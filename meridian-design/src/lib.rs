@@ -17,8 +17,10 @@
 pub mod chrome;
 pub mod colour;
 pub mod emit;
+pub mod scales;
 pub mod spacing;
 pub mod typography;
+pub mod validate;
 pub mod viz;
 
 pub use colour::{Rgba, StateSet};

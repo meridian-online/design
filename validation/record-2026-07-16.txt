@@ -1,0 +1,64 @@
+# Canonical validator record — Phase 1 palettes, 2026-07-16
+# Harbour categorical (approved), Meridian blue-240 sequential (opt-in scheme),
+# surfaces: light #fcfcfb / dark #161413. Re-enforced in CI by tests/palette_gate.rs.
+
+
+Palette (light, surface #fcfcfb, categorical): 8 slots
+  [PASS] Lightness band         all 8 inside L 0.43–0.77
+  [PASS] Chroma floor           all 8 >= 0.1
+  [PASS] CVD separation         worst adjacent #31aa8c↔#cca124 ΔE 11.7 (protan) · tritan 8.3
+  [PASS] Normal-vision floor    worst adjacent #31aa8c↔#cca124 ΔE 18.3 (normal)
+  [WARN] Contrast vs surface    below 3:1 — relief required (visible labels or table view): [["#cca124",2.35],["#31aa8c",2.82],["#dd7b2b",2.95]]
+
+  → ALL CHECKS PASS  (CVD in the 6–8 floor band is legal ONLY with secondary encoding: direct labels, gaps, or texture)
+  scope: categorical palettes only. For a lone status/text color check WCAG text contrast; for a sequential ramp, lightness monotonicity.
+
+
+Palette (dark, surface #161413, categorical): 8 slots
+  [PASS] Lightness band         all 8 inside L 0.48–0.67
+  [PASS] Chroma floor           all 8 >= 0.1
+  [PASS] CVD separation         worst adjacent #c74b47↔#31aa8c ΔE 10.2 (deutan) · tritan 6.8
+  [PASS] Normal-vision floor    worst adjacent #31aa8c↔#b68f1b ΔE 16.4 (normal)
+  [PASS] Contrast vs surface    all 8 >= 3:1
+
+  → ALL CHECKS PASS  (CVD in the 6–8 floor band is legal ONLY with secondary encoding: direct labels, gaps, or texture)
+  scope: categorical palettes only. For a lone status/text color check WCAG text contrast; for a sequential ramp, lightness monotonicity.
+
+
+Palette (light, surface #fcfcfb, categorical): 4 slots
+  [PASS] Lightness band         all 4 inside L 0.43–0.77
+  [PASS] Chroma floor           all 4 >= 0.1
+  [PASS] CVD separation         worst all-pairs #31aa8c↔#cca124 ΔE 11.7 (protan) · tritan 7.2
+  [PASS] Normal-vision floor    worst all-pairs #31aa8c↔#0083c4 ΔE 16.5 (normal)
+  [WARN] Contrast vs surface    below 3:1 — relief required (visible labels or table view): [["#cca124",2.35],["#31aa8c",2.82]]
+
+  → ALL CHECKS PASS  (CVD in the 6–8 floor band is legal ONLY with secondary encoding: direct labels, gaps, or texture)
+  scope: categorical palettes only. For a lone status/text color check WCAG text contrast; for a sequential ramp, lightness monotonicity.
+
+
+Palette (dark, surface #161413, categorical): 4 slots
+  [PASS] Lightness band         all 4 inside L 0.48–0.67
+  [PASS] Chroma floor           all 4 >= 0.1
+  [PASS] CVD separation         worst all-pairs #c74b47↔#b68f1b ΔE 9.9 (deutan) · tritan 5.6
+  [PASS] Normal-vision floor    worst all-pairs #31aa8c↔#0b89c8 ΔE 15.3 (normal)
+  [PASS] Contrast vs surface    all 4 >= 3:1
+
+  → ALL CHECKS PASS  (CVD in the 6–8 floor band is legal ONLY with secondary encoding: direct labels, gaps, or texture)
+  scope: categorical palettes only. For a lone status/text color check WCAG text contrast; for a sequential ramp, lightness monotonicity.
+
+
+Palette (light, surface #fcfcfb, ordinal ramp): 4 slots
+  [PASS] Lightness monotone     steps read light→dark
+  [PASS] Adjacent ΔL            all gaps >= 0.06
+  [PASS] Light-end contrast     #69baf0 at 2.07:1 vs surface
+  [PASS] Single hue             hue spread 1°
+
+  → ALL CHECKS PASS  (ordinal: one hue, monotone L, visible step gaps, light end clears surface)
+
+Palette (dark, surface #161413, ordinal ramp): 4 slots
+  [PASS] Lightness monotone     steps read light→dark
+  [PASS] Adjacent ΔL            all gaps >= 0.06
+  [PASS] Light-end contrast     #2d4f67 at 2.12:1 vs surface
+  [PASS] Single hue             hue spread 1°
+
+  → ALL CHECKS PASS  (ordinal: one hue, monotone L, visible step gaps, light end clears surface)

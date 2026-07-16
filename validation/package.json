@@ -1,0 +1,10 @@
+{
+  "name": "meridian-design-validation",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@radix-ui/colors": "^3.0.0",
+    "bezier-easing": "^2.1.0",
+    "colorjs.io": "^0.5.2"
+  }
+}

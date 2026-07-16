@@ -5,17 +5,16 @@
 Repo skeleton, ADRs 0001–0010, `meridian-design` crate skeleton (type shapes,
 brand constant, emitter stubs), CI.
 
-## Phase 1 — Palette design
+## Phase 1 — Palette design ✅ (2026-07-16)
 
-The creative core. Seed the vendored `generateRadixColors` (MIT, from
-radix-ui/website) with Maritime + a true hue-70 warm cream gray → 12-step
-neutral/accent/semantic scales, light + dark. Then the viz set: 8 ordered
-categorical slots tuned to the warm surfaces (ordering derived by enumerating
-for maximum adjacent CVD ΔE), sequential ramp, diverging pair, status palette —
-validated by script against **our** surfaces in both modes, output checked in
-as the CI gate. Chrome/ink table falls out of the neutral scale. Design calls
-made here: whether the sequential ramp is Maritime-anchored; the diverging
-warm pole.
+Shipped: 12-step neutral/accent/semantic scales generated from Meridian seeds
+(Maritime + true hue-70 warm cream); the approved "Harbour" 8-slot categorical
+set (ordering by exhaustive joint-mode CVD search; first four validate
+all-pairs); the Meridian blue-240 sequential ramp as an **opt-in** named
+scheme (default stays viridis — Hugh's call); diverging blue ↔ brick red;
+status palette; `null_ink`; the chart ink table. All values in
+`meridian-design`, gated by `tests/palette_gate.rs`; canonical validator
+record + reproducible pipeline + review gallery in `validation/`.
 
 ## Phase 2 — Font gate (early, cheap, blocking)
 

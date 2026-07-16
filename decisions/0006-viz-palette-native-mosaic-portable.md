@@ -44,6 +44,27 @@ surfaces, with the validation output checked in as a CI gate. A dedicated
 `null_ink` token gives NULL values a light neutral that cannot impersonate a
 scheme value.
 
+### Resolution (2026-07-16, Phase 1 complete)
+
+The "Harbour" categorical set is approved: blue → gold → teal → red → violet →
+orange → plum → green, Maritime-hue blue pinned to slot 1; all validator gates
+pass in both modes, first four validate all-pairs at CVD ΔE 9.9. Two open
+calls were decided the other way from the initial lean:
+
+- **Sequential default stays viridis.** The Maritime-anchored blue-240 ramp
+  ships as an *opt-in* named scheme (`meridian`), not the default — a bare
+  spec's continuous fills keep their scientific-colormap read.
+- **Diverging pair is blue ↔ brick red** (not burnt orange) — the stronger
+  conventional negative/positive signal, accepting that red does double duty
+  with status/critical.
+
+Values live in `meridian-design/src/{viz,scales,chrome}.rs`, gated by
+`tests/palette_gate.rs` (the Rust port of the validator); the canonical
+validator record and the reproducible generation pipeline are in
+`validation/`. The categorical default and mark default (slot-1 blue,
+replacing Tableau10 steel blue) remain renderer-default deviations to book as
+a DEV entry in Brightfield at Phase 4.
+
 ### Consequences
 
 - Good, because the canvas carries the identity while portable specs stay

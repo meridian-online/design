@@ -1,19 +1,27 @@
 # Validation
 
-Colour maths runs in CI, never by eye. Two gates land in Phase 1:
+Colour maths runs in CI, never by eye.
 
-## Palette validator
+## Palette gate
 
-Checks every shipped palette in BOTH modes against the Meridian surfaces:
-lightness band, chroma floor, adjacent-pair CVD separation (OKLab ΔE, ≥ 8
-target), the normal-vision floor (≥ 15, hard fail), and surface contrast.
-Categorical slot *ordering* is derived by enumerating orderings for maximum
-minimum adjacent CVD ΔE — the order is a safety mechanism, not cosmetics.
-Validation output is checked in beside the palette; CI re-runs and diffs it.
+Every shipped palette is checked in BOTH modes against the Meridian surfaces:
+lightness band, chroma floor, adjacent-pair CVD separation (OKLab ΔE ≥ 8,
+Machado 2009 severity-1.0 simulation), the normal-vision floor (≥ 15, hard
+fail), first-4 all-pairs, ordinal ramp bounds, and surface contrast. The
+standing CI gate is the Rust port in `meridian-design/src/validate.rs` +
+`tests/palette_gate.rs` — our own implementation of the published maths, so
+the repo owns its gate end-to-end. `record-2026-07-16.txt` is the canonical
+validator's output for the approved Phase 1 palettes (32 PASS lines);
+`gallery-2026-07-16.html` is the review page those approvals were made on.
 
-Implementation note: written here as our own script over the standard,
-well-published maths (OKLab ΔE, CVD simulation matrices, WCAG contrast), so
-the repo owns its gate end-to-end.
+## Reproducible pipeline
+
+- `scales.mts` — seeds → 12-step scales (drives the vendored generator)
+- `design.mts` — categorical candidate spec → metrics → exhaustive joint-mode
+  ordering search (the order is a safety mechanism, not cosmetics)
+- `ramps.mts` — sequential/diverging/status/null construction
+- `gen-rust.mts` — emits the Rust const blocks for `meridian-design`
+- `npm install` here, then `node <script>.mts` (Node ≥ 24 strips types natively)
 
 ## Scale generator
 

@@ -1,0 +1,273 @@
+<title>Meridian Palette — Phase 1 Review</title>
+<style>
+  :root {
+    --page: #fbfaf9; --card: #fcfcfb; --ink: #231f1c; --ink-2: #605c58;
+    --ink-3: #8a847f; --line: #e4e2e0; --accent: #4b7a9b; --accent-ink: #3e6d8d;
+    --pass: #218a45; --warn-bg: #f9f2e2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      --page: #0e0c0b; --card: #161413; --ink: #efeeec; --ink-2: #b7b2ae;
+      --ink-3: #7e7a75; --line: #2a2928; --accent: #8fc1e4; --accent-ink: #8fc1e4;
+      --pass: #4fae6e; --warn-bg: #2b2416;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #0e0c0b; --card: #161413; --ink: #efeeec; --ink-2: #b7b2ae;
+    --ink-3: #7e7a75; --line: #2a2928; --accent: #8fc1e4; --accent-ink: #8fc1e4;
+    --pass: #4fae6e; --warn-bg: #2b2416;
+  }
+  body {
+    background: var(--page); color: var(--ink);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+    margin: 0; padding: 48px 20px 80px;
+  }
+  main { max-width: 1040px; margin: 0 auto; }
+  h1 { font-size: 26px; font-weight: 650; letter-spacing: -0.01em; margin: 0 0 6px; text-wrap: balance; }
+  h2 { font-size: 17px; font-weight: 650; margin: 52px 0 4px; }
+  h2 .call { color: var(--accent-ink); font-weight: 700; }
+  .sub { color: var(--ink-2); margin: 0 0 18px; max-width: 72ch; }
+  .sub b { color: var(--ink); font-weight: 600; }
+  .eyebrow { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--ink-3); font-weight: 600; }
+  .verdict { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px;
+    border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 13px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pass); }
+  code, .hex { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+  .panes { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 760px) { .panes { grid-template-columns: 1fr; } }
+  .pane { border-radius: 8px; padding: 18px; border: 1px solid rgba(127,122,117,0.25); }
+  .pane.light { background: #fcfcfb; color: #231f1c; }
+  .pane.dark { background: #161413; color: #efeeec; }
+  .pane .plabel { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.55; margin-bottom: 12px; font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip { width: 96px; }
+  .chip .sw { height: 44px; border-radius: 5px; margin-bottom: 5px; }
+  .chip .nm { font-size: 12px; font-weight: 600; }
+  .chip .hx { opacity: 0.65; }
+  .chip .ct { font-size: 11px; opacity: 0.55; font-variant-numeric: tabular-nums; }
+  .relief { font-size: 10px; border: 1px solid currentColor; border-radius: 3px;
+    padding: 0 4px; opacity: 0.6; margin-left: 4px; }
+  .strip { display: flex; height: 34px; border-radius: 5px; overflow: hidden; margin: 8px 0 2px; }
+  .strip div { flex: 1; }
+  .striplbl { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+  .demo { margin-top: 16px; }
+  svg { display: block; max-width: 100%; }
+  table { border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  td, th { padding: 6px 14px 6px 0; text-align: left; border-bottom: 1px solid var(--line); }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); font-weight: 600; }
+  td .hex { color: var(--ink-2); }
+  .inkchip { display: inline-block; width: 13px; height: 13px; border-radius: 3px; vertical-align: -2px;
+    margin-right: 7px; border: 1px solid rgba(127,122,117,0.3); }
+  pre { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px;
+    font-size: 12px; line-height: 1.5; overflow-x: auto; }
+  .note { background: var(--warn-bg); border-radius: 6px; padding: 10px 14px; font-size: 13px;
+    color: var(--ink-2); margin-top: 14px; max-width: 78ch; }
+  .status-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; }
+  .badge { display: inline-flex; align-items: center; gap: 7px; border-radius: 5px; padding: 5px 11px;
+    font-size: 13px; font-weight: 600; color: #fff; }
+</style>
+
+<main>
+  <div class="eyebrow">Meridian design system · Phase 1</div>
+  <h1>Palette review — “Harbour” categorical, ramps, status &amp; ink</h1>
+  <p class="sub">Every set below was <b>computed, then validated</b> — designed in OKLCH on Meridian’s
+    warm surfaces, ordering chosen by exhaustive search over colourblind-simulated ΔE, then run through
+    the canonical palette validator in both modes. Two calls are yours to make: the sequential default
+    and the diverging warm pole. This page is set in the system it reviews: warm neutrals, Maritime
+    accent, data colour reserved for the charts. (Type is the system sans — Geist lands after its
+    Phase 2 render gate.)</p>
+  <div class="verdict"><span class="dot"></span>Validator: ALL CHECKS PASS — 8-slot adjacent + 4-slot all-pairs, light &amp; dark</div>
+
+  <h2>Categorical — 8 slots, fixed order</h2>
+  <p class="sub">Slot 1 is pinned to the Maritime-hue blue (brand anchor). The order
+    <b>blue → gold → teal → red → violet → orange → plum → green</b> maximises the worst
+    colourblind-simulated adjacent ΔE (10.2; target ≥ 8) with normal-vision adjacent ΔE 16.4 (floor 15).
+    The same hues serve both modes, re-stepped for each surface.</p>
+  <div class="panes">
+    <div class="pane light">
+      <div class="plabel">Light · surface #fcfcfb</div>
+      <div class="chips">
+        <div class="chip"><div class="sw" style="background:#0083c4"></div><div class="nm">1 blue</div><div class="hx hex">#0083c4</div><div class="ct">4.06:1</div></div>
+        <div class="chip"><div class="sw" style="background:#cca124"></div><div class="nm">2 gold<span class="relief">relief</span></div><div class="hx hex">#cca124</div><div class="ct">2.35:1</div></div>
+        <div class="chip"><div class="sw" style="background:#31aa8c"></div><div class="nm">3 teal<span class="relief">relief</span></div><div class="hx hex">#31aa8c</div><div class="ct">2.82:1</div></div>
+        <div class="chip"><div class="sw" style="background:#c13c3b"></div><div class="nm">4 red</div><div class="hx hex">#c13c3b</div><div class="ct">5.14:1</div></div>
+        <div class="chip"><div class="sw" style="background:#6a55b8"></div><div class="nm">5 violet</div><div class="hx hex">#6a55b8</div><div class="ct">5.68:1</div></div>
+        <div class="chip"><div class="sw" style="background:#dd7b2b"></div><div class="nm">6 orange<span class="relief">relief</span></div><div class="hx hex">#dd7b2b</div><div class="ct">2.95:1</div></div>
+        <div class="chip"><div class="sw" style="background:#bf62ad"></div><div class="nm">7 plum</div><div class="hx hex">#bf62ad</div><div class="ct">3.68:1</div></div>
+        <div class="chip"><div class="sw" style="background:#47944c"></div><div class="nm">8 green</div><div class="hx hex">#47944c</div><div class="ct">3.65:1</div></div>
+      </div>
+      <div class="demo">
+        <svg viewBox="0 0 440 120" width="440" height="120" role="img" aria-label="grouped bars, first four slots, light">
+          <line x1="24" y1="100" x2="430" y2="100" stroke="#d4d2cf"/>
+          <line x1="24" y1="60" x2="430" y2="60" stroke="#ebeae9"/>
+          <line x1="24" y1="20" x2="430" y2="20" stroke="#ebeae9"/>
+          <g>
+            <rect x="40"  y="38" width="18" height="62" rx="2" fill="#0083c4"/><rect x="62"  y="56" width="18" height="44" rx="2" fill="#cca124"/><rect x="84"  y="30" width="18" height="70" rx="2" fill="#31aa8c"/><rect x="106" y="68" width="18" height="32" rx="2" fill="#c13c3b"/>
+            <rect x="180" y="52" width="18" height="48" rx="2" fill="#0083c4"/><rect x="202" y="34" width="18" height="66" rx="2" fill="#cca124"/><rect x="224" y="62" width="18" height="38" rx="2" fill="#31aa8c"/><rect x="246" y="44" width="18" height="56" rx="2" fill="#c13c3b"/>
+            <rect x="320" y="26" width="18" height="74" rx="2" fill="#0083c4"/><rect x="342" y="60" width="18" height="40" rx="2" fill="#cca124"/><rect x="364" y="48" width="18" height="52" rx="2" fill="#31aa8c"/><rect x="386" y="36" width="18" height="64" rx="2" fill="#c13c3b"/>
+          </g>
+          <text x="76" y="114" font-size="10" fill="#8a847f">registries</text>
+          <text x="212" y="114" font-size="10" fill="#8a847f">filings</text>
+          <text x="352" y="114" font-size="10" fill="#8a847f">codes</text>
+        </svg>
+      </div>
+    </div>
+    <div class="pane dark">
+      <div class="plabel">Dark · surface #161413</div>
+      <div class="chips">
+        <div class="chip"><div class="sw" style="background:#0b89c8"></div><div class="nm">1 blue</div><div class="hx hex">#0b89c8</div><div class="ct">4.95:1</div></div>
+        <div class="chip"><div class="sw" style="background:#b68f1b"></div><div class="nm">2 gold</div><div class="hx hex">#b68f1b</div><div class="ct">6.06:1</div></div>
+        <div class="chip"><div class="sw" style="background:#31aa8c"></div><div class="nm">3 teal</div><div class="hx hex">#31aa8c</div><div class="ct">6.34:1</div></div>
+        <div class="chip"><div class="sw" style="background:#c74b47"></div><div class="nm">4 red</div><div class="hx hex">#c74b47</div><div class="ct">3.96:1</div></div>
+        <div class="chip"><div class="sw" style="background:#7b69c6"></div><div class="nm">5 violet</div><div class="hx hex">#7b69c6</div><div class="ct">4.09:1</div></div>
+        <div class="chip"><div class="sw" style="background:#b45c03"></div><div class="nm">6 orange</div><div class="hx hex">#b45c03</div><div class="ct">3.91:1</div></div>
+        <div class="chip"><div class="sw" style="background:#b55fa4"></div><div class="nm">7 plum</div><div class="hx hex">#b55fa4</div><div class="ct">4.49:1</div></div>
+        <div class="chip"><div class="sw" style="background:#47944c"></div><div class="nm">8 green</div><div class="hx hex">#47944c</div><div class="ct">4.90:1</div></div>
+      </div>
+      <div class="demo">
+        <svg viewBox="0 0 440 120" width="440" height="120" role="img" aria-label="line chart, first four slots, dark">
+          <line x1="24" y1="100" x2="430" y2="100" stroke="#3c3a38"/>
+          <line x1="24" y1="60" x2="430" y2="60" stroke="#232221"/>
+          <line x1="24" y1="20" x2="430" y2="20" stroke="#232221"/>
+          <polyline points="30,78 110,60 190,66 270,40 350,34 428,22" fill="none" stroke="#0b89c8" stroke-width="2"/>
+          <polyline points="30,90 110,84 190,70 270,74 350,58 428,52" fill="none" stroke="#b68f1b" stroke-width="2"/>
+          <polyline points="30,52 110,58 190,44 270,52 350,42 428,44" fill="none" stroke="#31aa8c" stroke-width="2"/>
+          <polyline points="30,94 110,88 190,90 270,80 350,84 428,72" fill="none" stroke="#c74b47" stroke-width="2"/>
+          <circle cx="428" cy="22" r="3" fill="#0b89c8"/><circle cx="428" cy="52" r="3" fill="#b68f1b"/>
+          <circle cx="428" cy="44" r="3" fill="#31aa8c"/><circle cx="428" cy="72" r="3" fill="#c74b47"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b>Relief rule:</b> three light-mode slots sit below 3:1 against the surface (the
+    reference palette carries the same count) — legal with visible direct labels or the table view.
+    Dark mode: all eight clear 3:1. <b>Series cap:</b> the first four slots validate all-pairs
+    (scatter, choropleth) at CVD ΔE 9.9 — past four, fold to “Other”, facet, or label directly.</p>
+
+  <h2><span class="call">Call ①</span> — Sequential default: Meridian blue, or keep viridis?</h2>
+  <p class="sub">The Meridian ramp is Maritime-anchored (OKLCH hue 240, 13 steps, ordinal-validated in
+    both modes). Viridis is the current Brightfield default — familiar, scientific, but generic and
+    green-yellow against warm neutrals. Both shown as heatmap strips on the real surfaces.</p>
+  <div class="panes">
+    <div class="pane light">
+      <div class="plabel">Light</div>
+      <div class="strip">
+        <div style="background:#c6e4fb"></div><div style="background:#a6d7fa"></div><div style="background:#87c8f6"></div><div style="background:#69baf0"></div><div style="background:#4daae6"></div><div style="background:#359bd9"></div><div style="background:#238cc7"></div><div style="background:#1d7cb2"></div><div style="background:#216d9b"></div><div style="background:#285e81"></div><div style="background:#2d4f67"></div><div style="background:#274154"></div><div style="background:#1b3546"></div>
+      </div>
+      <div class="striplbl">Meridian blue-240 · 100 → 700</div>
+      <div class="strip" style="margin-top:14px">
+        <div style="background:#fde725"></div><div style="background:#b5de2b"></div><div style="background:#6ece58"></div><div style="background:#35b779"></div><div style="background:#1f9e89"></div><div style="background:#26828e"></div><div style="background:#31688e"></div><div style="background:#3e4989"></div><div style="background:#482878"></div><div style="background:#440154"></div>
+      </div>
+      <div class="striplbl">viridis (status quo)</div>
+    </div>
+    <div class="pane dark">
+      <div class="plabel">Dark</div>
+      <div class="strip">
+        <div style="background:#c6e4fb"></div><div style="background:#a6d7fa"></div><div style="background:#87c8f6"></div><div style="background:#69baf0"></div><div style="background:#4daae6"></div><div style="background:#359bd9"></div><div style="background:#238cc7"></div><div style="background:#1d7cb2"></div><div style="background:#216d9b"></div><div style="background:#285e81"></div><div style="background:#2d4f67"></div><div style="background:#274154"></div><div style="background:#1b3546"></div>
+      </div>
+      <div class="striplbl">Meridian blue-240 · 100 → 700</div>
+      <div class="strip" style="margin-top:14px">
+        <div style="background:#fde725"></div><div style="background:#b5de2b"></div><div style="background:#6ece58"></div><div style="background:#35b779"></div><div style="background:#1f9e89"></div><div style="background:#26828e"></div><div style="background:#31688e"></div><div style="background:#3e4989"></div><div style="background:#482878"></div><div style="background:#440154"></div>
+      </div>
+      <div class="striplbl">viridis (status quo)</div>
+    </div>
+  </div>
+  <p class="note">Either way, viridis / blues / turbo stay available as named schemes — this call sets
+    only the <b>default</b> a bare spec renders with. A second concurrent sequential context takes the
+    next categorical hue as its own one-hue ramp.</p>
+
+  <h2><span class="call">Call ②</span> — Diverging warm pole: burnt orange, or brick red?</h2>
+  <p class="sub">Cool pole is Maritime blue in both candidates; the midpoint is the warm neutral
+    (light <span class="hex">#f4f3f2</span>, dark <span class="hex">#2a2928</span>), so “nothing”
+    reads as nothing. Orange echoes the warm ground and keeps red free for status/critical; red is the
+    stronger conventional signal for negative/positive.</p>
+  <div class="panes">
+    <div class="pane light">
+      <div class="plabel">A · blue ↔ orange</div>
+      <div class="strip">
+        <div style="background:#005389"></div><div style="background:#0070a9"></div><div style="background:#478ebc"></div><div style="background:#79abcf"></div><div style="background:#a8c9e2"></div><div style="background:#f4f3f2"></div><div style="background:#dfbca6"></div><div style="background:#ca9877"></div><div style="background:#b47548"></div><div style="background:#9e5209"></div><div style="background:#7f3400"></div>
+      </div>
+      <div class="plabel" style="margin-top:18px">B · blue ↔ red</div>
+      <div class="strip">
+        <div style="background:#005389"></div><div style="background:#0070a9"></div><div style="background:#478ebc"></div><div style="background:#79abcf"></div><div style="background:#a8c9e2"></div><div style="background:#f4f3f2"></div><div style="background:#e3b8b4"></div><div style="background:#d0938d"></div><div style="background:#bb6d67"></div><div style="background:#a54743"></div><div style="background:#8d1a1e"></div>
+      </div>
+    </div>
+    <div class="pane dark">
+      <div class="plabel">A · blue ↔ orange</div>
+      <div class="strip">
+        <div style="background:#005389"></div><div style="background:#0070a9"></div><div style="background:#478ebc"></div><div style="background:#79abcf"></div><div style="background:#a8c9e2"></div><div style="background:#2a2928"></div><div style="background:#dfbca6"></div><div style="background:#ca9877"></div><div style="background:#b47548"></div><div style="background:#9e5209"></div><div style="background:#7f3400"></div>
+      </div>
+      <div class="plabel" style="margin-top:18px">B · blue ↔ red</div>
+      <div class="strip">
+        <div style="background:#005389"></div><div style="background:#0070a9"></div><div style="background:#478ebc"></div><div style="background:#79abcf"></div><div style="background:#a8c9e2"></div><div style="background:#2a2928"></div><div style="background:#e3b8b4"></div><div style="background:#d0938d"></div><div style="background:#bb6d67"></div><div style="background:#a54743"></div><div style="background:#8d1a1e"></div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Status &amp; null ink</h2>
+  <p class="sub">Status colours are reserved — never reused as series — and always ship with icon +
+    label. <b>null_ink</b> gives NULL values a warm-gray cell that cannot impersonate a scheme value
+    (it closes Brightfield’s NULL-reads-as-high-value bug).</p>
+  <div class="status-row">
+    <span class="badge" style="background:#218a45">✓ good</span>
+    <span class="badge" style="background:#da950b;color:#231f1c">▲ warning</span>
+    <span class="badge" style="background:#db703b">◆ serious</span>
+    <span class="badge" style="background:#c9302d">✕ critical</span>
+  </div>
+  <div class="panes" style="margin-top:16px">
+    <div class="pane light">
+      <div class="plabel">null cell in a blue heatmap · light</div>
+      <div class="strip">
+        <div style="background:#87c8f6"></div><div style="background:#4daae6"></div><div style="background:#dcdad8"></div><div style="background:#238cc7"></div><div style="background:#216d9b"></div><div style="background:#2d4f67"></div>
+      </div>
+      <div class="striplbl">third cell is NULL → <span class="hex">#dcdad8</span>, reads “no data”, not “high”</div>
+    </div>
+    <div class="pane dark">
+      <div class="plabel">null cell in a blue heatmap · dark</div>
+      <div class="strip">
+        <div style="background:#87c8f6"></div><div style="background:#4daae6"></div><div style="background:#32302f"></div><div style="background:#238cc7"></div><div style="background:#216d9b"></div><div style="background:#2d4f67"></div>
+      </div>
+      <div class="striplbl">NULL → <span class="hex">#32302f</span></div>
+    </div>
+  </div>
+
+  <h2>The scales beneath — neutrals, Maritime, chart ink</h2>
+  <p class="sub">Generated Radix-shaped 12-step scales from Meridian seeds (true hue-70 warm cream
+    gray; Maritime lands exactly as step 9, the solid). Chart chrome ink is drawn from the gray scale.</p>
+  <div class="panes">
+    <div class="pane light">
+      <div class="plabel">gray · light</div>
+      <div class="strip"><div style="background:#f8f7f7"></div><div style="background:#f4f3f2"></div><div style="background:#ebeae9"></div><div style="background:#e4e2e0"></div><div style="background:#dcdad8"></div><div style="background:#d4d2cf"></div><div style="background:#cac6c3"></div><div style="background:#b7b3ae"></div><div style="background:#8a847f"></div><div style="background:#7f7a75"></div><div style="background:#605c58"></div><div style="background:#231f1c"></div></div>
+      <div class="plabel" style="margin-top:14px">maritime · light</div>
+      <div class="strip"><div style="background:#f6f8fa"></div><div style="background:#eff3f7"></div><div style="background:#e3eef6"></div><div style="background:#d6e6f2"></div><div style="background:#c7dceb"></div><div style="background:#b5cee2"></div><div style="background:#9dbdd5"></div><div style="background:#7ca6c5"></div><div style="background:#4b7a9b"></div><div style="background:#3e6d8d"></div><div style="background:#3b698a"></div><div style="background:#283e4d"></div></div>
+    </div>
+    <div class="pane dark">
+      <div class="plabel">gray · dark</div>
+      <div class="strip"><div style="background:#0d0c0c"></div><div style="background:#191817"></div><div style="background:#232221"></div><div style="background:#2a2928"></div><div style="background:#32302f"></div><div style="background:#3c3a38"></div><div style="background:#4a4744"></div><div style="background:#64605c"></div><div style="background:#716c67"></div><div style="background:#7e7a75"></div><div style="background:#b7b2ae"></div><div style="background:#efeeec"></div></div>
+      <div class="plabel" style="margin-top:14px">maritime · dark</div>
+      <div class="strip"><div style="background:#080d12"></div><div style="background:#12191e"></div><div style="background:#172835"></div><div style="background:#1b3547"></div><div style="background:#244256"></div><div style="background:#2f5068"></div><div style="background:#3c627d"></div><div style="background:#4a799a"></div><div style="background:#4b7a9b"></div><div style="background:#466c87"></div><div style="background:#8fc1e4"></div><div style="background:#cde8fc"></div></div>
+    </div>
+  </div>
+  <table>
+    <tr><th>Chart ink role</th><th>Light</th><th>Dark</th></tr>
+    <tr><td>Chart surface</td><td><span class="inkchip" style="background:#fcfcfb"></span><span class="hex">#fcfcfb</span></td><td><span class="inkchip" style="background:#161413"></span><span class="hex">#161413</span></td></tr>
+    <tr><td>Page plane</td><td><span class="inkchip" style="background:#fbfaf9"></span><span class="hex">#fbfaf9</span></td><td><span class="inkchip" style="background:#0e0c0b"></span><span class="hex">#0e0c0b</span></td></tr>
+    <tr><td>Primary ink (titles)</td><td><span class="inkchip" style="background:#231f1c"></span><span class="hex">#231f1c</span></td><td><span class="inkchip" style="background:#efeeec"></span><span class="hex">#efeeec</span></td></tr>
+    <tr><td>Secondary ink</td><td><span class="inkchip" style="background:#605c58"></span><span class="hex">#605c58</span></td><td><span class="inkchip" style="background:#b7b2ae"></span><span class="hex">#b7b2ae</span></td></tr>
+    <tr><td>Muted (axis labels)</td><td><span class="inkchip" style="background:#8a847f"></span><span class="hex">#8a847f</span></td><td><span class="inkchip" style="background:#716c67"></span><span class="hex">#716c67</span></td></tr>
+    <tr><td>Gridline (hairline)</td><td><span class="inkchip" style="background:#ebeae9"></span><span class="hex">#ebeae9</span></td><td><span class="inkchip" style="background:#232221"></span><span class="hex">#232221</span></td></tr>
+    <tr><td>Baseline / axis</td><td><span class="inkchip" style="background:#d4d2cf"></span><span class="hex">#d4d2cf</span></td><td><span class="inkchip" style="background:#3c3a38"></span><span class="hex">#3c3a38</span></td></tr>
+    <tr><td>Focus / interactive</td><td><span class="inkchip" style="background:#4b7a9b"></span><span class="hex">#4b7a9b</span></td><td><span class="inkchip" style="background:#8fc1e4"></span><span class="hex">#8fc1e4</span></td></tr>
+  </table>
+
+  <h2>Validator record</h2>
+  <pre>categorical 8-slot  light  PASS  worst adj CVD 11.7 (protan) · normal 18.3 · 3 relief slots
+categorical 8-slot  dark   PASS  worst adj CVD 10.2 (deutan) · normal 16.4 · 0 relief slots
+first-4 all-pairs   light  PASS  worst pair CVD 11.7 · normal 16.5
+first-4 all-pairs   dark   PASS  worst pair CVD  9.9 · normal 15.3
+sequential ordinal  light  PASS  steps 250–600 · light end 2.07:1
+sequential ordinal  dark   PASS  steps 300–600 · dark end 2.12:1</pre>
+  <p class="sub" style="margin-top:20px">On approval: values land as constants in <code>meridian-design</code>
+    with the validator ported to a cargo test, the emitted <code>tokens.css</code> snapshot regenerates,
+    and this validation record is checked in beside the palette.</p>
+</main>
