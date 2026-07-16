@@ -1,0 +1,11 @@
+[package]
+name = "meridian-design"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Meridian design tokens — framework-neutral colours, type ramp, spacing, and chart palettes"
+repository = "https://github.com/meridian-online/design"
+
+# Dependency-free by contract (ADR 0003): this crate must remain outside any
+# GPL firewall and portable to every consumer (web emission, GPUI, Masonry).
+[dependencies]
