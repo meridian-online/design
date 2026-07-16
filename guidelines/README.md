@@ -10,8 +10,9 @@ The rules tokens can't carry. Planned pages (Phase 5, except where noted):
 - `colour.md` — colour by job (categorical/sequential/diverging/status), the
   fixed-order rule, the validator gate, `null_ink`, Mosaic portability
   (ADR 0006/0007).
-- `typography.md` — Geist usage: weights at small sizes, `tnum`/`zero`,
-  self-hosted upstream builds only, no italics workarounds (ADR 0005).
+- `typography.md` — Inter + JetBrains Mono usage: `tnum`/`zero` at table
+  scope, `calt` off on data surfaces (JetBrains Mono ligatures), self-hosted
+  upstream builds only (ADR 0005 resolution).
 - `icons.md` — Tabler everywhere; shadcn internals exempt; outline primary /
   filled for selected states. Footnote: Carbon's icon taxonomy as the naming
   checklist for custom-drawn chart glyphs (ADR 0009).

@@ -1,14 +1,17 @@
-//! Type ramp (ADR 0005). Families are GATED on the Phase 2 render test — an
-//! 11px `tnum` table in Brightfield must pass an eyeball before these lock;
-//! the named fallback is Inter + JetBrains Mono. Sizes are logical pixels.
+//! Type ramp (ADR 0005, gate resolved 2026-07-16). The Phase 2 render test —
+//! side-by-side 11px `tnum` tables in a real Brightfield window — FAILED for
+//! Geist (Inter read better at 11px; harness: brightfield branch
+//! `design/0002-font-gate`, evidence `validation/font-gate-2026-07-16.png`).
+//! The named fallback locked in. Sizes are logical pixels.
 
-/// The UI sans. Embed the upstream Geist builds, never the Google Fonts
-/// build (it strips stylistic sets).
-pub const SANS_FAMILY: &str = "Geist";
+/// The UI sans. Embed the upstream rsms builds, never a stripped webfont
+/// build.
+pub const SANS_FAMILY: &str = "Inter";
 
-/// The data/code mono — editor, table cells, tick labels. Coding ligatures
-/// are off by default upstream (opt-in ss11); keep them off.
-pub const MONO_FAMILY: &str = "Geist Mono";
+/// The data/code mono — editor, table cells, tick labels. JetBrains Mono
+/// ships coding ligatures ON by default (`calt`) — Meridian turns them off
+/// on every data/editor surface via [`CALT_OFF`].
+pub const MONO_FAMILY: &str = "JetBrains Mono";
 
 /// Brand display face — marketing/web display surfaces ONLY, never inside
 /// the apps (ADR 0005).
@@ -34,3 +37,7 @@ pub const TNUM: FontFeature = FontFeature { tag: *b"tnum", value: 1 };
 
 /// Slashed zero — on wherever `TNUM` is on (0/O disambiguation at 11px).
 pub const ZERO: FontFeature = FontFeature { tag: *b"zero", value: 1 };
+
+/// Ligatures off — REQUIRED alongside `MONO_FAMILY` (JetBrains Mono defaults
+/// its coding ligatures on; `=>` must read as two glyphs in data surfaces).
+pub const CALT_OFF: FontFeature = FontFeature { tag: *b"calt", value: 0 };

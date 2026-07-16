@@ -16,17 +16,18 @@ status palette; `null_ink`; the chart ink table. All values in
 `meridian-design`, gated by `tests/palette_gate.rs`; canonical validator
 record + reproducible pipeline + review gallery in `validation/`.
 
-## Phase 2 — Font gate (early, cheap, blocking)
+## Phase 2 — Font gate ✅ (2026-07-16 — FAILED for Geist, fallback adopted)
 
-Bundle the upstream Geist builds (not the Google Fonts build — it strips
-stylistic sets), render an 11px `tnum` table in Brightfield, eyeball it.
-Pass → typography tokens lock. Fail → Inter + JetBrains Mono, ADR 0005
-amended, nothing else changes.
+The 11px `tnum` side-by-side ran in a real Brightfield window (branch
+`design/0002-font-gate`); Hugh's eyeball: Inter reads better. **Inter +
+JetBrains Mono adopted** (ADR 0005 resolution; evidence in `validation/`).
+JetBrains Mono requires `CALT_OFF` (ligatures off) on data surfaces.
 
 ## Phase 3 — Web adoption
 
 Swap `global.css` to the emitted `tokens.css`; replace the untouched shadcn
-`--chart-1..5` with the real viz palette; drop Inter from the layout; add the
+`--chart-1..5` with the real viz palette; drop Geist from the layout (Inter
+stays — the Phase 2 verdict flipped the cleanup direction); add the
 table-scope `tnum` utility. Conformance test pins web against the crate.
 
 ## Phase 4 — Brightfield adoption (two PRs)
