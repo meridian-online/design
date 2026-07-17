@@ -37,6 +37,28 @@ ingest strips Tabler's invisible bounding-rect path; the web sets
 only as a *naming/coverage checklist* when Meridian must draw a glyph Tabler
 lacks (guidelines footnote, not a dependency).
 
+### Update (2026-07-17 — web migration already shipped)
+
+The web side of this decision landed independently (web PR #42, `82cf76e`,
+deployed): all app components migrated to `@tabler/icons-react`, zero
+`lucide-react` imports remain in `components/`. Three refinements from that
+work fold back into this ADR:
+
+- **The exemption clause broadens**: it is "framework internals", not just
+  shadcn — **fumadocs** docs UI imports `lucide-react` transitively and
+  `lib/source.ts` uses its `lucideIconsPlugin`, so `lucide-react` stays as a
+  dependency and must not be "cleaned up".
+- **Single binding module**: the finetype type-icon vocabulary (45 kebab
+  names, `icon` field as of finetype 0.6.52) resolves to Tabler components in
+  exactly one place — web `lib/icon-map.tsx` (`getTypeIcon`, null → the
+  domain-coloured dot fallback). New icon consumers go through it, never
+  bind names ad hoc. If Brightfield's sidebar ever shows type icons, the
+  name→Tabler mapping should lift into this repo as shared data (same
+  third-consumer trigger as the token machinery).
+- **Non-1:1 name precedents** (Lucide → Tabler) are set and should be reused,
+  e.g. BarChart3→IconChartBar, Sigma→IconSum, Info→IconInfoCircle,
+  BookOpen→IconBook, FileJson2→IconJson — full list in web PR #42.
+
 ### Consequences
 
 - Good, because zero per-icon policy decisions and native coverage for
