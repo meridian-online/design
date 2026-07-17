@@ -48,10 +48,12 @@ explorer; map shadcn semantic tokens onto `--m-*`.
   `serialise_spec` to expand `colorScheme: meridian` to explicit ranges on
   export.
 
-## Phase 5 — Guidelines
+## Phase 5 — Guidelines ✅ (2026-07-17)
 
-Density (12px base; row ladder 22/24/36/46), speed budgets, icon policy,
-brand application.
+Six citable pages shipped in `guidelines/`: identity, density, speed
+budgets, colour, typography, icons — each distilled from the ADRs and the
+shipped phases, with evidence links. The roadmap is complete; the system is
+live on web and desktop.
 
 ## Standing
 
