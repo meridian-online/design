@@ -17,6 +17,7 @@
 pub mod chrome;
 pub mod colour;
 pub mod emit;
+pub mod fonts;
 pub mod scales;
 pub mod spacing;
 pub mod typography;

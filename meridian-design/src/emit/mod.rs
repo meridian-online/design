@@ -1,6 +1,9 @@
 //! Emitters — every downstream artefact is generated from this crate and
 //! pinned by a conformance test (ADR 0008): `tokens.css` for the web, and
-//! (Phase 3+) the gpui-component `ThemeConfig` JSON pair for Brightfield.
+//! the gpui-component `ThemeConfig` JSON pair for Brightfield.
+
+mod theme;
+pub use theme::{theme_config, ThemeMode};
 
 use crate::chrome::{InkTokens, INK_DARK, INK_LIGHT};
 use crate::colour::Rgba;
