@@ -35,7 +35,7 @@ scope). Icons had already shipped independently (web #42 — see ADR 0009
 update). Web follow-ups noted on the PR: apply `ui-numeric` to the dataset
 explorer; map shadcn semantic tokens onto `--m-*`.
 
-## Phase 4 — Brightfield adoption (two PRs)
+## Phase 4 — Brightfield adoption ✅ (2026-07-17, brightfield #62 + #63)
 
 - **PR A — overlay** (PNGs byte-identical): apply the emitted `ThemeConfig`
   pair; UI/editor fonts via config; tokenise GPUI-only overlay colours (brush,
