@@ -23,12 +23,17 @@ The 11px `tnum` side-by-side ran in a real Brightfield window (branch
 JetBrains Mono adopted** (ADR 0005 resolution; evidence in `validation/`).
 JetBrains Mono requires `CALT_OFF` (ligatures off) on data surfaces.
 
-## Phase 3 — Web adoption
+## Phase 3 — Web adoption ✅ (2026-07-17, web PR #44 → prod)
 
-Swap `global.css` to the emitted `tokens.css`; replace the untouched shadcn
-`--chart-1..5` with the real viz palette; drop Geist from the layout (Inter
-stays — the Phase 2 verdict flipped the cleanup direction); add the
-table-scope `tnum` utility. Conformance test pins web against the crate.
+Shipped: the generated tokens block lives marker-delimited in web
+`app/global.css`, byte-pinned to this repo's snapshot by web
+`scripts/check-tokens.mjs`; `--chart-1..5` reference the Harbour slots
+(dormant until the site's first chart — zero consumers today, by check);
+Inter self-hosted from upstream rsms 4.1 builds, Geist dropped, Anybody
+display-only; `@utility ui-numeric` (tabular figures + slashed zero, table
+scope). Icons had already shipped independently (web #42 — see ADR 0009
+update). Web follow-ups noted on the PR: apply `ui-numeric` to the dataset
+explorer; map shadcn semantic tokens onto `--m-*`.
 
 ## Phase 4 — Brightfield adoption (two PRs)
 
