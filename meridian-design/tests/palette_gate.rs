@@ -32,7 +32,7 @@ fn categorical_light_passes_all_gates() {
         let ct = contrast(*c, INK_LIGHT.surface);
         if [1, 2, 5].contains(&i) {
             assert!(
-                ct < 3.0 && ct >= 2.0,
+                (2.0..3.0).contains(&ct),
                 "slot {i} left the documented relief band: {ct:.2}"
             );
         } else {
