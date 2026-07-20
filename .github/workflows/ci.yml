@@ -6,6 +6,30 @@ on:
   pull_request:
 
 jobs:
+  # Repo-wide hygiene gate. Deliberately first, deliberately toolchain-free: it
+  # is `git grep` over tracked files and finishes in seconds, so a leaked private
+  # planning identifier goes red long before the crate build has resolved a
+  # dependency.
+  #
+  # NOTE the absence of `defaults.run.working-directory`. The `crate` job below
+  # scopes itself to `meridian-design/`; this one must see the WHOLE repository —
+  # guidelines/, decisions/, validation/, README, workflows and all — because
+  # prose is where these identifiers actually leak. The script also cd's to the
+  # repo root itself, so it stays repo-wide even if a default is added later.
+  public-hygiene:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      # The gate's own regression test runs FIRST. A hygiene gate fails silently
+      # in both directions — it can stop matching, or start matching honest
+      # prose — so "the gate still works" has to be established before "the tree
+      # is clean" means anything.
+      - name: hygiene gate self-test
+        run: ./scripts/check-public-hygiene-selftest.sh
+      - name: private planning identifiers
+        run: ./scripts/check-public-hygiene.sh
+
   crate:
     runs-on: ubuntu-latest
     defaults:
