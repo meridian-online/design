@@ -15,11 +15,12 @@ shell grew a private shadow palette.
 
 | Path | Contents |
 |---|---|
-| `meridian-design/` | The token crate. MIT, **dependency-free by contract** (ADR 0003). The only place token values are defined, plus the emitters. |
+| `meridian-design/` | The token crate — the only crate in this repo today. MIT, **dependency-free by contract** (ADR 0003). The only place token values are defined, plus the emitters (`src/emit/`) and the bundled `fonts/`. |
 | `decisions/` | ADRs 0001–0011 — the scoping decisions and every amendment to them. `_template.md` is the shape. |
-| `guidelines/` | Six citable pages: identity, density, speed, colour, typography, icons. The rules tokens cannot carry. |
-| `validation/` | Colour maths and its evidence: the reproducible `.mts` pipeline, the vendored Radix scale generator, the approved-palette record and review gallery. |
-| `scripts/` | Repo gates that are not Rust tests — currently the public-hygiene check. |
+| `guidelines/` | Six citable pages — identity, density, speed, colour, typography, icons — plus `README.md`, their index. The rules tokens cannot carry. |
+| `validation/` | Colour maths and its evidence: the reproducible `.mts` pipeline (with its own private `package.json`), the vendored Radix scale generator, the approved-palette record and the review gallery. |
+| `scripts/` | Repo gates that are not Rust tests — currently the public-hygiene check and its self-test. |
+| `README.md`, `ROADMAP.md`, `LICENSE` | The public face, the sequence of work, and the MIT grant. |
 
 Toolchain is pinned by `rust-toolchain.toml` (1.95.0). CI: `.github/workflows/ci.yml`.
 
@@ -47,9 +48,10 @@ a cascade, and typography carries OpenType features as `(tag, value)` pairs.
 
 `meridian-design` itself stays MIT and dependency-free — that is what keeps it
 permanently outside the GPL firewall (ADR 0003, ADR 0011). **That contract binds
-the crate, not the repository.** Sibling crates live here too and may take
-dependencies of their own; the first is `meridian-egui`, the egui adapter and
-desktop primitives (ADR 0011).
+the crate, not the repository.** Sibling crates *may* live here and take
+dependencies of their own; none exists yet. The first will be `meridian-egui`,
+the egui adapter and desktop primitives, which ADR 0011 decided but which has not
+been written — `meridian-design` is still the only crate in the tree.
 
 ## Emitters and their pinned snapshots
 
@@ -71,8 +73,9 @@ Rules:
   emitter restating chrome anchors as literal hexes instead of reading
   `chrome.rs`, which made editing a chrome token a silent no-op. When you add an
   emitter, add the test that proves it *reads* the tokens.
-- Palette maths is gated by `tests/palette_gate.rs` (the Rust port of the
-  validator in `src/validate.rs`), never approved by eye.
+- Palette maths is gated by `tests/palette_gate.rs` and chrome contrast by
+  `tests/chrome_gate.rs` — both built on `src/validate.rs`, never approved by
+  eye.
 - The `validation/*.mts` scripts are an offline, reproducible pipeline; their
   output is committed into the crate, never computed at build time (ADR 0007).
 
@@ -106,11 +109,19 @@ Public on GitHub, MIT, and read by people outside the project. Concretely:
 - **No private planning identifiers.** Decision-record refs, task ids, milestone
   ids, acceptance-criterion shorthand, document ids, card ids and spec AC ids
   from the private planning tracker mean nothing here and leak the shape of
-  private work. `scripts/check-public-hygiene.sh` enforces this; it runs first in
-  CI and takes seconds. Run it locally before pushing — no arguments needed.
-  If it fires, delete the pointer and, where it carried meaning, write the actual
-  rationale in plain English. The allowlist is a last resort and every entry
-  must explain itself.
+  private work. If one slips in, delete the pointer and, where it carried
+  meaning, write the actual rationale in plain English.
+- **`scripts/check-public-hygiene.sh` catches part of that, and only part.** It
+  is `git grep` over the tracked files of the current checkout: code, comments,
+  prose. It does **not** read commit messages, PR titles or descriptions, review
+  comments, branch names, or history no longer in the tree. Those are exactly
+  where these identifiers have leaked before, so the script is a floor and the
+  discipline is still yours. It runs first in CI, takes seconds, and needs no
+  arguments locally. The allowlist is a last resort: an entry that does not
+  parse, or that no longer suppresses anything, is a hard failure. Prefer
+  tightening the pattern and adding the innocent string to
+  `scripts/public-hygiene-innocent-strings.txt`, then re-run
+  `scripts/check-public-hygiene-selftest.sh`.
 - Cross-repo references are fine when they resolve publicly: ADR numbers in this
   repo, `meridian-online/*` PR numbers, upstream issue links.
 - Commit messages, comments and PR text are as public as the code.
@@ -118,11 +129,14 @@ Public on GitHub, MIT, and read by people outside the project. Concretely:
 ## Where the boundary sits
 
 - **Tokens and adapters live here. Components mostly do not.** Web keeps its own
-  components (shadcn on Base UI) permanently — no npm package and no TypeScript
-  build path in this repo. Desktop is the exception: with no host widget library
-  left after the move off GPUI, a *capped* set of egui primitives lands here as
-  `meridian-egui` (ADR 0011). Capped, not a gallery — the maintenance concern in
-  ADR 0002 was correct.
+  components (shadcn on Base UI) permanently — this repo publishes no npm
+  package and has no TypeScript build path for consumers. (`validation/` does
+  carry TypeScript, but it is a private, offline colour pipeline whose output is
+  committed; nothing downstream builds it.) Desktop is the exception: with no
+  host widget library left after the move off GPUI, a *capped* set of egui
+  primitives is to land here as `meridian-egui` (ADR 0011 — decided, not yet
+  written). Capped, not a gallery — the maintenance concern in ADR 0002 was
+  correct.
 - **An application's information architecture never moves here.** Brightfield's
   dock model, its pane/panel/toolbar/status contracts, its pickers and modal
   layers stay in Brightfield. A design system that owns an application's IA is
