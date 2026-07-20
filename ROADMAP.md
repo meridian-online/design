@@ -1,9 +1,10 @@
 # Roadmap
 
-## Phase 0 — Scaffold (this repo state)
+## Phase 0 — Scaffold ✅ (2026-07-16)
 
-Repo skeleton, ADRs 0001–0010, `meridian-design` crate skeleton (type shapes,
-brand constant, emitter stubs), CI.
+Repo skeleton, the first ten ADRs (0001–0010), `meridian-design` crate skeleton
+(type shapes, brand constant, emitter stubs), CI. Later phases filled the
+skeleton in; ADR 0011 followed on 2026-07-20.
 
 ## Phase 1 — Palette design ✅ (2026-07-16)
 
@@ -57,6 +58,14 @@ live on web and desktop.
 
 ## Standing
 
-Revisit Masonry/Xilem at its next release (~late 2026). GPL exposure in the
-current stack is contained (stub + cargo-deny gate in Brightfield), so the
-Linebender move stays strategic, not urgent.
+The Masonry/Xilem watch is **retired** (ADR 0003 update, 2026-07-20):
+Brightfield committed to egui and paid the migration cost, so reopening
+Linebender is a new decision rather than a standing assumption. The
+framework-neutral crate shape is kept on its own merits.
+
+## Next — desktop components
+
+Brightfield's move off GPUI leaves no host widget library to defer to. A capped
+set of egui primitives and the egui adapter land here as a second crate,
+`meridian-egui`, alongside the geometry/state token layer they consume
+(ADR 0011). The token crate's contract is unchanged.

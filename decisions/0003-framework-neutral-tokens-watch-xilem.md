@@ -1,7 +1,7 @@
 ---
 status: accepted
 date-created: 2026-07-16
-date-modified: 2026-07-16
+date-modified: 2026-07-20
 ---
 # 0003. Framework-neutral tokens; thin GPUI adapter; watch Xilem
 
@@ -69,6 +69,42 @@ while actually shipping the widgets. Next concrete step when migration
 pressure arrives: a spike — egui_tiles + embedded vello canvas + a
 feature-frozen Inter table at 11px — gated by the same eyeball
 discipline as the font gate.
+
+### Update (2026-07-20 — two clarifications; the watch is retired)
+
+**1. "MIT and dependency-free" scopes the crate, not the repository.** The
+contract above binds `meridian-design`, and its own manifest has always said
+so — `meridian-design/Cargo.toml`, above an intentionally empty
+`[dependencies]`:
+
+> `# Dependency-free by contract (ADR 0003): this crate must remain outside any`
+> `# GPL firewall and portable to every consumer (web emission, GPUI, Masonry).`
+
+"This crate", not "this repo". A sibling crate in the same repository may take
+dependencies; `meridian-egui` takes `meridian-design` and `egui` (ADR 0011).
+The firewall is a property of the token crate's dependency graph, and it is
+undisturbed by a neighbour.
+
+**2. The Masonry/Xilem watch is retired.** This ADR held the option open
+pending the next Xilem release. Brightfield has since committed to egui and
+paid for it: a staged migration, no dual-host in the main tree, and a standing
+maintenance tax in the form of a wgpu major-version lock shared with the Vello
+canvas. Keeping a port test alive would constrain present design decisions in
+order to preserve an option that has already been declined — the worst of both,
+since the constraint is paid now and the option is not exercised.
+
+The framework-neutral crate shape is **retained on its own merits** — plain
+`Copy` structs, no framework types, colours as sRGB, dimensions as
+logical-pixel floats. It is a good shape because it keeps the token data
+honest and testable, not because it hedges a port. Retained as a property, not
+as a hedge.
+
+Reopening Linebender is therefore a **new decision**, taken on evidence at the
+time, not a standing assumption anyone inherits. The port test is replaced by
+the **crate-boundary test** of ADR 0011: pure data, or anything the web
+`tokens.css` emitter needs, lives in `meridian-design`; anything naming an
+`egui` type lives in `meridian-egui`. That test is mechanical, and two live
+consumers exercise it continuously.
 
 ### Consequences
 
