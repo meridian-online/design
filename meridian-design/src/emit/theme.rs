@@ -9,7 +9,9 @@
 //! stock blue survives. Snapshot-pinned by `tests/conformance.rs`.
 
 use crate::colour::Rgba;
+use crate::radius;
 use crate::scales::*;
+use crate::semantic::semantic;
 use crate::viz::{CATEGORICAL_DARK, CATEGORICAL_LIGHT, STATUS};
 
 /// Theme appearance for [`theme_config`].
@@ -23,36 +25,50 @@ pub fn theme_config(mode: ThemeMode) -> String {
     let dark = mode == ThemeMode::Dark;
     // Scale accessors take Radix STEP numbers (1..=12), not indices.
     let gray = if dark { &GRAY_DARK } else { &GRAY_LIGHT };
-    let mar = if dark { &MARITIME_DARK } else { &MARITIME_LIGHT };
+    let mar = if dark {
+        &MARITIME_DARK
+    } else {
+        &MARITIME_LIGHT
+    };
     let red = if dark { &RED_DARK } else { &RED_LIGHT };
     let green = if dark { &GREEN_DARK } else { &GREEN_LIGHT };
     let amber = if dark { &AMBER_DARK } else { &AMBER_LIGHT };
     let blue = if dark { &BLUE_DARK } else { &BLUE_LIGHT };
-    let cat = if dark { &CATEGORICAL_DARK } else { &CATEGORICAL_LIGHT };
+    let cat = if dark {
+        &CATEGORICAL_DARK
+    } else {
+        &CATEGORICAL_LIGHT
+    };
     let g = |step: usize| gray[step - 1].hex();
     let m = |step: usize| mar[step - 1].hex();
 
-    // Chrome anchors (chrome.rs INK tokens, restated per mode).
-    let page = if dark { "#0e0c0b" } else { "#fbfaf9" };
-    let surface = if dark { "#161413" } else { "#fcfcfb" };
-    let ink = g(12);
+    // Chrome anchors — READ, never restated. These were hard-coded hexes
+    // that happened to match `chrome.rs`; an edit there did not propagate,
+    // and the snapshot test could not notice because it pinned this emitter
+    // against its own output. They now come through the semantic layer,
+    // which sources them from `chrome.rs`, and `tests/conformance.rs`
+    // asserts the emitted values equal the chrome tokens.
+    let sem = semantic(dark);
+    let page = sem.surfaces.app.hex();
+    let surface = sem.surfaces.raised.hex();
+    let ink = sem.text.primary.hex();
     // On-solid text: light cream on maritime/red/green/blue solids in both
     // modes; warning takes dark text (bright-scale caveat, ADR 0007).
-    let on_solid = "#fcfcfb";
-    let on_warning = "#231f1c";
+    let on_solid = sem.text.on_solid.hex();
+    let on_warning = sem.text.on_solid_bright.hex();
 
     let mut c: Vec<(&str, String)> = Vec::new();
-    c.push(("background", page.into()));
+    c.push(("background", page.clone()));
     c.push(("foreground", ink.clone()));
     c.push(("muted.background", g(3)));
     c.push(("muted.foreground", g(11)));
     c.push(("accent.background", g(3)));
     c.push(("accent.foreground", ink.clone()));
-    c.push(("border", g(4)));
-    c.push(("input.border", g(5)));
-    c.push(("ring", m(8)));
+    c.push(("border", sem.borders.subtle.hex()));
+    c.push(("input.border", sem.borders.default_.hex()));
+    c.push(("ring", sem.borders.focus.hex()));
     c.push(("primary.background", m(9)));
-    c.push(("primary.foreground", on_solid.into()));
+    c.push(("primary.foreground", on_solid.clone()));
     c.push(("primary.hover.background", m(10)));
     c.push(("primary.active.background", if dark { m(7) } else { m(11) }));
     c.push(("secondary.background", g(2)));
@@ -60,43 +76,43 @@ pub fn theme_config(mode: ThemeMode) -> String {
     c.push(("secondary.hover.background", g(3)));
     c.push(("secondary.active.background", g(4)));
     c.push(("danger.background", STATUS.critical.hex()));
-    c.push(("danger.foreground", on_solid.into()));
+    c.push(("danger.foreground", on_solid.clone()));
     c.push(("danger.hover.background", red[9].hex()));
     c.push(("danger.active.background", red[10].hex()));
     c.push(("success.background", STATUS.good.hex()));
-    c.push(("success.foreground", on_solid.into()));
+    c.push(("success.foreground", on_solid.clone()));
     c.push(("success.hover.background", green[9].hex()));
     c.push(("success.active.background", green[10].hex()));
     c.push(("warning.background", STATUS.warning.hex()));
-    c.push(("warning.foreground", on_warning.into()));
+    c.push(("warning.foreground", on_warning.clone()));
     c.push(("warning.hover.background", amber[9].hex()));
     c.push(("warning.active.background", amber[10].hex()));
     c.push(("info.background", blue[8].hex()));
-    c.push(("info.foreground", on_solid.into()));
+    c.push(("info.foreground", on_solid.clone()));
     c.push(("info.hover.background", blue[9].hex()));
     c.push(("info.active.background", blue[10].hex()));
     c.push(("sidebar.background", g(1)));
     c.push(("sidebar.foreground", ink.clone()));
-    c.push(("sidebar.border", g(4)));
+    c.push(("sidebar.border", sem.borders.subtle.hex()));
     c.push(("sidebar.accent.background", g(3)));
     c.push(("sidebar.accent.foreground", ink.clone()));
     c.push(("sidebar.primary.background", m(9)));
-    c.push(("sidebar.primary.foreground", on_solid.into()));
-    c.push(("title_bar.background", page.into()));
-    c.push(("title_bar.border", g(4)));
+    c.push(("sidebar.primary.foreground", on_solid.clone()));
+    c.push(("title_bar.background", page.clone()));
+    c.push(("title_bar.border", sem.borders.subtle.hex()));
     c.push(("tab_bar.background", g(2)));
     c.push(("tab_bar.segmented.background", g(3)));
     c.push(("tab.background", g(2)));
     c.push(("tab.foreground", g(11)));
-    c.push(("tab.active.background", surface.into()));
+    c.push(("tab.active.background", surface.clone()));
     c.push(("tab.active.foreground", ink.clone()));
-    c.push(("list.background", surface.into()));
+    c.push(("list.background", surface.clone()));
     c.push(("list.head.background", g(2)));
     c.push(("list.even.background", g(1)));
     c.push(("list.hover.background", g(3)));
     c.push(("list.active.background", m(3)));
     c.push(("list.active.border", m(6)));
-    c.push(("table.background", surface.into()));
+    c.push(("table.background", surface.clone()));
     c.push(("table.head.background", g(2)));
     c.push(("table.head.foreground", g(11)));
     c.push(("table.foot.background", g(2)));
@@ -105,8 +121,8 @@ pub fn theme_config(mode: ThemeMode) -> String {
     c.push(("table.hover.background", g(3)));
     c.push(("table.active.background", m(3)));
     c.push(("table.active.border", m(6)));
-    c.push(("table.row.border", g(3)));
-    c.push(("popover.background", surface.into()));
+    c.push(("table.row.border", sem.borders.divider.hex()));
+    c.push(("popover.background", surface.clone()));
     c.push(("popover.foreground", ink.clone()));
     c.push(("selection.background", m(4)));
     c.push(("caret", ink.clone()));
@@ -116,7 +132,7 @@ pub fn theme_config(mode: ThemeMode) -> String {
     c.push(("scrollbar.background", g(2)));
     c.push(("scrollbar.thumb.background", g(6)));
     c.push(("scrollbar.thumb.hover.background", g(7)));
-    c.push(("window.border", g(4)));
+    c.push(("window.border", sem.borders.subtle.hex()));
     c.push((
         "overlay",
         if dark {
@@ -135,30 +151,33 @@ pub fn theme_config(mode: ThemeMode) -> String {
     c.push(("progress.bar.background", m(9)));
     c.push(("slider.background", g(5)));
     c.push(("slider.thumb.background", m(9)));
-    c.push(("status_bar.background", page.into()));
-    c.push(("status_bar.border", g(4)));
-    c.push(("tiles.background", page.into()));
-    c.push(("accordion.background", surface.into()));
+    c.push(("status_bar.background", page.clone()));
+    c.push(("status_bar.border", sem.borders.subtle.hex()));
+    c.push(("tiles.background", page.clone()));
+    c.push(("accordion.background", surface.clone()));
     c.push(("accordion.hover.background", g(3)));
     c.push(("group_box.background", g(2)));
     c.push(("group_box.foreground", ink.clone()));
     c.push(("group_box.title.foreground", g(11)));
     c.push(("description_list.label.background", g(2)));
     c.push(("description_list.label.foreground", g(11)));
-    c.push(("button.background", surface.into()));
+    c.push(("button.background", surface.clone()));
     c.push(("button.foreground", ink.clone()));
     c.push(("button.hover.background", g(3)));
     c.push(("button.active.background", g(4)));
     c.push(("button.primary.background", m(9)));
-    c.push(("button.primary.foreground", on_solid.into()));
+    c.push(("button.primary.foreground", on_solid.clone()));
     c.push(("button.primary.hover.background", m(10)));
-    c.push(("button.primary.active.background", if dark { m(7) } else { m(11) }));
+    c.push((
+        "button.primary.active.background",
+        if dark { m(7) } else { m(11) },
+    ));
     c.push(("button.secondary.background", g(2)));
     c.push(("button.secondary.foreground", ink.clone()));
     c.push(("button.secondary.hover.background", g(3)));
     c.push(("button.secondary.active.background", g(4)));
     c.push(("button.danger.background", STATUS.critical.hex()));
-    c.push(("button.danger.foreground", on_solid.into()));
+    c.push(("button.danger.foreground", on_solid.clone()));
     c.push(("button.danger.hover.background", red[9].hex()));
     c.push(("button.danger.active.background", red[10].hex()));
     for (i, colour) in cat.iter().take(5).enumerate() {
@@ -189,8 +208,10 @@ pub fn theme_config(mode: ThemeMode) -> String {
     json.push_str("  \"font.size\": 12,\n");
     json.push_str("  \"mono_font.family\": \"JetBrains Mono\",\n");
     json.push_str("  \"mono_font.size\": 12,\n");
-    json.push_str("  \"radius\": 6,\n");
-    json.push_str("  \"radius.lg\": 8,\n");
+    // The two radii that used to live here as bare literals now come from
+    // `radius.rs`, which is the one definition (see that module's header).
+    json.push_str(&format!("  \"radius\": {},\n", radius::CONTROL as u32));
+    json.push_str(&format!("  \"radius.lg\": {},\n", radius::PANEL as u32));
     json.push_str("  \"colors\": {\n");
     for (i, (k, v)) in c.iter().enumerate() {
         let comma = if i + 1 == c.len() { "" } else { "," };

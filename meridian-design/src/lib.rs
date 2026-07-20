@@ -15,20 +15,44 @@
 //! Colours are designed in OKLCH and stored as their sRGB conversion so no
 //! consumer needs colour-space maths (ADR 0008). The crate carries the full
 //! palette — neutral, accent and semantic scales, the categorical chart set,
-//! and the sequential and diverging ramps — alongside the type ramp, spacing
-//! and the brand signature.
+//! and the sequential and diverging ramps — alongside the type ramp, the box
+//! model, and the brand signature.
+//!
+//! The crate is layered:
+//!
+//! - **raw** — [`scales`] (12-step ramps), [`viz`] (chart palettes), [`chrome`]
+//!   (the ink/overlay tokens the renderer reads);
+//! - **geometry** — [`spacing`], [`radius`], [`control`], [`focus`],
+//!   [`elevation`], [`motion`]: the box model, stated once;
+//! - **semantic** — [`semantic`]: what a colour is *for*, framework-neutral,
+//!   with an instantiated [`StateSet`] per interaction role;
+//! - **contract** — [`a11y`]: role and keyboard intent, the half of a component
+//!   spec that colour tokens cannot carry;
+//! - **emitters** — [`emit`], one per consumer, each pinned by a snapshot.
+//!
+//! Reach for the semantic layer first; drop to a raw scale only when the thing
+//! being coloured genuinely has no semantic name yet.
 
+pub mod a11y;
 pub mod chrome;
 pub mod colour;
+pub mod control;
+pub mod elevation;
 pub mod emit;
+pub mod focus;
 pub mod fonts;
+pub mod motion;
+pub mod radius;
 pub mod scales;
+pub mod semantic;
 pub mod spacing;
 pub mod typography;
 pub mod validate;
 pub mod viz;
 
 pub use colour::{Rgba, StateSet};
+pub use elevation::Elevation;
+pub use semantic::{semantic, Role, Semantic};
 
 /// Maritime — the Meridian brand signature, `hsl(205, 35%, 45%)` / `#4b7a9b`
 /// (web decision 0010). Reserved for interactive, focus, and selection states;
