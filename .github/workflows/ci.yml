@@ -30,6 +30,36 @@ jobs:
       - name: private planning identifiers
         run: ./scripts/check-public-hygiene.sh
 
+  # Formatting + lint, split out from `crate` rather than appended to it so a
+  # style regression reports without waiting on a build, and so a red build
+  # cannot hide a lint failure (or the reverse). Same `working-directory`
+  # scoping as `crate`: the Cargo package lives in `meridian-design/`, not at
+  # the repo root.
+  #
+  # Green on arrival, not aspirational — the two commits preceding this one
+  # formatted the crate with default rustfmt and cleared its one clippy warning.
+  fmt-clippy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: meridian-design
+    steps:
+      - uses: actions/checkout@v4
+      # Pinned to match `crate` and the repo's rust-toolchain.toml. Clippy's
+      # lint set moves between releases, so an unpinned toolchain would let a
+      # newer rustc turn this gate red on a commit that changed nothing.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.95.0
+          components: rustfmt, clippy
+      # `fmt` first: it builds nothing, so a formatting slip reports in seconds.
+      - run: cargo fmt --all --check
+      # `--all-targets` so the `tests/` gates are linted too, not just the lib —
+      # the crate's one clippy warning lived in `tests/palette_gate.rs`, and a
+      # lib-only run would never have seen it.
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+
   crate:
     runs-on: ubuntu-latest
     defaults:
