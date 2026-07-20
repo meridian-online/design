@@ -6,13 +6,17 @@
 //!
 //! - the web takes the emitted `tokens.css` ([`emit::tokens_css`]), pinned by
 //!   a conformance test;
-//! - Brightfield's render crate reads token values directly; its app shell
-//!   applies the emitted gpui-component `ThemeConfig` JSON;
-//! - future Linebender/Masonry chrome consumes the same structs.
+//! - Brightfield's renderer reads token values directly; its app shell applies
+//!   the emitted theme;
+//! - framework adapters are thin emitters and they live in this repo, as
+//!   sibling crates — a host change re-translates the adapter, not the system
+//!   (ADR 0003; ADR 0011 for the egui adapter).
 //!
 //! Colours are designed in OKLCH and stored as their sRGB conversion so no
-//! consumer needs colour-space maths (ADR 0008). Phase 0 carries the type
-//! shapes and the brand signature; scale and palette values land in Phase 1.
+//! consumer needs colour-space maths (ADR 0008). The crate carries the full
+//! palette — neutral, accent and semantic scales, the categorical chart set,
+//! and the sequential and diverging ramps — alongside the type ramp, spacing
+//! and the brand signature.
 
 pub mod chrome;
 pub mod colour;

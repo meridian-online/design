@@ -1,9 +1,10 @@
 # Roadmap
 
-## Phase 0 — Scaffold (this repo state)
+## Phase 0 — Scaffold ✅ (2026-07-16)
 
-Repo skeleton, ADRs 0001–0010, `meridian-design` crate skeleton (type shapes,
-brand constant, emitter stubs), CI.
+Repo skeleton, the first ten ADRs (0001–0010), `meridian-design` crate skeleton
+(type shapes, brand constant, emitter stubs), CI. Later phases filled the
+skeleton in; ADR 0011 followed on 2026-07-20.
 
 ## Phase 1 — Palette design ✅ (2026-07-16)
 

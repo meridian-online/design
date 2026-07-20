@@ -13,20 +13,29 @@ off GPUI onto egui + Vello, which voids that premise on the desktop half:
 egui ships roughly fifteen primitive widgets and no system at all, so there is
 no host library left to defer to.
 
-An audit of the desktop shell shows what the resulting vacuum produced. A
-private shadow palette of 34 hard-coded hex literals across 11 distinct values,
-with **zero** occurrences of Maritime — the interaction accent had drifted to a
-generic azure at ~83% saturation where Maritime sits at 35%. One concept,
-focus/selection, rendered five different ways. Seven empty states with seven
-treatments. One modal card copied four times at widths 560/480/520/480.
+An audit of the desktop shell's own chrome code — **as of 2026-07-20**, scoped
+to the shell and app source and excluding the generated chart-ramp tables —
+shows what the resulting vacuum produced. A private shadow palette of 34
+hard-coded hex literals across **11 distinct values**, with **zero**
+occurrences of Maritime; the interaction accent had drifted to a generic azure
+at ~83% saturation where Maritime sits at 35%. One concept, focus/selection,
+rendered five different ways. Seven empty states with seven treatments. One
+modal card copied four times at widths 560/480/520/480.
 `meridian_design::spacing` imported zero times, with row heights redeclared in
 four places that agree only by coincidence. Zero Tabler icons against ADR 0009.
+(The literal count is scope-dependent: a whole-repository grep, which sweeps in
+the sequential and diverging ramp tables that are legitimately literal, returns
+a larger number. The 11 distinct chrome values are the finding.)
 
-The root cause is upstream of the app: `meridian-design/src/spacing.rs` still
-carries an unfulfilled "Phase 1" TODO. The crate holds 214 colour values and
-six dimension values — no radii, no control heights, no focus geometry, no
-elevation, no durations. A consumer cannot import geometry that was never
-defined, so it invents it, eleven values at a time.
+The root cause was upstream of the app. **At the time of that audit**
+`meridian-design/src/spacing.rs` still carried an unfulfilled "Phase 1" TODO,
+and the crate held 214 colour values and six dimension values — no radii, no
+control heights, no focus geometry, no elevation, no durations. A consumer
+cannot import geometry that was never defined, so it invents it, eleven values
+at a time. Work to close that gap — the geometry, state and semantic token
+layer this ADR calls for — is in flight in parallel with this record; the
+audit numbers above are a dated snapshot of the condition that motivated the
+decision, not a claim about the crate's present contents.
 
 ## Considered Options
 
@@ -63,8 +72,11 @@ targets is rejected outright — the two hosts share a look, not a widget model.
 ### The licence firewall
 
 Zed's `ui`, `ui_macros`, `theme`, `workspace`, `component` and
-`component_preview` crates are **GPL-3.0-or-later** (verified 2026-07-20
-against each crate's `Cargo.toml`; `crates/ui/` carries its own `LICENSE-GPL`).
+`component_preview` crates are **GPL-3.0-or-later** (verified 2026-07-20: each
+of the six crates declares `license = "GPL-3.0-or-later"` in its own
+`Cargo.toml`, which is the citable fact — the `LICENSE-GPL` beside `crates/ui/`
+is a symlink to the repository-root licence file and carries no separate
+weight).
 Their API shapes and interaction patterns may be read and reimplemented from
 understanding. **No code, no enum bodies, no token values may be copied**, in
 any quantity, including "just the variant names". GPUI itself is Apache-2.0;

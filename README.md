@@ -23,7 +23,9 @@ is `meridian-egui`, the egui adapter and desktop primitives (ADR 0011).
 ## How it is consumed
 
 - **Web** takes the emitted `tokens.css` (CSS custom properties, light + dark),
-  pinned byte-for-byte by a conformance check on the web side.
+  pinned byte-for-byte at both ends — `tests/conformance.rs`
+  (`tokens_css_matches_snapshot`) gates the emitted bytes in this repo's CI,
+  and a conformance check on the web side pins what ships.
 - **Brightfield** takes `meridian-design` as a cargo dependency. The renderer
   reads token values directly; the app shell applies the emitted theme.
 - **Framework adapters are thin emitters and they live here**, not in the
