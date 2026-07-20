@@ -13,19 +13,24 @@ off GPUI onto egui + Vello, which voids that premise on the desktop half:
 egui ships roughly fifteen primitive widgets and no system at all, so there is
 no host library left to defer to.
 
-An audit of the desktop shell's own chrome code — **as of 2026-07-20**, scoped
-to the shell and app source and excluding the generated chart-ramp tables —
-shows what the resulting vacuum produced. A private shadow palette of 34
-hard-coded hex literals across **11 distinct values**, with **zero**
-occurrences of Maritime; the interaction accent had drifted to a generic azure
-at ~83% saturation where Maritime sits at 35%. One concept, focus/selection,
-rendered five different ways. Seven empty states with seven treatments. One
-modal card copied four times at widths 560/480/520/480.
+An audit of the desktop shell's own chrome code shows what the resulting vacuum
+produced. In the shell's single largest source file alone, a private shadow
+palette of **39 hard-coded colour literals across 10 distinct values**, with
+**zero** occurrences of Maritime; the interaction accent had drifted to a
+generic azure at ~83% saturation where Maritime sits at 35%. One concept,
+focus/selection, rendered five different ways. Seven empty states with seven
+treatments. One modal card copied four times at widths 560/480/520/480.
 `meridian_design::spacing` imported zero times, with row heights redeclared in
 four places that agree only by coincidence. Zero Tabler icons against ADR 0009.
-(The literal count is scope-dependent: a whole-repository grep, which sweeps in
-the sequential and diverging ramp tables that are legitimately literal, returns
-a larger number. The 11 distinct chrome values are the finding.)
+
+Those counts are a dated snapshot, and they are scope-sensitive, so they are
+stated with their reproduction: they are occurrences of the Rust integer form
+`0x` followed by six hex digits — not the CSS `#rrggbb` form, which does not
+appear — in the app shell's main source file as of 2026-07-20. Widening the
+scope raises the total; sweeping in the generated sequential and diverging ramp
+tables, which are legitimately literal, raises it much further. The finding is
+not the total but the shape: a chrome palette maintained by hand, in one file,
+that had drifted clear of the token crate without anything noticing.
 
 The root cause was upstream of the app. **At the time of that audit**
 `meridian-design/src/spacing.rs` still carried an unfulfilled "Phase 1" TODO,
