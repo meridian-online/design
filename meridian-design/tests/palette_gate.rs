@@ -18,7 +18,10 @@ fn categorical_light_passes_all_gates() {
     let p = CATEGORICAL_LIGHT;
     for (i, c) in p.iter().enumerate() {
         let l = okl(*c);
-        assert!(l >= LIGHT_BAND.0 && l <= LIGHT_BAND.1, "slot {i} outside light band: L{l:.3}");
+        assert!(
+            l >= LIGHT_BAND.0 && l <= LIGHT_BAND.1,
+            "slot {i} outside light band: L{l:.3}"
+        );
         assert!(okc(*c) >= CHROMA_FLOOR, "slot {i} below chroma floor");
     }
     assert!(min_adjacent(&p, delta_e_cvd) >= CVD_TARGET);
@@ -28,7 +31,10 @@ fn categorical_light_passes_all_gates() {
     for (i, c) in p.iter().enumerate() {
         let ct = contrast(*c, INK_LIGHT.surface);
         if [1, 2, 5].contains(&i) {
-            assert!(ct < 3.0 && ct >= 2.0, "slot {i} left the documented relief band: {ct:.2}");
+            assert!(
+                (2.0..3.0).contains(&ct),
+                "slot {i} left the documented relief band: {ct:.2}"
+            );
         } else {
             assert!(ct >= 3.0, "slot {i} lost 3:1 on the light surface: {ct:.2}");
         }
@@ -40,9 +46,15 @@ fn categorical_dark_passes_all_gates() {
     let p = CATEGORICAL_DARK;
     for (i, c) in p.iter().enumerate() {
         let l = okl(*c);
-        assert!(l >= DARK_BAND.0 && l <= DARK_BAND.1, "slot {i} outside dark band: L{l:.3}");
+        assert!(
+            l >= DARK_BAND.0 && l <= DARK_BAND.1,
+            "slot {i} outside dark band: L{l:.3}"
+        );
         assert!(okc(*c) >= CHROMA_FLOOR, "slot {i} below chroma floor");
-        assert!(contrast(*c, INK_DARK.surface) >= 3.0, "slot {i} below 3:1 on dark");
+        assert!(
+            contrast(*c, INK_DARK.surface) >= 3.0,
+            "slot {i} below 3:1 on dark"
+        );
     }
     assert!(min_adjacent(&p, delta_e_cvd) >= CVD_TARGET);
     assert!(min_adjacent(&p, delta_e) >= NORMAL_FLOOR);
@@ -63,8 +75,14 @@ fn sequential_meridian_is_a_single_hue_monotone_ramp() {
         assert!(okl(w[0]) > okl(w[1]), "lightness must strictly descend");
     }
     let hues: Vec<f64> = ramp.iter().map(|c| okh(*c)).collect();
-    let (min, max) = hues.iter().fold((f64::MAX, f64::MIN), |(a, b), h| (a.min(*h), b.max(*h)));
-    assert!(max - min < 4.0, "hue drift {:.1}° — sequential must stay one hue", max - min);
+    let (min, max) = hues
+        .iter()
+        .fold((f64::MAX, f64::MIN), |(a, b), h| (a.min(*h), b.max(*h)));
+    assert!(
+        max - min < 4.0,
+        "hue drift {:.1}° — sequential must stay one hue",
+        max - min
+    );
 }
 
 #[test]
@@ -100,7 +118,10 @@ fn status_colours_clear_dark_surface_and_stay_off_series_slots() {
 fn diverging_arms_descend_toward_their_poles() {
     // Blue arm: pole → lightest; red arm: lightest → pole.
     for w in DIVERGING_BLUE_ARM.windows(2) {
-        assert!(okl(w[0]) < okl(w[1]), "blue arm must lighten toward the midpoint");
+        assert!(
+            okl(w[0]) < okl(w[1]),
+            "blue arm must lighten toward the midpoint"
+        );
     }
     for w in DIVERGING_RED_ARM.windows(2) {
         assert!(okl(w[0]) > okl(w[1]), "red arm must darken toward the pole");
