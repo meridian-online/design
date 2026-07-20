@@ -36,5 +36,5 @@ regression, not a debate.
 ## Evidence
 
 ADR 0010. Shipped practice: brush re-dispatch on release (#60); reload/save
-outcomes surfaced in the Log dock; the card-0015 continuous-drag design
-explicitly gates on throttle/cancellation.
+outcomes surfaced in the Log dock; the continuous-drag design explicitly gates
+on throttle/cancellation.
