@@ -33,11 +33,20 @@ pub struct FontFeature {
 
 /// Tabular figures — mandatory wherever numbers align (tables, axis ticks),
 /// applied at table scope, not globally.
-pub const TNUM: FontFeature = FontFeature { tag: *b"tnum", value: 1 };
+pub const TNUM: FontFeature = FontFeature {
+    tag: *b"tnum",
+    value: 1,
+};
 
 /// Slashed zero — on wherever `TNUM` is on (0/O disambiguation at 11px).
-pub const ZERO: FontFeature = FontFeature { tag: *b"zero", value: 1 };
+pub const ZERO: FontFeature = FontFeature {
+    tag: *b"zero",
+    value: 1,
+};
 
 /// Ligatures off — REQUIRED alongside `MONO_FAMILY` (JetBrains Mono defaults
 /// its coding ligatures on; `=>` must read as two glyphs in data surfaces).
-pub const CALT_OFF: FontFeature = FontFeature { tag: *b"calt", value: 0 };
+pub const CALT_OFF: FontFeature = FontFeature {
+    tag: *b"calt",
+    value: 0,
+};

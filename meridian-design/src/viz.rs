@@ -94,9 +94,9 @@ pub struct Status {
     pub critical: Rgba,
 }
 pub const STATUS: Status = Status {
-    good: Rgba::from_u8(0x21, 0x8a, 0x45, 0xff),     // #218a45
-    warning: Rgba::from_u8(0xda, 0x95, 0x0b, 0xff),  // #da950b
-    serious: Rgba::from_u8(0xdb, 0x70, 0x3b, 0xff),  // #db703b
+    good: Rgba::from_u8(0x21, 0x8a, 0x45, 0xff),    // #218a45
+    warning: Rgba::from_u8(0xda, 0x95, 0x0b, 0xff), // #da950b
+    serious: Rgba::from_u8(0xdb, 0x70, 0x3b, 0xff), // #db703b
     critical: Rgba::from_u8(0xc9, 0x30, 0x2d, 0xff), // #c9302d
 };
 
