@@ -40,3 +40,23 @@ pub mod icons;
 pub mod widgets;
 
 pub use icons::Icon;
+
+// The reusable overlay/picker chrome primitives (ADR 0011): one modal chrome,
+// one query line, one list-row treatment, one keystroke chip, one picker over
+// N delegates, and the notification/toast layers. Each is a shape the tokens
+// alone cannot supply; all of them draw exclusively through the token system.
+pub mod key_chip;
+pub mod list_row;
+pub mod notify;
+pub mod overlay;
+pub mod picker;
+pub mod query;
+
+pub use key_chip::{key_chip, tooltip_for_action};
+pub use list_row::{list_row, ListRow, ListRowResponse, RowHeight, RowState};
+pub use notify::{Notification, NotificationId, NotificationLayer, Severity, Toast, ToastLayer};
+pub use overlay::{overlay_frame, ModalChrome, ModalLayer, ModalLayerResponse, ModalWidth};
+pub use picker::{
+    Picker, PickerDelegate, PickerEvent, PickerHint, PickerOutcome, PickerResponse, PickerRow,
+};
+pub use query::{query_line, QueryLineResponse, PROMPT_GLYPH};
