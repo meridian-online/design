@@ -11,8 +11,8 @@ use egui_kittest::kittest::Queryable;
 use egui_kittest::Harness;
 use meridian_egui::{
     list_row, theme, ListRow, ModalChrome, ModalLayer, Mode, Notification, NotificationId,
-    NotificationLayer, Picker, PickerDelegate, PickerEvent, PickerOutcome, PickerRow, RowHeight,
-    Severity, Toast, ToastLayer,
+    NotificationLayer, Picker, PickerDelegate, PickerEvent, PickerHint, PickerOutcome, PickerRow,
+    RowHeight, Severity, Toast, ToastLayer,
 };
 
 /// A flat list delegate with case-insensitive substring filtering — the
@@ -142,6 +142,215 @@ fn clicking_a_row_confirms_that_row() {
         state.picker.delegate.confirmed,
         Some((Some(1), String::new()))
     );
+}
+
+/// The grouped read-only-sheet shape: sections with headers, filtering keeps
+/// each surviving section's header on its first surviving row.
+struct GroupedSheet {
+    /// `(section, label)` pairs, in section order.
+    items: Vec<(&'static str, &'static str)>,
+    matches: Vec<usize>,
+}
+
+impl GroupedSheet {
+    fn new(items: Vec<(&'static str, &'static str)>) -> Self {
+        Self {
+            matches: (0..items.len()).collect(),
+            items,
+        }
+    }
+}
+
+impl PickerDelegate for GroupedSheet {
+    fn update_query(&mut self, query: &str) {
+        let needle = query.to_lowercase();
+        self.matches = (0..self.items.len())
+            .filter(|&i| self.items[i].1.to_lowercase().contains(&needle))
+            .collect();
+    }
+    fn match_count(&self) -> usize {
+        self.matches.len()
+    }
+    fn row(&self, index: usize) -> PickerRow {
+        PickerRow::new(self.items[self.matches[index]].1)
+    }
+    fn confirm(&mut self, _index: Option<usize>, _query: &str) -> PickerOutcome {
+        PickerOutcome::Close
+    }
+    fn header_before(&self, index: usize) -> Option<String> {
+        let section = self.items[self.matches[index]].0;
+        let first_of_section = index == 0 || self.items[self.matches[index - 1]].0 != section;
+        first_of_section.then(|| section.to_owned())
+    }
+}
+
+#[test]
+fn grouped_headers_render_once_per_section_and_follow_the_filter() {
+    let mut harness = Harness::new_ui_state(
+        |ui, picker: &mut Picker<GroupedSheet>| {
+            theme::apply(ui.ctx(), Mode::Light);
+            picker.show(ui);
+        },
+        Picker::new(GroupedSheet::new(vec![
+            ("Recent", "alpha.csv"),
+            ("Recent", "beta.csv"),
+            ("Pinned", "gamma.csv"),
+        ])),
+    );
+    harness.run();
+    // `get_by_label` panics on duplicates, so each hit also asserts the
+    // header rendered exactly once — before its section, not per row.
+    harness.get_by_label("Recent");
+    harness.get_by_label("Pinned");
+    harness.get_by_label("alpha.csv");
+    harness.get_by_label("beta.csv");
+    harness.get_by_label("gamma.csv");
+
+    // Filtering to the second section re-derives the headers: "Pinned" now
+    // heads the first visible row and "Recent" is gone with its rows.
+    harness.event(egui::Event::Text("gamma".to_owned()));
+    harness.run();
+    harness.get_by_label("Pinned");
+    harness.get_by_label("gamma.csv");
+    assert!(harness.query_by_label("Recent").is_none());
+    assert!(harness.query_by_label("alpha.csv").is_none());
+}
+
+/// The typed-value-prompt shape: zero matches by design, the query is the
+/// value, validation narrates through `hint`.
+struct DurationPrompt {
+    hint: Option<PickerHint>,
+    value: Option<String>,
+}
+
+impl DurationPrompt {
+    fn new() -> Self {
+        let mut prompt = Self {
+            hint: None,
+            value: None,
+        };
+        prompt.update_query("");
+        prompt
+    }
+
+    fn valid(query: &str) -> bool {
+        query
+            .strip_suffix("ms")
+            .is_some_and(|n| !n.is_empty() && n.chars().all(|c| c.is_ascii_digit()))
+    }
+}
+
+impl PickerDelegate for DurationPrompt {
+    fn update_query(&mut self, query: &str) {
+        self.hint = if query.is_empty() {
+            Some(PickerHint::Info("for example 250ms".to_owned()))
+        } else if Self::valid(query) {
+            None
+        } else {
+            Some(PickerHint::Error("enter a duration in ms".to_owned()))
+        };
+    }
+    fn match_count(&self) -> usize {
+        0
+    }
+    fn row(&self, _index: usize) -> PickerRow {
+        unreachable!("a typed-value prompt never has matches")
+    }
+    fn confirm(&mut self, _index: Option<usize>, query: &str) -> PickerOutcome {
+        if Self::valid(query) {
+            self.value = Some(query.to_owned());
+            PickerOutcome::Close
+        } else {
+            PickerOutcome::KeepOpen
+        }
+    }
+    fn empty_text(&self) -> Option<String> {
+        None
+    }
+    fn hint(&self) -> Option<PickerHint> {
+        self.hint.clone()
+    }
+}
+
+#[test]
+fn a_typed_value_prompt_narrates_through_the_hint_line() {
+    let mut harness = Harness::new_ui_state(
+        |ui, s: &mut PromptFixture| {
+            theme::apply(ui.ctx(), Mode::Light);
+            let r = s.picker.show(ui);
+            if r.event.is_some() {
+                s.last_event = r.event;
+            }
+        },
+        PromptFixture {
+            picker: Picker::new(DurationPrompt::new()),
+            last_event: None,
+        },
+    );
+    harness.run();
+    // The info hint renders under the query line; the empty state is
+    // suppressed (`empty_text` = None), not narrated as "no matches".
+    harness.get_by_label("for example 250ms");
+    assert!(harness.query_by_label("No matches").is_none());
+
+    // An invalid value swaps the hint to the error line, and enter keeps the
+    // prompt open instead of confirming.
+    harness.event(egui::Event::Text("42".to_owned()));
+    harness.run();
+    harness.get_by_label("enter a duration in ms");
+    harness.key_press(egui::Key::Enter);
+    harness.run();
+    assert_eq!(harness.state().last_event, None, "invalid value keeps open");
+
+    // Completing the value clears the hint; enter now confirms the raw query.
+    harness.event(egui::Event::Text("ms".to_owned()));
+    harness.run();
+    assert!(harness.query_by_label("enter a duration in ms").is_none());
+    assert!(harness.query_by_label("for example 250ms").is_none());
+    harness.key_press(egui::Key::Enter);
+    harness.run();
+    let state = harness.state();
+    assert_eq!(state.last_event, Some(PickerEvent::Confirmed));
+    assert_eq!(state.picker.delegate.value, Some("42ms".to_owned()));
+}
+
+struct PromptFixture {
+    picker: Picker<DurationPrompt>,
+    last_event: Option<PickerEvent>,
+}
+
+struct BoxedFixture {
+    picker: Picker<Box<dyn PickerDelegate>>,
+    last_event: Option<PickerEvent>,
+}
+
+#[test]
+fn one_boxed_slot_drives_the_full_chrome() {
+    // The one-modal-slot pattern the docs advertise, drawn for real: the
+    // delegate lives behind `Box<dyn PickerDelegate>` and the picker still
+    // lists, filters, and confirms through it.
+    let mut harness = Harness::new_ui_state(
+        |ui, s: &mut BoxedFixture| {
+            theme::apply(ui.ctx(), Mode::Light);
+            let r = s.picker.show(ui);
+            if r.event.is_some() {
+                s.last_event = r.event;
+            }
+        },
+        BoxedFixture {
+            picker: Picker::new(Box::new(JumpList::new(vec!["alpha", "beta"]))),
+            last_event: None,
+        },
+    );
+    harness.run();
+    harness.get_by_label("alpha");
+    harness.event(egui::Event::Text("be".to_owned()));
+    harness.run();
+    harness.get_by_label("beta");
+    assert!(harness.query_by_label("alpha").is_none());
+    harness.key_press(egui::Key::Enter);
+    harness.run();
+    assert_eq!(harness.state().last_event, Some(PickerEvent::Confirmed));
 }
 
 #[test]

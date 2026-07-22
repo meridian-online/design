@@ -116,7 +116,9 @@ pub struct PickerResponse {
 }
 
 /// The domain half of a picker. Object-safe, so hosts can store delegates as
-/// `Box<dyn PickerDelegate>` behind one modal slot.
+/// `Box<dyn PickerDelegate>` behind one modal slot — the forwarding impl
+/// below makes the boxed form a delegate itself, so
+/// `Picker<Box<dyn PickerDelegate>>` compiles.
 pub trait PickerDelegate {
     /// The query changed (also called once with the empty query when the
     /// picker is created) — refilter, rerank, revalidate.
@@ -163,6 +165,54 @@ pub trait PickerDelegate {
 
     /// The picker is going away without a confirm.
     fn dismiss(&mut self) {}
+}
+
+/// The forwarding impl the one-modal-slot pattern rests on:
+/// `Picker<Box<dyn PickerDelegate>>` needs `Box<dyn PickerDelegate>` to be a
+/// delegate itself. Every method forwards — the defaulted ones deliberately
+/// included, because leaving any of them to the trait default would silently
+/// disconnect an inner delegate's `placeholder` / `header_before` / `hint` /
+/// `confirmable` / `empty_text` / `dismiss` override behind the box.
+impl<D: PickerDelegate + ?Sized> PickerDelegate for Box<D> {
+    fn update_query(&mut self, query: &str) {
+        (**self).update_query(query);
+    }
+
+    fn match_count(&self) -> usize {
+        (**self).match_count()
+    }
+
+    fn row(&self, index: usize) -> PickerRow {
+        (**self).row(index)
+    }
+
+    fn confirm(&mut self, index: Option<usize>, query: &str) -> PickerOutcome {
+        (**self).confirm(index, query)
+    }
+
+    fn placeholder(&self) -> String {
+        (**self).placeholder()
+    }
+
+    fn header_before(&self, index: usize) -> Option<String> {
+        (**self).header_before(index)
+    }
+
+    fn hint(&self) -> Option<PickerHint> {
+        (**self).hint()
+    }
+
+    fn confirmable(&self) -> bool {
+        (**self).confirmable()
+    }
+
+    fn empty_text(&self) -> Option<String> {
+        (**self).empty_text()
+    }
+
+    fn dismiss(&mut self) {
+        (**self).dismiss();
+    }
 }
 
 /// The chrome half: query line, hint, match list, selection, keyboard.
@@ -540,6 +590,77 @@ mod tests {
     fn keep_open_swallows_the_event() {
         let mut p = Picker::new(KeepsOpen);
         assert_eq!(p.confirm_current(), None);
+    }
+
+    /// Overrides every defaulted trait method, so a forwarding impl that let
+    /// any one of them fall back to the trait default is caught by name.
+    struct Full {
+        dismissed: std::rc::Rc<std::cell::Cell<bool>>,
+    }
+
+    impl PickerDelegate for Full {
+        fn update_query(&mut self, _query: &str) {}
+        fn match_count(&self) -> usize {
+            1
+        }
+        fn row(&self, _index: usize) -> PickerRow {
+            PickerRow::new("row")
+        }
+        fn confirm(&mut self, _index: Option<usize>, _query: &str) -> PickerOutcome {
+            PickerOutcome::Close
+        }
+        fn placeholder(&self) -> String {
+            "Type a duration".to_owned()
+        }
+        fn header_before(&self, index: usize) -> Option<String> {
+            (index == 0).then(|| "Section".to_owned())
+        }
+        fn hint(&self) -> Option<PickerHint> {
+            Some(PickerHint::Info("guidance".to_owned()))
+        }
+        fn confirmable(&self) -> bool {
+            false
+        }
+        fn empty_text(&self) -> Option<String> {
+            None
+        }
+        fn dismiss(&mut self) {
+            self.dismissed.set(true);
+        }
+    }
+
+    #[test]
+    fn the_boxed_slot_compiles_and_hosts_different_delegate_kinds() {
+        // The advertised one-modal-slot pattern, verbatim: the concrete box
+        // coerces to `Box<dyn PickerDelegate>` and drives the picker.
+        let mut p: Picker<Box<dyn PickerDelegate>> = Picker::new(Box::new(Fixed::new(3)));
+        p.move_selection(1);
+        assert_eq!(p.confirm_current(), Some(PickerEvent::Confirmed));
+        p.delegate = Box::new(KeepsOpen);
+        assert_eq!(
+            p.confirm_current(),
+            None,
+            "the same slot hosts a different delegate kind"
+        );
+    }
+
+    #[test]
+    fn box_forwarding_preserves_every_defaulted_override() {
+        let dismissed = std::rc::Rc::new(std::cell::Cell::new(false));
+        let mut boxed: Box<dyn PickerDelegate> = Box::new(Full {
+            dismissed: std::rc::Rc::clone(&dismissed),
+        });
+        assert_eq!(boxed.placeholder(), "Type a duration");
+        assert_eq!(boxed.header_before(0), Some("Section".to_owned()));
+        assert_eq!(boxed.header_before(1), None);
+        assert_eq!(boxed.hint(), Some(PickerHint::Info("guidance".to_owned())));
+        assert!(!boxed.confirmable());
+        assert_eq!(boxed.empty_text(), None);
+        boxed.dismiss();
+        assert!(
+            dismissed.get(),
+            "dismiss reaches the inner delegate, not the trait's no-op default"
+        );
     }
 
     #[test]
