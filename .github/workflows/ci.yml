@@ -32,18 +32,16 @@ jobs:
 
   # Formatting + lint, split out from `crate` rather than appended to it so a
   # style regression reports without waiting on a build, and so a red build
-  # cannot hide a lint failure (or the reverse). Same `working-directory`
-  # scoping as `crate`: the Cargo package lives in `meridian-design/`, not at
-  # the repo root.
+  # cannot hide a lint failure (or the reverse).
   #
-  # Green on arrival, not aspirational — the two commits preceding this one
-  # formatted the crate with default rustfmt and cleared its one clippy warning.
+  # Runs at the repo root over the whole workspace. There used to be a
+  # `working-directory: meridian-design` here, from when this repo held a single
+  # crate — but the moment a sibling crate (`meridian-egui`) was added, that
+  # default made it invisible to CI: `cargo` scoped to `meridian-design/` cannot
+  # see a member beside it. `--workspace` at the root is what includes both.
   fmt-clippy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: meridian-design
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       # Pinned to match `crate` and the repo's rust-toolchain.toml. Clippy's
@@ -55,20 +53,33 @@ jobs:
           components: rustfmt, clippy
       # `fmt` first: it builds nothing, so a formatting slip reports in seconds.
       - run: cargo fmt --all --check
-      # `--all-targets` so the `tests/` gates are linted too, not just the lib —
-      # the crate's one clippy warning lived in `tests/palette_gate.rs`, and a
-      # lib-only run would never have seen it.
+      # `--all-targets` so the `tests/` gates, the `meridian-egui` harness test
+      # and the eframe `gallery` example are all linted and compiled — not just
+      # the libs. A lib-only run would never see a broken example.
       - run: cargo clippy --workspace --all-targets -- -D warnings
 
   crate:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: meridian-design
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.95.0
-      - run: cargo build
-      - run: cargo test
+      - run: cargo build --workspace
+      - run: cargo test --workspace
+
+  # Licence gate for the egui emitter. `meridian-design` is dependency-free, but
+  # `meridian-egui` links `egui` and pulls a dev-only `eframe`/`wgpu` surface;
+  # `deny.toml` (at the repo root) is the allow-list an MIT binary may carry.
+  # Scoped to `check licenses` deliberately: `check advisories` reddens on
+  # pre-existing RUSTSEC entries carried by the wgpu/egui tree, which is a
+  # separate concern from what this gate is for.
+  licenses:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check licenses

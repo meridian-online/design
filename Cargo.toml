@@ -1,0 +1,15 @@
+[workspace]
+# Two members, two emitters over one token crate. `meridian-design` is the
+# framework-neutral source of truth (plain `Copy` data, empty `[dependencies]`);
+# `meridian-egui` is the egui adapter — "a third thin emitter" (ADR 0003), the
+# one place Meridian tokens become an `egui::Style`/`Visuals`/`FontDefinitions`.
+# The adapter lives here, beside the tokens it translates, so a host change
+# re-translates the adapter rather than the system (ADR 0011).
+members = ["meridian-design", "meridian-egui"]
+
+# Resolver 2 is required, not cosmetic: `meridian-egui` pulls `egui` (edition
+# 2024) and its dev-only `eframe`/`egui_kittest`/`wgpu` surface. The v1 resolver
+# unifies features across the normal/dev/build graphs, which would leak a
+# dev-only feature into the crate a consumer links; v2 keeps them separate, and
+# that separation is what keeps the licence surface (deny.toml) honest.
+resolver = "2"

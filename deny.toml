@@ -1,0 +1,40 @@
+# License gate: `cargo deny check licenses`
+#
+# The token crate (`meridian-design`) is dependency-free and trivially MIT. This
+# gate exists for the egui emitter: `meridian-egui` links `egui`, and its
+# dev-only surface pulls `eframe`/`egui_kittest`/`wgpu`. That graph is broadly
+# permissive, but egui ships bundled default fonts under open-font licences, and
+# wgpu's transitive tree carries the usual permissive spread — so this makes any
+# copyleft or otherwise-unexpected licence a loud failure rather than a silent
+# redistribution. Allow-list ported from the brightfield consumer so the two
+# repos agree on what an MIT binary may carry.
+
+[licenses]
+allow = [
+  "MIT",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "Zlib",
+  "BSL-1.0",
+  "CC0-1.0",
+  "Unicode-3.0",
+  "bzip2-1.0.6",
+  "NCSA",
+  "CDLA-Permissive-2.0",
+  # MPL-2.0 is file-scoped weak copyleft: acceptable in an MIT binary provided
+  # the MPL-covered files' source stays available (it is: crates.io). Flag any
+  # new MPL entrant in review rather than blocking the build.
+  "MPL-2.0",
+  # 0BSD (BSD Zero Clause) is OSI-approved and maximally permissive —
+  # public-domain-equivalent, no attribution clause.
+  "0BSD",
+  # Open-font licences for egui's bundled default fonts (Ubuntu-Light + the
+  # Noto/emoji fallbacks the egui default FontDefinitions ship). Both are
+  # permissive OSS font licences, fine to redistribute in an MIT binary; they
+  # cover font data only, not code. Entrant: egui/eframe.
+  "OFL-1.1",
+  "Ubuntu-font-1.0",
+]
