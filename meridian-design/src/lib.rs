@@ -23,7 +23,7 @@
 //! - **raw** — [`scales`] (12-step ramps), [`viz`] (chart palettes), [`chrome`]
 //!   (the ink/overlay tokens the renderer reads);
 //! - **geometry** — [`spacing`], [`radius`], [`control`], [`focus`],
-//!   [`elevation`], [`motion`]: the box model, stated once;
+//!   [`elevation`], [`motion`], [`input_widgets`]: the box model, stated once;
 //! - **semantic** — [`semantic`]: what a colour is *for*, framework-neutral,
 //!   with an instantiated [`StateSet`] per interaction role;
 //! - **contract** — [`a11y`]: role and keyboard intent, the half of a component
@@ -41,6 +41,7 @@ pub mod elevation;
 pub mod emit;
 pub mod focus;
 pub mod fonts;
+pub mod input_widgets;
 pub mod motion;
 pub mod radius;
 pub mod scales;
