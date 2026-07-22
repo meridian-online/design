@@ -174,11 +174,21 @@ fn fmt_point(p: kurbo::Point) -> String {
     format!("Point::new({}, {})", fmt_f64(p.x), fmt_f64(p.y))
 }
 
-/// `Debug` for `f64` prints the shortest decimal that round-trips — stable
-/// across platforms, and always a valid Rust float literal (`3.0`, `0.591`,
-/// `1e-17`).
+/// Emit a coordinate as a Rust float literal, quantised for cross-platform
+/// determinism.
+///
+/// Arc→cubic conversion runs through the platform's libm (`sin`/`cos`), whose
+/// results differ in the last ulp between targets (macOS arm64 vs Linux
+/// x86_64) — at full precision the shortest round-trip decimal then differs
+/// byte-for-byte across machines, which broke the drift gate in CI. Rounding
+/// to six decimal places (≈ 5e-7 on a 24×24 grid — far below anything
+/// renderable) absorbs the libm noise: `*`, `round` and `/` are IEEE
+/// correctly-rounded, so the quantised value is identical on every platform.
+/// `Debug` then prints the shortest decimal that round-trips — always a valid
+/// Rust float literal (`3.0`, `0.591`).
 fn fmt_f64(v: f64) -> String {
-    format!("{v:?}")
+    let q = (v * 1e6).round() / 1e6;
+    format!("{q:?}")
 }
 
 #[cfg(test)]

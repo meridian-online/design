@@ -13,11 +13,32 @@ const DATA: &str = include_str!("../src/icons/data.rs");
 #[test]
 fn generated_constants_match_the_manifest_byte_for_byte() {
     let derived = icons::gen::derive(MANIFEST).expect("the committed manifest derives");
-    assert!(
-        derived == DATA,
-        "src/icons/data.rs has drifted from src/icons/tabler.manifest — \
-         regenerate with: cargo run -p meridian-egui --bin gen-tabler-icons"
-    );
+    if derived != DATA {
+        // Surface the first divergent line: a bare "something differs" is
+        // undiagnosable from a CI log.
+        let divergence = derived
+            .lines()
+            .zip(DATA.lines())
+            .enumerate()
+            .find(|(_, (d, c))| d != c)
+            .map(|(i, (d, c))| {
+                format!(
+                    "first divergent line {}:\n  derived:   {d}\n  committed: {c}",
+                    i + 1
+                )
+            })
+            .unwrap_or_else(|| {
+                format!(
+                    "one file is a prefix of the other (derived {} lines, committed {})",
+                    derived.lines().count(),
+                    DATA.lines().count()
+                )
+            });
+        panic!(
+            "src/icons/data.rs has drifted from src/icons/tabler.manifest — \
+             regenerate with: cargo run -p meridian-egui --bin gen-tabler-icons\n{divergence}"
+        );
+    }
 }
 
 #[test]
