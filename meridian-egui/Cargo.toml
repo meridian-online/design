@@ -24,6 +24,13 @@ egui = "0.35"
 # what the tokens say; `eframe` runs the gallery example a human looks at. The
 # `wgpu`/`snapshot` features match the brightfield consumer's kittest setup so a
 # pixel baseline authored here and one authored there mean the same thing.
+#
+# `default-features = false` drops eframe's `glow` (we render through wgpu only),
+# but the same switch also drops its default `x11`/`wayland` — the Linux window
+# backends. macOS builds either way (its backend is unconditional), so the
+# omission is invisible locally and only surfaces as winit's "platform not
+# supported" compile error on Linux CI. Re-enable both so the gallery example
+# compiles cross-platform under `--all-targets`.
 [dev-dependencies]
 egui_kittest = { version = "0.35", features = ["wgpu", "snapshot"] }
-eframe = { version = "0.35", default-features = false, features = ["wgpu"] }
+eframe = { version = "0.35", default-features = false, features = ["wgpu", "x11", "wayland"] }
