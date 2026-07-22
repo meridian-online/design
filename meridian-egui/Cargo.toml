@@ -1,0 +1,29 @@
+[package]
+name = "meridian-egui"
+version = "0.1.0"
+edition = "2021"
+# The design repo pins 1.95.0 (rust-toolchain.toml); egui 0.35 declares
+# rust-version 1.92, so the pin clears the adapter's floor with headroom. Stated
+# here so a consumer resolving this crate on its own sees the same floor.
+rust-version = "1.95"
+license = "MIT"
+description = "The egui emitter of the Meridian Design System — Meridian tokens as an egui Style/Visuals/FontDefinitions"
+repository = "https://github.com/meridian-online/design"
+
+# The whole crate: the token source, and egui. Deliberately ABSENT from the
+# normal graph — and load-bearing in its absence — are eframe, wgpu and any
+# windowing backend. This adapter derives a `Style`/`Visuals` and installs
+# fonts; it neither opens a window nor owns a render surface, so a consumer
+# linking it takes on egui and nothing heavier.
+[dependencies]
+meridian-design = { path = "../meridian-design" }
+egui = "0.35"
+
+# Dev-only, so none of this reaches a consumer's dependency (or licence) graph:
+# `egui_kittest` renders a themed frame headlessly to assert the adapter drew
+# what the tokens say; `eframe` runs the gallery example a human looks at. The
+# `wgpu`/`snapshot` features match the brightfield consumer's kittest setup so a
+# pixel baseline authored here and one authored there mean the same thing.
+[dev-dependencies]
+egui_kittest = { version = "0.35", features = ["wgpu", "snapshot"] }
+eframe = { version = "0.35", default-features = false, features = ["wgpu"] }
