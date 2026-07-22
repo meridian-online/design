@@ -34,3 +34,9 @@ pub mod tokens;
 pub use ext::MeridianUi;
 pub use mode::Mode;
 pub use tokens::{Tokens, TOKENS};
+
+pub mod align;
+pub mod icons;
+pub mod widgets;
+
+pub use icons::Icon;

@@ -18,6 +18,12 @@ repository = "https://github.com/meridian-online/design"
 [dependencies]
 meridian-design = { path = "../meridian-design" }
 egui = "0.35"
+# The icon constants are kurbo paths (ADR 0009's SVG→path ingest): the offline
+# generator parses the vendored Tabler path data through kurbo, and at runtime
+# kurbo's affine + flattening rasterise a glyph onto an egui painter. Pinned to
+# the same major the Vello canvas consumer uses, so an `Icon`'s elements can
+# cross into a kurbo/Vello scene without conversion.
+kurbo = "0.13"
 
 # Dev-only, so none of this reaches a consumer's dependency (or licence) graph:
 # `egui_kittest` renders a themed frame headlessly to assert the adapter drew
