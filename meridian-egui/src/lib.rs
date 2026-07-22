@@ -37,5 +37,6 @@ pub use tokens::{Tokens, TOKENS};
 
 pub mod align;
 pub mod icons;
+pub mod widgets;
 
 pub use icons::Icon;
