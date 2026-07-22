@@ -1521,6 +1521,7 @@ dependencies = [
  "eframe",
  "egui",
  "egui_kittest",
+ "kurbo",
  "meridian-design",
 ]
 

@@ -36,3 +36,6 @@ pub use mode::Mode;
 pub use tokens::{Tokens, TOKENS};
 
 pub mod align;
+pub mod icons;
+
+pub use icons::Icon;
