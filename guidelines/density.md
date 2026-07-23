@@ -13,8 +13,8 @@ who want more on screen; density is a value, not a setting.
 - **The row-height ladder** — pick a rung, never invent a height:
   | rung | px | use |
   |---|---|---|
-  | dense | 22 | hot dense lists (leaderboard-class) |
-  | grid | 24 | virtualised data grids |
+  | dense | 20 | hot dense lists (leaderboard-class); the unified data table (virtualised grids) |
+  | grid | 24 | rows carrying their own inline pointer controls (menu option rows, pickers) |
   | preview | 36 | preview tables |
   | comfortable | 46 | settings, navigation lists |
 - **Tabular figures at table scope, never globally.** Wherever digits align
