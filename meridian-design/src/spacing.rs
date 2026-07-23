@@ -13,10 +13,12 @@
 //! chosen" — so the default is the only column. A surface that needs more
 //! room picks a taller rung; it does not scale the ladder.
 
-/// Hot dense lists (leaderboard-class rows).
-pub const ROW_DENSE: f32 = 22.0;
+/// Hot dense lists (leaderboard-class rows) and the unified data table —
+/// scanning surfaces where the row itself is the only pointer target.
+pub const ROW_DENSE: f32 = 20.0;
 
-/// Virtualised data grids.
+/// Rows that carry their own inline pointer controls (menu option rows,
+/// pickers) — the smallest rung that is a self-sufficient pointer target.
 pub const ROW_GRID: f32 = 24.0;
 
 /// Preview tables.
@@ -49,7 +51,7 @@ pub fn nearest_row(px: f32) -> f32 {
 /// ladder" overstates it. Every step is a multiple of `BASE / 2` = 2 px;
 /// most are also multiples of 4, but [`SPACE_1`] (2) and [`SPACE_3`] (6) are
 /// not, and they earn their place — 2 px is the only gap that reads as
-/// "touching but not welded" inside a 22 px row, and 6 px is the
+/// "touching but not welded" inside a 20 px row, and 6 px is the
 /// icon-to-label gap the icon guideline asks for. So: **2 px grid, 4 px
 /// rhythm.** Nothing off the 2 px grid is a legal gap, which is what
 /// `ladder_ascends_and_stays_on_the_half_base_grid` enforces.
@@ -59,7 +61,7 @@ pub const BASE: f32 = 4.0;
 pub const SPACE_0: f32 = 0.0;
 /// `2` — hairline gap: glyph-to-rule inside a dense control, chip internals.
 pub const SPACE_1: f32 = 2.0;
-/// `4` — the base unit: vertical padding inside a dense row.
+/// `4` — the base unit: vertical padding inside a grid row.
 pub const SPACE_2: f32 = 4.0;
 /// `6` — icon-to-label, inline control gaps.
 pub const SPACE_3: f32 = 6.0;

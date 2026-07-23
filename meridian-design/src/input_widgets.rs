@@ -59,7 +59,7 @@ pub const WIDGET_BASELINE_NUDGE: f32 = 4.0;
 pub const MENU_OPTION_ROW_HEIGHT: f32 = ROW_GRID;
 
 /// Height of one option row of a `radio`-presented input — the dense rung
-/// (22px): radio rows rest in the composition like a dense list, and every
+/// (20px): radio rows rest in the composition like a dense list, and every
 /// row is also keyboard-reachable.
 pub const RADIO_ROW_HEIGHT: f32 = ROW_DENSE;
 
@@ -144,7 +144,7 @@ mod tests {
         assert_eq!(WIDGET_TEXT_SIZE, 12.0);
         assert_eq!(WIDGET_BASELINE_NUDGE, 4.0);
         assert_eq!(MENU_OPTION_ROW_HEIGHT, 24.0);
-        assert_eq!(RADIO_ROW_HEIGHT, 22.0);
+        assert_eq!(RADIO_ROW_HEIGHT, 20.0);
         assert_eq!(RADIO_CHROME_PAD, 10.0);
     }
 
