@@ -6,11 +6,11 @@
 //!
 //! - the web takes the emitted `tokens.css` ([`emit::tokens_css`]), pinned by
 //!   a conformance test;
-//! - Brightfield's renderer reads token values directly; its app shell applies
-//!   the emitted theme;
-//! - framework adapters are thin emitters and they live in this repo, as
-//!   sibling crates — a host change re-translates the adapter, not the system
-//!   (ADR 0003; ADR 0011 for the egui adapter).
+//! - the desktop app consumes tokens through the egui adapter, a sibling
+//!   crate that reads the token values directly;
+//! - that adapter is a thin emitter that lives in this repo — a host change
+//!   re-translates the adapter, not the system (ADR 0003; ADR 0011 for the
+//!   egui adapter).
 //!
 //! Colours are designed in OKLCH and stored as their sRGB conversion so no
 //! consumer needs colour-space maths (ADR 0008). The crate carries the full

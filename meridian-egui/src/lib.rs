@@ -3,8 +3,8 @@
 //! `meridian-design` is framework-neutral by contract (ADR 0003): its tokens are
 //! plain sRGB `Copy` data with an empty `[dependencies]`, so every consumer
 //! converts them onto its own framework's types at its own boundary. This crate
-//! is that boundary for egui — "a third thin emitter" alongside the web's
-//! `tokens.css` and the desktop theme JSON (ADR 0003; ADR 0011 places the egui
+//! is that boundary for egui — a thin emitter alongside the web's
+//! `tokens.css` (ADR 0003; ADR 0011 places the egui
 //! adapter here, beside the tokens, rather than in the consuming shell).
 //!
 //! Three things cross the boundary and nothing else:

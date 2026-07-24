@@ -145,8 +145,8 @@ Public on GitHub, MIT, and read by people outside the project. Concretely:
   dock model, its pane/panel/toolbar/status contracts, its pickers and modal
   layers stay in Brightfield. A design system that owns an application's IA is
   the same mistake as one that owns nothing.
-- **Framework adapters are thin emitters and they live here**, not in the
-  consuming app — so a host change re-translates an adapter rather than the
+- **The egui adapter is a thin emitter and lives here**, not in the
+  consuming app — so a host change re-translates the adapter rather than the
   system (ADR 0003).
 - Consumers pin what they take: web checks the emitted CSS block byte-for-byte
   on its own side; Brightfield takes the crate as a cargo dependency. A token
