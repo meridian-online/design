@@ -23,8 +23,8 @@ pub const UI_SIZE: f32 = 12.0;
 /// Chart axis/tick labels sit one step below UI body.
 pub const CHART_LABEL_SIZE: f32 = 11.0;
 
-/// An OpenType feature setting, shaped as Parley's `FontFeature` (tag +
-/// value) so it maps to CSS `font-feature-settings`, gpui, and Masonry alike.
+/// An OpenType feature setting as a tag + value, so it maps to CSS
+/// `font-feature-settings` and any OpenType-aware shaper alike.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FontFeature {
     pub tag: [u8; 4],

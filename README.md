@@ -27,11 +27,12 @@ is `meridian-egui`, the egui adapter and desktop primitives (ADR 0011).
   (`tokens_css_matches_snapshot`) gates the emitted bytes in this repo's CI,
   and a conformance check on the web side pins what ships.
 - **Brightfield** takes `meridian-design` as a cargo dependency. The renderer
-  reads token values directly; the app shell applies the emitted theme.
-- **Framework adapters are thin emitters and they live here**, not in the
-  consuming app — tokens are plain `Copy` structs with framework-neutral sRGB
-  colours and logical-pixel dimensions, so a host change re-translates the
-  adapter rather than the system (ADR 0003).
+  reads token values directly; the egui app shell is themed through the
+  `meridian-egui` adapter (ADR 0011).
+- **Framework adapters are thin and they live here**, not in the consuming app
+  — tokens are plain `Copy` structs with framework-neutral sRGB colours and
+  logical-pixel dimensions, so a host change re-translates the adapter rather
+  than the system (ADR 0003).
 
 ## Status
 
@@ -43,8 +44,10 @@ failed font gate for Geist; Tabler adopted as the one icon language and shipped
 on web; tokens live in production web CSS and in the desktop chrome and chart
 ink; six guideline pages written.
 
-Current work is the **desktop component layer**. Brightfield's move off GPUI
-onto egui leaves no host widget library to defer to, so a capped set of
-primitives and the egui adapter arrive here as `meridian-egui`, alongside the
-geometry and state tokens they consume (ADR 0011). The token crate's contract
-is unchanged by it.
+The **desktop component layer** lives here as `meridian-egui`: the egui adapter
+and a capped set of primitives, alongside the geometry and state tokens they
+consume (ADR 0011). Brightfield's move off GPUI onto egui left no host widget
+library to defer to, so those primitives live in the design system. With the
+desktop app on egui, the earlier gpui-component theme emitter has been retired —
+the crate now emits `tokens.css` for the web, and `meridian-egui` themes the
+desktop. The token crate's contract is unchanged by any of it.

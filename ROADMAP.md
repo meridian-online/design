@@ -63,9 +63,15 @@ Brightfield committed to egui and paid the migration cost, so reopening
 Linebender is a new decision rather than a standing assumption. The
 framework-neutral crate shape is kept on its own merits.
 
-## Next — desktop components
+## Phase 6 — Desktop components ✅
 
-Brightfield's move off GPUI leaves no host widget library to defer to. A capped
-set of egui primitives and the egui adapter land here as a second crate,
+Brightfield's move off GPUI left no host widget library to defer to, so a capped
+set of egui primitives and the egui adapter landed here as a second crate,
 `meridian-egui`, alongside the geometry/state token layer they consume
 (ADR 0011). The token crate's contract is unchanged.
+
+With the desktop app on egui, the gpui-component `ThemeConfig` emitter that
+Phase 4 introduced has been **retired** — it had no remaining consumer once the
+shell cut over. The crate now emits a single artefact, `tokens.css` for the web
+(pinned by `tests/conformance.rs`); the desktop is themed through
+`meridian-egui`.

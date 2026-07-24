@@ -1,7 +1,8 @@
 [workspace]
 # Two members, two emitters over one token crate. `meridian-design` is the
 # framework-neutral source of truth (plain `Copy` data, empty `[dependencies]`);
-# `meridian-egui` is the egui adapter — "a third thin emitter" (ADR 0003), the
+# `meridian-egui` is the egui adapter — a thin emitter alongside the web's
+# `tokens.css` (ADR 0003), the
 # one place Meridian tokens become an `egui::Style`/`Visuals`/`FontDefinitions`.
 # The adapter lives here, beside the tokens it translates, so a host change
 # re-translates the adapter rather than the system (ADR 0011).

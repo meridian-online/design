@@ -5,8 +5,8 @@
 //!
 //! - **ink** reaches the Vello scene and therefore rendered PNGs — changing
 //!   it is a sanctioned example-PNG re-baseline event.
-//! - **overlay** is GPUI-side quads that never enter the Vello scene — safe
-//!   to change with PNGs byte-identical.
+//! - **overlay** is app-side (egui) quads that never enter the Vello scene —
+//!   safe to change with PNGs byte-identical.
 
 use crate::colour::Rgba;
 
@@ -52,7 +52,7 @@ pub const INK_DARK: InkTokens = InkTokens {
     focus: Rgba::from_u8(0x8f, 0xc1, 0xe4, 0xff),
 };
 
-/// GPUI-side interaction quads (never in the Vello scene).
+/// App-side (egui) interaction quads (never in the Vello scene).
 pub struct OverlayTokens {
     /// Committed brush interior wash.
     pub brush_fill: Rgba,

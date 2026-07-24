@@ -7,5 +7,5 @@ description = "Meridian design tokens — framework-neutral colours, type ramp, 
 repository = "https://github.com/meridian-online/design"
 
 # Dependency-free by contract (ADR 0003): this crate must remain outside any
-# GPL firewall and portable to every consumer (web emission, GPUI, Masonry).
+# GPL firewall and portable to every consumer (web emission, egui).
 [dependencies]
