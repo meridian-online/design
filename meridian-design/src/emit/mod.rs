@@ -1,9 +1,7 @@
 //! Emitters — every downstream artefact is generated from this crate and
-//! pinned by a conformance test (ADR 0008): `tokens.css` for the web, and
-//! the gpui-component `ThemeConfig` JSON pair for Brightfield.
-
-mod theme;
-pub use theme::{theme_config, ThemeMode};
+//! pinned by a conformance test (ADR 0008): `tokens.css` for the web. The
+//! desktop app consumes the tokens through the `meridian-egui` adapter
+//! (ADR 0011), so this module carries no desktop emitter of its own.
 
 use crate::chrome::{InkTokens, INK_DARK, INK_LIGHT};
 use crate::colour::Rgba;

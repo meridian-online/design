@@ -36,8 +36,8 @@ pub fn mode_of(ui: &egui::Ui) -> Mode {
     }
 }
 
-/// The mode's overlay tokens (the GPUI-era "never in the data scene" group:
-/// brush wash, brush border, focus ring).
+/// The mode's overlay tokens (the "never in the data scene" group: brush
+/// wash, brush border, focus ring).
 fn overlay(mode: Mode) -> &'static OverlayTokens {
     if mode.is_dark() {
         &OVERLAY_DARK

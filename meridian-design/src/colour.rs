@@ -1,8 +1,8 @@
 //! Framework-neutral colour types.
 
 /// An sRGB colour with straight (non-premultiplied) alpha, components in
-/// `0.0..=1.0`. Deliberately not `gpui::Hsla`, not `peniko::Color`: consumers
-/// convert at their own boundary (ADR 0003).
+/// `0.0..=1.0`. Deliberately not `egui::Color32`, not `peniko::Color`:
+/// consumers convert at their own boundary (ADR 0003).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Rgba {
     pub r: f32,

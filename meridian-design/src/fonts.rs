@@ -1,8 +1,8 @@
 //! Bundled font bytes (ADR 0005 resolution): Inter 4.1 (upstream rsms static
 //! builds) and JetBrains Mono 2.304 — both SIL OFL 1.1, licence files ship
-//! alongside in `fonts/`. One source, two sinks: a GPUI app registers these
-//! with `text_system().add_fonts`, the render crate parses them directly.
-//! Never substitute a stripped webfont build.
+//! alongside in `fonts/`. One source, two sinks: the egui app registers these
+//! through the `meridian-egui` adapter (`install_fonts`), the render crate
+//! parses them directly. Never substitute a stripped webfont build.
 
 /// The UI sans family name these bytes register as.
 pub const SANS: &str = "Inter";

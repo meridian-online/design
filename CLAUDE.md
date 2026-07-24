@@ -61,7 +61,10 @@ by a conformance test, so drift fails CI instead of shipping:
 | Artefact | Emitter | Snapshot | Regenerate with |
 |---|---|---|---|
 | Web `tokens.css` | `emit::tokens_css` | `tests/snapshots/tokens.css` | `cargo run --example dump_css > tests/snapshots/tokens.css` |
-| Desktop `ThemeConfig` (light/dark) | `emit::theme_config` | `tests/snapshots/theme-{light,dark}.json` | `cargo run --example dump_theme light > tests/snapshots/theme-light.json` (and `dark`) |
+
+The desktop app is themed through the `meridian-egui` adapter (ADR 0011), not a
+JSON theme artefact; the gpui-component `ThemeConfig` emitter was retired once
+that shell cut over to egui, so `tokens.css` is the only emitted artefact today.
 
 Rules:
 
@@ -69,10 +72,11 @@ Rules:
   A red conformance test means a consumer would have drifted; it is never fixed
   by loosening the test.
 - **A snapshot only catches a change, never a missing one.** `conformance.rs`
-  carries extra structural tests for exactly this reason — one caught the theme
-  emitter restating chrome anchors as literal hexes instead of reading
-  `chrome.rs`, which made editing a chrome token a silent no-op. When you add an
-  emitter, add the test that proves it *reads* the tokens.
+  carries extra structural tests for exactly this reason — an emitter that
+  restates a token as a literal instead of reading its module makes editing that
+  token a silent no-op, and a snapshot pinned against the emitter's own output
+  cannot notice. When you add an emitter, add the test that proves it *reads*
+  the tokens.
 - Palette maths is gated by `tests/palette_gate.rs` and chrome contrast by
   `tests/chrome_gate.rs` — both built on `src/validate.rs`, never approved by
   eye.

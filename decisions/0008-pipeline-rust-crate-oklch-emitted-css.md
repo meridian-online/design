@@ -37,3 +37,14 @@ until a third consumer materialises.
   of `apply_config`.
 - Bad, because non-Rust contributors edit token values in Rust source — the
   values are plain consts, so the barrier is low but non-zero.
+
+### Update (2026-07-24 — the gpui-component `ThemeConfig` emitter is retired)
+
+Brightfield moved off GPUI onto egui (ADR 0011), which deleted the only consumer
+of the `ThemeConfig` JSON pair. That emitter (`emit::theme_config`, its
+`ThemeMode`, the `dump_theme` example, and the `theme-{light,dark}.json`
+snapshots) has been removed; the desktop is now themed through the
+`meridian-egui` adapter, which reads the token layer directly. The pipeline's
+shape is unchanged — the crate is still the single source of truth, still emits
+its artefact from Rust and pins it byte-for-byte in CI — but there is now **one**
+emitted artefact, `tokens.css` for the web, not two.
