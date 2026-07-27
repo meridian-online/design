@@ -34,6 +34,7 @@
 //! being coloured genuinely has no semantic name yet.
 
 pub mod a11y;
+pub mod brand;
 pub mod chrome;
 pub mod colour;
 pub mod control;

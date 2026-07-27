@@ -11,7 +11,9 @@ and the chart ink both of them render.
 | Path | Contents |
 |---|---|
 | `meridian-design/` | The token crate — MIT, dependency-free, framework-neutral Rust. Colours, type ramp, spacing, chart palettes, and the emitters. The **only** place token values are defined. |
-| `decisions/` | Architecture decision records, ADRs 0001–0011 — the scoping decisions that shaped the system, and the record of every amendment to them. |
+| `meridian-design/brand/` | The mark, the wordmark, and their Affinity sources. **Not MIT** — see below. |
+| `meridian-egui/` | The egui adapter and a capped set of desktop primitives (ADR 0011). Takes dependencies of its own; the token crate's contract is unaffected. |
+| `decisions/` | Architecture decision records, ADRs 0001–0012 — the scoping decisions that shaped the system, and the record of every amendment to them. |
 | `guidelines/` | Six citable pages: identity, density, speed budgets, colour method, typography, icons. |
 | `validation/` | Palette gates and evidence — colour maths runs in CI, never by eye. |
 
@@ -51,3 +53,16 @@ library to defer to, so those primitives live in the design system. With the
 desktop app on egui, the earlier gpui-component theme emitter has been retired —
 the crate now emits `tokens.css` for the web, and `meridian-egui` themes the
 desktop. The token crate's contract is unchanged by any of it.
+
+The **brand assets** live in `meridian-design/brand/` (ADR 0012), which is where
+consumers should reference the mark from — inlining its path is how the one
+divergence we have already found got there. Brand motion is capped at three
+animations and confined to brand surfaces; the apps' no-decorative-motion budget
+is unchanged.
+
+## Licence
+
+MIT for the code — with two carve-outs, both stated in [LICENSE](LICENSE):
+`meridian-design/brand/` holds Meridian trademarks (all rights reserved), and
+`meridian-design/fonts/` holds Inter and JetBrains Mono under the SIL Open Font
+License 1.1. Neither is covered by the MIT grant.

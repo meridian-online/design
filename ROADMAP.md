@@ -75,3 +75,24 @@ Phase 4 introduced has been **retired** — it had no remaining consumer once th
 shell cut over. The crate now emits a single artefact, `tokens.css` for the web
 (pinned by `tests/conformance.rs`); the desktop is themed through
 `meridian-egui`.
+
+## Phase 7 — Brand assets and motion 🚧 (2026-07-27)
+
+The mark and wordmark come under version control as `meridian-design/brand/`,
+reserved rather than MIT, with the carve-out stated in the root `LICENSE`, the
+root `README` and `brand/LICENSE-BRAND.md`. They had been reaching production by
+hand-copy from a local folder, and web had already stopped copying the file and
+started copying the *path* — an inline mark that has diverged from the tracked
+SVG by a byte.
+
+ADR 0012 settles the motion question the assets raised: brand motion is allowed
+on brand surfaces (marketing, install, OG, the desktop front door, the README),
+never in app chrome or on a data surface, capped at three assets. Desktop takes
+Lottie through velato — which targets the Vello version the app already pins;
+web takes animated SVG rather than a 75 KB JS runtime or a CDN WASM fetch. Both
+are emitted from one generator and pinned, on the `tokens.css` model.
+
+Outstanding: the generator and its two artefacts; the wordmark has **no vector
+source** and needs an outlined SVG export before it can be animated at all; and
+the web-side check pinning the inlined glyph to `brand/` is a change in that
+repo, not this one.

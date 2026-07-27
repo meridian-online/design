@@ -15,8 +15,10 @@ shell grew a private shadow palette.
 
 | Path | Contents |
 |---|---|
-| `meridian-design/` | The token crate — the only crate in this repo today. MIT, **dependency-free by contract** (ADR 0003). The only place token values are defined, plus the emitters (`src/emit/`) and the bundled `fonts/`. |
-| `decisions/` | ADRs 0001–0011 — the scoping decisions and every amendment to them. `_template.md` is the shape. |
+| `meridian-design/` | The token crate. MIT, **dependency-free by contract** (ADR 0003). The only place token values are defined, plus the emitters (`src/emit/`), the bundled `fonts/`, and `brand/`. |
+| `meridian-design/brand/` | The mark, the wordmark, their Affinity sources, and the motion generated from them (ADR 0012). **Reserved, not MIT** — `brand/LICENSE-BRAND.md`, echoed in the root `LICENSE`. Inside the crate because the desktop takes it as a cargo dependency and needs the bytes at compile time. |
+| `meridian-egui/` | The egui adapter and the capped desktop primitives (ADR 0011). Takes dependencies of its own. |
+| `decisions/` | ADRs 0001–0012 — the scoping decisions and every amendment to them. `_template.md` is the shape. |
 | `guidelines/` | Six citable pages — identity, density, speed, colour, typography, icons — plus `README.md`, their index. The rules tokens cannot carry. |
 | `validation/` | Colour maths and its evidence: the reproducible `.mts` pipeline (with its own private `package.json`), the vendored Radix scale generator, the approved-palette record and the review gallery. |
 | `scripts/` | Repo gates that are not Rust tests — currently the public-hygiene check and its self-test. |
@@ -48,10 +50,14 @@ a cascade, and typography carries OpenType features as `(tag, value)` pairs.
 
 `meridian-design` itself stays MIT and dependency-free — that is what keeps it
 permanently outside the GPL firewall (ADR 0003, ADR 0011). **That contract binds
-the crate, not the repository.** Sibling crates *may* live here and take
-dependencies of their own; none exists yet. The first will be `meridian-egui`,
-the egui adapter and desktop primitives, which ADR 0011 decided but which has not
-been written — `meridian-design` is still the only crate in the tree.
+the crate, not the repository.** Sibling crates live here and take dependencies
+of their own: `meridian-egui` is the first, the egui adapter and the capped
+desktop primitives ADR 0011 called for.
+
+One thing in the crate is **not** under its MIT grant: `brand/`. The mark and
+wordmark are trademarks, reserved, carved out in the root `LICENSE` and in
+`brand/LICENSE-BRAND.md` — the same shape `fonts/` already uses for OFL. Adding
+files there means adding them under those terms, not the crate's.
 
 ## Emitters and their pinned snapshots
 
@@ -138,9 +144,14 @@ Public on GitHub, MIT, and read by people outside the project. Concretely:
   carry TypeScript, but it is a private, offline colour pipeline whose output is
   committed; nothing downstream builds it.) Desktop is the exception: with no
   host widget library left after the move off GPUI, a *capped* set of egui
-  primitives is to land here as `meridian-egui` (ADR 0011 — decided, not yet
-  written). Capped, not a gallery — the maintenance concern in ADR 0002 was
-  correct.
+  primitives landed here as `meridian-egui` (ADR 0011). Capped at 15, not a
+  gallery — the maintenance concern in ADR 0002 was correct, and the cap is the
+  whole answer to it.
+- **Brand assets live here; where they are used does not.** The mark, the
+  wordmark and their motion are the system's (ADR 0012). *Which* surface plays an
+  animation, and when, is the consuming app's call. Brand motion is capped at
+  three assets and confined to brand surfaces — `guidelines/speed.md`'s
+  no-decorative-motion budget is unchanged inside the apps.
 - **An application's information architecture never moves here.** Brightfield's
   dock model, its pane/panel/toolbar/status contracts, its pickers and modal
   layers stay in Brightfield. A design system that owns an application's IA is
