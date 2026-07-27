@@ -42,12 +42,21 @@ operations: **one** tooth path, placed three times, mirrored once by
 `matrix(-1,0,0,-1,800,800)`, clipped by `circle r=300` at `(400,400)`. Six teeth
 from one primitive and two transforms.
 
-That is why the mark can be animated by derivation rather than by hand. The
-rounded band-ends are the projection of a meridian on a sphere: a meridian at
-longitude θ projects to an ellipse of horizontal semi-axis `R·cos θ`. A genuine
-globe turn therefore holds the latitude bands fixed and animates each cap's
-horizontal radius as `R·cos(ωt)` — it loops exactly, and it reads as a sphere
-rather than as a logo on a turntable.
+That is why the mark can be animated by derivation rather than by hand.
+
+Decomposing the flattened path confirms the same structure and adds the detail
+that matters: each tooth is a **100-tall bar** running from a vertical axis out
+to the limb, closed at its inner end by a **quarter circle of radius 100**. The
+arc from `(400,200)` to `(300,100)` has centre `(400,100)`, with every control
+point exactly 100 away. The bars alternate side, top to bottom.
+
+The radius is constant at every latitude. A meridian projected onto a sphere
+would give a cap widest at the equator and pinched at the poles, so **the mark
+is a stylised globe rather than a projection of one** — and an animation that
+scaled the existing curve like an ellipse would be animating a shape that is not
+there. The turn instead sweeps one parameter per bar, the position of its cap:
+`x_cap(t) = 300 + side·100 + A·sin(ωt + φ)`, clipped to the disc. At `A = 0` it
+is the shipped mark exactly, which is how the generator is checked.
 
 Keep this file. Re-deriving it from the flattened mark is real work.
 

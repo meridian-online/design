@@ -140,14 +140,35 @@ computed at build time) and for `tokens.css` (ADR 0008). A hand-tuned editor
 remains the right tool for anything organic enough to need hand-drawn easing;
 nothing here is.
 
-**The globe turn is derived, not eyeballed.** The mark's rounded band-ends are
-the projection of a meridian on a sphere. A meridian at longitude θ projects to
-an ellipse of horizontal semi-axis `R·cos θ`, so the turn holds the latitude
-bands fixed and animates each cap's horizontal radius as `R·cos(ωt)`. It loops
-exactly, and both renderers express it as a group x-scale under a circular mask.
+**The globe turn is derived from what the mark is, which is not what it looks
+like.** Decomposing the shipped path segment by segment: each of the six teeth
+is a 100-tall bar running from a vertical axis out to the disc limb, closed at
+its inner end by a **quarter circle of radius 100**. That is verified, not
+inferred — the arc from `(400,200)` to `(300,100)` has centre `(400,100)`, and
+every control point on it sits exactly 100 from that centre. The bars alternate
+side, top to bottom.
+
+The constant radius is the finding. A meridian projected onto a sphere makes a
+cap that is widest at the equator and pinches toward the poles; the mark's caps
+are radius 100 at every latitude. **So the mark is a stylised globe, not a
+projection of one**, and an animation that treats the existing curve as an
+ellipse to be scaled would be animating a shape the mark does not contain.
+
+The turn therefore sweeps one parameter per bar — where its cap sits on the axis
+— and leaves the cap's radius alone: `x_cap(t) = 300 + side·100 + A·sin(ωt + φ)`,
+clipped to the disc. At `A = 0` the output is the shipped mark exactly, which is
+the property that makes the generator checkable. Both renderers express it as an
+animated path under a circular clip.
+
 Worth stating because the animation shipping today is a `rotate()`, and a rotate
-is the wrong transform for this mark: the bands are horizontal, so spinning them
-reads as a wheel rather than a sphere.
+is the wrong transform for this mark either way: the bars are horizontal, so
+spinning them reads as a wheel rather than a sphere.
+
+Two free parameters remain, and they are aesthetic rather than derivable: the
+phase offset between bars (π reproduces the mark's alternating rhythm; π/3 reads
+as a helix) and the sweep amplitude (300 lets a bar cover or clear the whole
+disc; 150 keeps every bar partly on screen at all times). Those are settled by
+looking, not by argument — see the prototype linked from the pull request.
 
 ### What the desktop renderer cannot do, verified in its source
 
