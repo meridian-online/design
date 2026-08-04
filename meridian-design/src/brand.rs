@@ -27,8 +27,8 @@ pub const MARK_WHITE: &str = include_str!("../brand/meridian_white.svg");
 /// and surfaces whose background cannot be controlled.
 ///
 /// The plate is a filled rectangle behind the path, not an outline around it,
-/// so this variant renders as a black tile wherever it is placed. Where the
-/// surface should show through, [`MARK_WHITE`] is the one that does.
+/// so this variant brings a black tile with it rather than adapting to the
+/// surface. Where that surface should show through, use [`MARK_WHITE`].
 pub const MARK_WHITEOB: &str = include_str!("../brand/meridian_whiteob.svg");
 
 /// [`MARK_BLACK`] with the standard clear space baked in.

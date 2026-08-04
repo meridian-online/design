@@ -2,10 +2,10 @@
 //!
 //! The crate declares `license = "MIT"`. `brand/` does not fall under it —
 //! `brand/LICENSE-BRAND.md` reserves the directory, echoed in the root
-//! `LICENSE` — so the assets no code reads are kept out of the tarball a
-//! registry would receive, by `exclude` in `Cargo.toml`. They stay in git,
-//! editable, on GitHub; the repository and the published package are two
-//! different artefacts and this is the line between them.
+//! `LICENSE` — so `exclude` in `Cargo.toml` keeps the unreferenced assets out
+//! of the tarball a registry would receive. They stay in git, editable, on
+//! GitHub; the repository and the published package are two different
+//! artefacts and this is the line between them.
 //!
 //! The two lists below are the gate on that split. A file added under `brand/`
 //! that `exclude` does not catch lands in an MIT-declared tarball, and reports
@@ -30,7 +30,8 @@ const PACKAGED: &[&str] = &[
 ];
 
 /// Retained in git, kept out of the tarball: the Affinity masters and the
-/// raster wordmark, which no `include_str!` in this workspace reads.
+/// raster wordmark. `git grep include_str -- '*.rs'` finds no reference to
+/// them, which is what makes dropping them from the package free.
 ///
 /// `Meridian Prime Components.svg` sits in the same directory and is packaged.
 /// That is why `exclude` names `brand/sources/*.af` and not `brand/sources/` —
