@@ -12,7 +12,7 @@ carries its own OFL terms.
 |---|---|
 | `meridian_black.svg` | The prime mark, dark-on-transparent. Light contexts. |
 | `meridian_white.svg` | The prime mark in white. Dark contexts. |
-| `meridian_whiteob.svg` | White with an outline — high contrast, favicons, unpredictable backgrounds. |
+| `meridian_whiteob.svg` | The white mark on an opaque black plate that fills the canvas — a filled rectangle behind the path, not an outline around it. Favicons, and surfaces whose background cannot be controlled. |
 | `meridian_*_pad.svg` | The same three with the standard clear-space padding baked in. Use these when you cannot control the surrounding margin. |
 | `meridian_wordmark.png` | The wordmark, 1000×410 raster. **There is no wordmark SVG yet** — see below. |
 | `sources/*.af` | Affinity Designer originals. The editable truth. |
@@ -45,10 +45,9 @@ from one primitive and two transforms.
 That is why the mark can be animated by derivation rather than by hand.
 
 Decomposing the flattened path confirms the same structure and adds the detail
-that matters: each tooth is a **100-tall bar** running from a vertical axis out
-to the limb, closed at its inner end by a **quarter circle of radius 100**. The
-arc from `(400,200)` to `(300,100)` has centre `(400,100)`, with every control
-point exactly 100 away. The bars alternate side, top to bottom.
+that matters: each tooth is a bar running from a vertical axis out to the limb,
+closed at its inner end by a **cap of constant radius**. The bars alternate
+side, top to bottom.
 
 The radius is constant at every latitude. A meridian projected onto a sphere
 would give a cap widest at the equator and pinched at the poles, so **the mark

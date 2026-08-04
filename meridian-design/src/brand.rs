@@ -13,7 +13,8 @@
 //! characters of path data into a component will, and nothing will say so.
 //!
 //! Which variant: [`MARK_BLACK`] on light, [`MARK_WHITE`] on dark,
-//! [`MARK_WHITEOB`] where the background is unpredictable (favicons, photos).
+//! [`MARK_WHITEOB`] where the background cannot be controlled — it brings its
+//! own opaque plate rather than adapting to what is behind it.
 //! The `_PAD` forms bake in the standard clear space — reach for them when you
 //! cannot control the surrounding margin, and only then. Motion rules are ADR
 //! 0012; usage rules are `guidelines/identity.md`.
@@ -22,7 +23,12 @@
 pub const MARK_BLACK: &str = include_str!("../brand/meridian_black.svg");
 /// The prime mark in white. Dark contexts.
 pub const MARK_WHITE: &str = include_str!("../brand/meridian_white.svg");
-/// White with an outline — high contrast, favicons, unpredictable backgrounds.
+/// The white mark on an opaque black plate that fills the canvas. Favicons,
+/// and surfaces whose background cannot be controlled.
+///
+/// The plate is a filled rectangle behind the path, not an outline around it,
+/// so this variant renders as a black tile wherever it is placed. Where the
+/// surface should show through, [`MARK_WHITE`] is the one that does.
 pub const MARK_WHITEOB: &str = include_str!("../brand/meridian_whiteob.svg");
 
 /// [`MARK_BLACK`] with the standard clear space baked in.
@@ -220,6 +226,33 @@ mod tests {
                 "{name}'s offset disagrees with MARK_CLEAR_SPACE"
             );
         }
+    }
+
+    /// The `whiteob` variants are plated, not outlined.
+    ///
+    /// This is the distinction [`MARK_WHITEOB`]'s documentation promises a
+    /// consumer, and the two render differently on the case that variant is
+    /// reached for: a filled `<rect>` behind the path covers whatever is
+    /// under it, where an outline would let the surface through. Both halves
+    /// are legible in the file, so both are asserted here rather than left to
+    /// the description.
+    #[test]
+    fn the_whiteob_variants_are_plated_rather_than_outlined() {
+        for (name, svg) in [("whiteob", MARK_WHITEOB), ("whiteob_pad", MARK_WHITEOB_PAD)] {
+            assert!(
+                svg.contains("<rect id=\"black\""),
+                "{name} has lost the opaque plate its documentation describes"
+            );
+            assert!(
+                !svg.contains("stroke:"),
+                "{name} now carries stroke paint; if it has gained an outline, \
+                 the docs on MARK_WHITEOB describe a plate and need re-checking"
+            );
+        }
+        assert!(
+            !MARK_WHITE.contains("<rect"),
+            "meridian_white.svg has gained a plate, which is what whiteob is for"
+        );
     }
 
     /// The construction file is what makes the mark animatable by derivation

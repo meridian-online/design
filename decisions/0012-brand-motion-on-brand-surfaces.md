@@ -142,11 +142,8 @@ nothing here is.
 
 **The globe turn is derived from what the mark is, which is not what it looks
 like.** Decomposing the shipped path segment by segment: each of the six teeth
-is a 100-tall bar running from a vertical axis out to the disc limb, closed at
-its inner end by a **quarter circle of radius 100**. That is verified, not
-inferred — the arc from `(400,200)` to `(300,100)` has centre `(400,100)`, and
-every control point on it sits exactly 100 from that centre. The bars alternate
-side, top to bottom.
+is a bar running from a vertical axis out to the disc limb, closed at its inner
+end by a **cap of constant radius**. The bars alternate side, top to bottom.
 
 The constant radius is the finding. A meridian projected onto a sphere makes a
 cap that is widest at the equator and pinches toward the poles; the mark's caps
