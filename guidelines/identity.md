@@ -25,11 +25,21 @@ felt in restraint, not colour volume (ADR 0004).
 - **Anybody is display-only.** The brand display face appears on marketing
   and web display surfaces (headlines, wordmark lockups, OG images) and
   never inside the apps.
-- **The mark.** Brand assets (the prime pattern) live in the web repo's
-  `brand/` directory — dark-on-transparent for light contexts, white for
-  dark, `whiteob` for high-contrast/favicon.
+- **The mark lives here now.** `meridian-design/brand/` is the source —
+  dark-on-transparent for light contexts, white for dark, `whiteob` for
+  high-contrast and favicons, `_pad` variants when you cannot control the
+  surrounding margin. Consumers reference a tracked file; **nobody inlines the
+  path**. A copied path is a copy that drifts, and one already has.
+- **The mark is not redrawn.** No recolouring outside the three supplied
+  variants, no re-proportioning, no partial use of the teeth as a decorative
+  motif. It is reserved, not MIT — see `meridian-design/brand/LICENSE-BRAND.md`.
+- **The mark may move on brand surfaces only.** Marketing, install, OG images,
+  the desktop front door, the README — capped at three animations, and never in
+  app chrome or on a data surface (ADR 0012, `speed.md`). The honest-work
+  indicator is the one in-app use, and `speed.md` already required it.
 
 ## Evidence
 
-Decision record: ADR 0004. Shipped proof: web PR #44; Brightfield #62
-(chrome) + #63 (canvas) — chrome samples byte-exact against the token scale.
+Decision records: ADR 0004; ADR 0012 for the mark's home and its motion. Shipped
+proof: web PR #44; Brightfield #62 (chrome) + #63 (canvas) — chrome samples
+byte-exact against the token scale.

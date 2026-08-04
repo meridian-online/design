@@ -19,3 +19,19 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+NOT COVERED BY THE ABOVE
+
+Two directories in this repository carry their own terms, and the MIT grant
+above does not extend to either:
+
+  meridian-design/brand/   Meridian trademarks and brand artefacts.
+                           All rights reserved. See brand/LICENSE-BRAND.md.
+
+  meridian-design/fonts/   Inter and JetBrains Mono, under the SIL Open Font
+                           License 1.1. See LICENSE-Inter.txt and
+                           LICENSE-JetBrainsMono.txt in that directory.
+
+Everything else in this repository is MIT under the terms above.

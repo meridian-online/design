@@ -18,9 +18,17 @@ speed policy" is a complete review comment.
   (today's cross-filter brush). Moving to live re-query (continuous drag)
   requires throttling + cancellation discipline first — never uncancelled
   query pile-up.
-- **No decorative animation.** Motion exists only for spatial continuity —
-  a panel opening, a brush moving, an overlay appearing — and stays under
-  ~150 ms. Nothing eases in for delight; data appears at once, not staggered.
+- **No decorative animation in the apps.** Motion exists only for spatial
+  continuity — a panel opening, a brush moving, an overlay appearing — and stays
+  under ~150 ms. Nothing eases in for delight; data appears at once, not
+  staggered. **Brand surfaces are the one exception** and they are governed
+  separately: marketing, install, OG images, the desktop front door, the README
+  may carry brand motion, capped at three assets, under ADR 0012. Application
+  chrome and data surfaces may not — that half of this bullet is unchanged and
+  is still a complete review comment on its own.
+- **The honest-work cue may wear the mark.** The >100 ms indicator this page
+  requires is not decorative motion, and drawing it as the Meridian mark rather
+  than a generic spinner changes how it looks, not whether it is allowed.
 - **Honour `prefers-reduced-motion`** on the web; desktop motion is sparse
   enough that there is nothing to reduce.
 - **GPU is the enabler, not the excuse.** Rendering headroom is spent on
@@ -35,6 +43,6 @@ regression, not a debate.
 
 ## Evidence
 
-ADR 0010. Shipped practice: brush re-dispatch on release (#60); reload/save
-outcomes surfaced in the Log dock; the continuous-drag design explicitly gates
-on throttle/cancellation.
+ADR 0010; ADR 0012 for the brand-surface carve-out. Shipped practice: brush
+re-dispatch on release (#60); reload/save outcomes surfaced in the Log dock; the
+continuous-drag design explicitly gates on throttle/cancellation.
