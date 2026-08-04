@@ -34,8 +34,4 @@ needs these bytes at compile time. A directory at the repository root would not
 reach it. The carve-out is the price of that, and it is stated here, in
 `../../README.md`, and in `../../LICENSE`.
 
-If this crate is ever published to a registry, exclude `brand/sources/` from the
-package — the Affinity files are the editable originals and no consumer compiles
-them.
-
 Questions: <https://github.com/meridian-online/design>.
