@@ -7,9 +7,10 @@ description = "Meridian design tokens — framework-neutral colours, type ramp, 
 repository = "https://github.com/meridian-online/design"
 
 # `license` above covers the code. It does not cover `brand/`, which
-# `brand/LICENSE-BRAND.md` reserves — so the brand files no code reads stay out
-# of the published tarball. They remain tracked in git and editable; the
-# repository and the package are separate artefacts.
+# `brand/LICENSE-BRAND.md` reserves — and that carve-out ships in the tarball
+# beside the assets it governs. What stays out is named below: those files
+# remain tracked in git and editable; the repository and the package are
+# separate artefacts.
 #
 # Not `brand/sources/`: `src/brand.rs` embeds `Meridian Prime Components.svg`
 # from that directory, and dropping it fails `cargo package`'s verify build.

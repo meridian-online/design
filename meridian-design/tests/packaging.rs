@@ -2,10 +2,10 @@
 //!
 //! The crate declares `license = "MIT"`. `brand/` does not fall under it —
 //! `brand/LICENSE-BRAND.md` reserves the directory, echoed in the root
-//! `LICENSE` — so `exclude` in `Cargo.toml` keeps the unreferenced assets out
-//! of the tarball a registry would receive. They stay in git, editable, on
-//! GitHub; the repository and the published package are two different
-//! artefacts and this is the line between them.
+//! `LICENSE` — so `exclude` in `Cargo.toml` keeps the Affinity masters and the
+//! raster wordmark out of the tarball a registry would receive. They stay in
+//! git, editable, on GitHub; the repository and the published package are two
+//! different artefacts and this is the line between them.
 //!
 //! The two lists below are the gate on that split. A file added under `brand/`
 //! that `exclude` does not catch lands in an MIT-declared tarball, and reports
@@ -55,8 +55,6 @@ fn crate_root() -> PathBuf {
 /// only re-read the pattern.
 ///
 /// `--allow-dirty` because the question is what the working tree would ship.
-/// Cargo otherwise refuses whenever anything in the repository is uncommitted,
-/// which would redden this gate for a reason unrelated to brand assets.
 fn packaged_brand_files() -> Vec<String> {
     let cargo = std::env::var("CARGO").unwrap_or_else(|_| env!("CARGO").to_owned());
     let out = Command::new(cargo)
@@ -165,8 +163,7 @@ fn the_brand_masters_are_retained_and_unpublished() {
 /// tarball fails to compile at `cargo package`'s verify step, a long way from
 /// the manifest edit that caused it.
 ///
-/// The embedded paths are read out of `src/brand.rs` rather than restated, so
-/// this stays true when a variant is added.
+/// The embedded paths are read out of `src/brand.rs` rather than restated.
 #[test]
 fn every_brand_file_the_crate_embeds_is_packaged() {
     const NEEDLE: &str = "include_str!(\"../brand/";
