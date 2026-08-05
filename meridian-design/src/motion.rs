@@ -1,8 +1,8 @@
 //! Motion — two constants, because the budget only needs two.
 //!
-//! `guidelines/speed.md` (ADR 0010) says motion exists **only for spatial
-//! continuity** — a panel opening, a brush moving, an overlay appearing — and
-//! stays under ~150 ms; nothing eases in for delight. Feedback that
+//! `guidelines/speed.md` (ADR 0010) caps **spatial-continuity** motion — a
+//! panel opening, a brush moving, an overlay appearing — at ~150 ms; nothing
+//! eases in for delight. Feedback that
 //! acknowledges input (hover emphasis, focus ring, selection, keypress echo)
 //! lands on the *next frame* with no animation at all, which is why there is
 //! no hover or focus duration in this module: the correct value is zero and a
