@@ -141,6 +141,8 @@ computed at build time) and for `tokens.css` (ADR 0008). A hand-tuned editor
 remains the right tool for anything organic enough to need hand-drawn easing;
 nothing here is.
 
+### The globe turn
+
 *(This section is retired as a specification by the Update of 2026-08-05 below.
 The derivation stands; the animation it names is not the one to build.)*
 

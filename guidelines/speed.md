@@ -19,10 +19,9 @@ speed policy" is a complete review comment.
   requires throttling + cancellation discipline first — never uncancelled
   query pile-up.
 - **No decorative animation in the apps.** The test is what the motion depicts,
-  not where it runs. Motion earns its place by carrying something a still frame
-  cannot — spatial continuity as a panel opens, a brush moves, an overlay
-  appears — and continuity motion stays under ~150 ms. Nothing eases in for
-  delight; data appears at once, not staggered.
+  not where it runs. Motion earns its place — spatial continuity as a panel
+  opens, a brush moves, an overlay appears — and continuity motion stays under
+  ~150 ms. Nothing eases in for delight; data appears at once, not staggered.
 - **On a data surface, the test is whether the motion depicts a property of the
   data.** The worked example is flow direction: a dot travelling an edge of a
   graph encodes which way the graph flows — a property of the graph, not an
