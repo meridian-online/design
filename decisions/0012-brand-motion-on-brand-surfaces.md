@@ -1,7 +1,7 @@
 ---
 status: accepted
 date-created: 2026-07-27
-date-modified: 2026-07-27
+date-modified: 2026-08-05
 ---
 # 0012. Brand motion lives on brand surfaces, and there are three of it
 
@@ -72,7 +72,8 @@ is being *presented*. Motion there is doing the job the surface exists for.
 panel, not a toolbar, not a chart, not a row. `speed.md`'s budgets are unchanged
 inside the apps and this ADR narrows nothing about them: feedback still lands
 next frame, spatial continuity still stays under 150 ms, and there is still no
-easing for delight anywhere a user is working.
+easing for delight anywhere a user is working. *(This clause is narrowed by the
+Update of 2026-08-05 below — read them together.)*
 
 **The one in-app exception is not an exception.** The honest-work indicator —
 the cue shown when something can exceed ~100 ms — is *required* by `speed.md`
@@ -140,6 +141,11 @@ computed at build time) and for `tokens.css` (ADR 0008). A hand-tuned editor
 remains the right tool for anything organic enough to need hand-drawn easing;
 nothing here is.
 
+### The globe turn
+
+*(This section is retired as a specification by the Update of 2026-08-05 below.
+The derivation stands; the animation it names is not the one to build.)*
+
 **The globe turn is derived from what the mark is, which is not what it looks
 like.** Decomposing the shipped path segment by segment: each of the six teeth
 is a bar running from a vertical axis out to the disc limb, closed at its inner
@@ -183,6 +189,65 @@ These are authoring constraints, not blockers, and they are cheaper to know now:
   works. Stroke dash — the other way to draw a line on — genuinely is missing.
 - **Prefer plain masks to track mattes.** The matte path carries an unresolved
   note in the renderer; plain masks apply cleanly as clip layers.
+
+### Update (2026-08-05 — the data-surface clause narrows; the globe turn retires)
+
+Two amendments, taken together so the record moves once rather than twice.
+
+**1. "Anything on a data surface" narrows to *decorative* motion on a data
+surface, and the test is what the motion depicts.**
+
+The clause above bars motion by location. That was the right rule for the
+question this ADR was asked — where the *mark* may animate — and it is the wrong
+rule for motion in general, because this decision already admits a case that
+location cannot explain. The honest-work indicator is allowed inside the apps, in
+a data grid among other places, and the reason given for it above is not where it
+sits but what it shows.
+
+So the test is what the motion depicts, and it reads the same way everywhere:
+
+- **Admitted: motion that encodes a property of the data.** A dot travelling an
+  edge of a graph shows which way the graph flows. Direction is a property of
+  the topology and the dot encodes it, as an arrowhead does. That is data ink,
+  and it survives on the same ground the honest-work cue survives on.
+- **Refused: motion tied to no state.** An ambient field behind a canvas depicts
+  nothing about what is drawn on it. `guidelines/speed.md` is unchanged here —
+  rendering headroom is spent on more data on screen, not on ornament — and a
+  surface that wants one ships it behind a preference a reader can leave off.
+- **The ~150 ms ceiling is a continuity budget.** It bounds a transition. A cue
+  that runs while a surface is idle is not a transition, so the ceiling does not
+  reach it; what governs that cue is whether it depicts something.
+
+**This does not let the mark animate in a toolbar.** What it admits is ink that
+says something about the data and happens to be drawn as motion. The
+brand-surface list, the three-asset cap, the move of the assets into
+`meridian-design/brand/`, the trademark carve-out and the format split are all
+untouched — this narrows one sentence.
+
+It is an amendment and not a supersession: the reasoning stands, and the scope
+was written when brand motion was the motion in question. `guidelines/speed.md`
+carries the same test now, so the sentence quoted in the Context section above is
+that page as it read on 2026-07-27, not as it reads today.
+
+**2. The globe turn specified above is retired as a specification. The cap is
+not.**
+
+`x_cap(t) = 300 + side·100 + A·sin(ωt + φ)` is derived from the mark's own
+geometry, and at `A = 0` it reproduces the shipped mark, which is what makes a
+generator for it checkable. Both of those still hold. What did not survive was
+the animation itself: built and viewed rather than argued, it does not read as a
+globe turning, and the phase and amplitude that section left free are not what
+would fix that.
+
+`guidelines/identity.md` binds any replacement: the mark is not redrawn. An
+animation that has to mirror the figure, or close it with a straight edge inside
+the disc, is redrawing it — so the repairs a sweep of this shape invites are not
+available either.
+
+**So that section specifies nothing to build.** The turn and the work indicator
+derived from it are still assets the cap allows; their *form* is open, and a
+later amendment names it. This changes what an asset looks like, not how many
+there are or where they may play.
 
 ### Consequences
 
