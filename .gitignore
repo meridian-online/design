@@ -1,3 +1,9 @@
 target/
 node_modules/
 .DS_Store
+__pycache__/
+
+# Exploration output. The four artefacts that ship live in
+# meridian-design/brand/motion/ and are pinned; anything build_form.py writes
+# here is a scheme or a lag that lost, kept regenerable rather than committed.
+motion/output/

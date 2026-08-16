@@ -1,0 +1,49 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Meridian — orbit frames</title>
+<style>
+ body{background:#faf8f4;color:#1a1917;margin:0;padding:24px;
+      font:12px/1.5 ui-sans-serif,system-ui}
+ h1{font-size:15px;margin:0 0 4px}
+ p{margin:0 0 18px;color:#5a564f;max-width:70ch}
+ .strip{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:26px}
+ .cell{position:relative}
+ .cell div{width:100%;aspect-ratio:1;background:#fff;border:1px solid #e4e0d8;
+           border-radius:6px}
+ .cell b{position:absolute;left:5px;top:4px;font:10px/1 ui-monospace,monospace;
+         color:#a09a90;font-weight:400}
+ h2{font-size:12px;margin:0 0 8px;color:#5a564f;font-weight:600}
+</style>
+<h1>form — frame by frame</h1>
+<p>Every cell is its own player stopped on one frame, so what you see is what
+the renderer draws, not an interpolation of it. Row one is the orbit (0–40);
+row two picks up the S's and the mark.</p>
+
+<h2>The seam — 26 to 54. The arc dies where and when the first S appears.</h2>
+<div class="strip" id="a"></div>
+
+<h2>The whole loop — 0 to 176, every 4</h2>
+<div class="strip" id="b"></div>
+
+<script src="lottie.min.js"></script>
+<script>
+const SRC = '../../meridian-design/brand/motion/form.json';
+function strip(host, frames){
+  const el = document.getElementById(host);
+  frames.forEach(f => {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    const box = document.createElement('div');
+    const tag = document.createElement('b');
+    tag.textContent = f;
+    cell.append(box, tag); el.append(cell);
+    const anim = lottie.loadAnimation({
+      container: box, renderer: 'svg', loop: false, autoplay: false, path: SRC
+    });
+    anim.addEventListener('DOMLoaded', () => anim.goToAndStop(f, true));
+  });
+}
+const step = (a,b,n) => Array.from({length: Math.floor((b-a)/n)+1}, (_,i)=>a+i*n);
+strip('a', step(26, 54, 2));
+strip('b', step(0, 176, 4));
+</script>

@@ -40,7 +40,12 @@ speed policy" is a complete review comment.
   this page already required that cue.
 - **The honest-work cue may wear the mark.** The >100 ms indicator this page
   requires is not decorative motion, and drawing it as the Meridian mark rather
-  than a generic spinner changes how it looks, not whether it is allowed.
+  than a generic spinner changes how it looks, not whether it is allowed. The
+  asset is `meridian-design/brand/motion/form.*` — Lottie for the desktop,
+  animated SVG for the web. **Take it; do not draw another one.** Under reduced
+  motion it settles to the assembled mark, which says the brand and not that
+  anything is happening, so a surface using it as the work cue carries a textual
+  cue beside it.
 - **Reduced motion is honoured wherever motion ships, desktop included.** On the
   web that is the `prefers-reduced-motion` media query. The desktop obligation is
   the same one, and it falls on whichever surface introduces the motion: a reader

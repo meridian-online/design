@@ -15,8 +15,34 @@ carries its own OFL terms.
 | `meridian_whiteob.svg` | The white mark on an opaque black plate that fills the canvas — a filled rectangle behind the path, not an outline around it. Favicons, and surfaces whose background cannot be controlled. |
 | `meridian_*_pad.svg` | The same three with the standard clear-space padding baked in. Use these when you cannot control the surrounding margin. |
 | `meridian_wordmark.png` | The wordmark, 1000×410 raster. **There is no wordmark SVG yet** — see below. |
+| `motion/form.json`, `form_dark.json` | `form`, the mark-motion asset, as Lottie for the desktop. See below. |
+| `motion/form.svg`, `form_dark.svg` | The same animation as animated SVG, for the web. |
 | `sources/*.af` | Affinity Designer originals. The editable truth. |
 | `sources/Meridian Prime Components.svg` | The mark's *construction* file — see below. It is not an artefact to ship. |
+
+## `motion/` is generated, and both formats come from one source
+
+An arc laps the disc, three strokes flow through it, and the mark assembles row
+by row. 7.2 s at 25 fps, looping. ADR 0012's first capped asset, and what plays
+as the >100 ms work cue.
+
+**Two formats because two consumers.** The desktop takes Lottie through velato;
+the web takes animated SVG, because the site ships no motion library and a
+Lottie runtime is ~75 KB gzipped for two brand animations. The web file is
+self-contained and script-free — reference it with `<img>` — and honours
+`prefers-reduced-motion`, where it settles to the assembled mark.
+
+**Do not hand-edit these four files.** They are emitted by
+[`motion/build_form.py`](../../motion) at the repository root, which reads
+`meridian_black.svg` for the geometry and `tests/snapshots/tokens.css` for every
+colour, so neither is retyped anywhere. `scripts/check-motion.sh` fails CI if
+what is committed here is no longer what that generator produces, and
+`tests/motion.rs` fails if the two formats have drifted apart or if a colour has
+stopped being a token value.
+
+Which variant: `form.*` on light, `form_dark.*` on dark. There is no adaptive
+single file — the ink and the wake are different token values in each theme, and
+the chart ramp they walk runs the other way round.
 
 ## They did not arrive consistent
 
