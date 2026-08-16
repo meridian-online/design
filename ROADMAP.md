@@ -76,7 +76,7 @@ shell cut over. The crate now emits a single artefact, `tokens.css` for the web
 (pinned by `tests/conformance.rs`); the desktop is themed through
 `meridian-egui`.
 
-## Phase 7 — Brand assets and motion 🚧 (2026-07-27)
+## Phase 7 — Brand assets and motion ✅ (2026-07-27 → 2026-08-16)
 
 The mark and wordmark come under version control as `meridian-design/brand/`,
 reserved rather than MIT, with the carve-out stated in the root `LICENSE`, the
@@ -92,7 +92,31 @@ Lottie through velato — which targets the Vello version the app already pins;
 web takes animated SVG rather than a 75 KB JS runtime or a CDN WASM fetch. Both
 are emitted from one generator and pinned, on the `tokens.css` model.
 
-Outstanding: the generator and its two artefacts; the wordmark has **no vector
-source** and needs an outlined SVG export before it can be animated at all; and
-the web-side check pinning the inlined glyph to `brand/` is a change in that
-repo, not this one.
+All three of that phase's outstanding items closed on 2026-08-16.
+
+**`form` is the first capped asset** — an arc laps the disc, three strokes flow
+through, and the mark assembles row by row; 7.2 s at 25 fps, looping. It emits
+from one dependency-free Python generator into `brand/motion/` in both formats,
+byte-pinned by `scripts/check-motion.sh` with `tests/motion.rs` carrying what a
+byte comparison cannot say. Both renderers were then checked rather than
+assumed: velato 0.11 imports both Lottie files and draws every beat with the
+track mattes arriving as `Compose::SrcIn`, measured through a recording
+`RenderSink` with no GPU; the SVG agrees to seven significant figures across
+Chromium 149, Firefox 153 and Safari 26.1.
+
+**The wordmark has a vector source.** `meridian_wordmark.svg` and
+`meridian_lockup.svg` are outlined curves, registered vertex-by-vertex against
+the tracked mark, with the setting recorded in `brand/README.md` because
+outlining destroys it. That unblocks the second capped asset, the wordmark
+forming — and the third was never a third: ADR 0012 reads the work indicator as
+a cut of `form`, not a new animation.
+
+**Web took the asset** (`meridian-online/web#79`): the hand-rolled loading glyph
+that inlined the mark's path and spun it is gone, replaced by the tracked file
+behind a byte-for-byte pin against `design@main`, on the same clone and in the
+same CI step group as the token pin. That closes the inline-mark drift this
+phase opened on.
+
+Standing after the phase: Brightfield still pins an older rev and has not taken
+the work cue, and the wordmark-forming animation is authored but unbuilt. Both
+are new work rather than unfinished work.
