@@ -1,10 +1,13 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="meridian-design/brand/motion/lockup_dark.svg">
+    <img src="meridian-design/brand/motion/lockup.svg" alt="Meridian" width="420" height="105">
+  </picture>
+</p>
+
 # Meridian Design System
 
-The single source of truth for how Meridian looks, reads, and feels — across the
-web ([meridian-online/web](https://github.com/meridian-online/web)), the
-Brightfield desktop app
-([meridian-online/brightfield](https://github.com/meridian-online/brightfield)),
-and the chart ink both of them render.
+The single source of truth for how Meridian looks, reads, and feels — across the web ([meridian-online/web](https://github.com/meridian-online/web)), the Brightfield desktop app ([meridian-online/brightfield](https://github.com/meridian-online/brightfield)), and the chart ink both of them render.
 
 ## What lives here
 
@@ -32,7 +35,9 @@ Phases 0–5 are shipped and the system is live on both web and desktop — see 
 
 The **desktop component layer** lives here as `meridian-egui`: the egui adapter and a capped set of primitives, alongside the geometry and state tokens they consume (ADR 0011). Brightfield's move off GPUI onto egui left no host widget library to defer to, so those primitives live in the design system. With the desktop app on egui, the earlier gpui-component theme emitter has been retired — the crate now emits `tokens.css` for the web, and `meridian-egui` themes the desktop. The token crate's contract is unchanged by any of it.
 
-The **brand assets** live in `meridian-design/brand/` (ADR 0012), which is where consumers should reference the mark from — inlining its path is how the one divergence we have already found got there. Brand motion is capped at three animations and confined to brand surfaces; the apps' no-decorative-motion budget is unchanged. The first of those assets is `brand/motion/form.*` — the mark forming, emitted as Lottie for the desktop and as animated SVG for the web, because the two consumers want different things and the site takes no motion runtime.
+The **brand assets** live in `meridian-design/brand/` (ADR 0012), which is where consumers should reference the mark from — inlining its path is how the one divergence we have already found got there. Brand motion is capped at three animations and confined to brand surfaces; the apps' no-decorative-motion budget is unchanged. Two of the three are built, each emitted as Lottie for the desktop and as animated SVG for the web, because the two consumers want different things and the site takes no motion runtime: `brand/motion/form.*`, the mark assembling, which doubles as the honest-work cue once a wait passes 100 ms; and `brand/motion/lockup.*`, the animation playing at the top of this file, where one edge crosses the brand left to right, the mark's rows arriving behind it before it writes the word. The third slot was never a third — ADR 0012 reads the work indicator as a cut of `form` rather than a new animation.
+
+The README is one of the brand surfaces ADR 0012 allows, and the hero above is that permission being used rather than a new one: it references the tracked file by path, the way every other consumer must. Its dark twin is served through `prefers-color-scheme`, it stops under `prefers-reduced-motion` and rests on the finished lockup, and `tests/motion.rs` fails if the path it points at stops resolving.
 
 ## Licence
 
