@@ -1,7 +1,6 @@
 # Guidelines
 
-The rules tokens can't carry. Each page is short, imperative, and citable in
-a review — "this violates `speed.md`" is a complete comment.
+The rules tokens can't carry. Each page is short, imperative, and citable in a review — "this violates `speed.md`" is a complete comment.
 
 | Page | One line |
 |---|---|
@@ -12,6 +11,4 @@ a review — "this violates `speed.md`" is a complete comment.
 | [typography.md](typography.md) | Inter + JetBrains Mono (+`CALT_OFF`) + Anybody; upstream builds only; features by scope. |
 | [icons.md](icons.md) | Tabler everywhere; framework internals exempt; one binding module per surface. |
 
-Decisions behind these pages live in `../decisions/` (ADRs 0001–0012);
-palette evidence in `../validation/`; the mark itself in
-`../meridian-design/brand/`.
+Decisions behind these pages live in `../decisions/` (ADRs 0001–0012); palette evidence in `../validation/`; the mark itself in `../meridian-design/brand/`.
