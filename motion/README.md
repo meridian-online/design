@@ -69,6 +69,8 @@ python3 -m http.server 8803       # from the REPOSITORY ROOT
 
 Then `localhost:8803/motion/preview/form.html`. Plain Python 3, no dependencies.
 
+The published copies are at <https://meridian-online.github.io/design/> and need no server at all — `.github/workflows/pages.yml` builds them from `main`, with `--explore` run first so the comparison pages have their scratch. Serve locally when you are changing a generator; read them published when you are checking one.
+
 Serve from the repository root, not from `motion/` or `preview/`: the pages reach `../../meridian-design/brand/motion/*`, and a server will not look above its own root, so a server started lower leaves every canvas blank. `file://` fails for the same reason — the artefacts are fetched, and that is blocked.
 
 `output/` is untracked. The runner-up and the slower cut belong to a decision that has been made; leaving them committed would put files in the tree that look like assets, that nothing pins, and that a consumer could take. Run `--explore` to get them back.

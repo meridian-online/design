@@ -1,0 +1,63 @@
+name: pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Least privilege, and only what a Pages deployment actually needs. `id-token`
+# is for the OIDC handshake `deploy-pages` uses; nothing here writes contents.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time, and never cancel one in flight — a half-replaced
+# site is worse than a stale one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # Runs on pull requests too, and deliberately. The thing this catches is a
+  # reference that dangles once published: the file is tracked, the HTML is
+  # valid, the crate's tests are green, and the page is quietly broken for
+  # everyone who has not got the repo checked out. Finding that at deploy time
+  # means finding it in public.
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      # `motion/output/` is untracked by design — ADR 0012's cap is on shipped
+      # assets, and the schemes that lost are kept regenerable rather than
+      # committed. Three of the comparison pages read it, so the site is built
+      # with it rebuilt from the generator rather than published without it.
+      #
+      # No `setup-python`: the generator is dependency-free by the same rule
+      # that keeps the crate dependency-free, and the runner ships a python3.
+      - name: rebuild the exploration scratch the comparison pages read
+        run: cd motion && python3 build_form.py --explore
+
+      # Assembles the site, writes the index from the same manifest it copies
+      # from, and exits non-zero if any reference would 404 once published.
+      - name: assemble the evidence site
+        run: python3 scripts/build-pages.py _site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
