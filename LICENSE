@@ -24,8 +24,8 @@ SOFTWARE.
 
 NOT COVERED BY THE ABOVE
 
-Two directories in this repository carry their own terms, and the MIT grant
-above does not extend to either:
+Three directories in this repository carry their own terms, and the MIT grant
+above does not extend to any of them:
 
   meridian-design/brand/   Meridian trademarks and brand artefacts.
                            All rights reserved. See brand/LICENSE-BRAND.md.
@@ -33,5 +33,12 @@ above does not extend to either:
   meridian-design/fonts/   Inter and JetBrains Mono, under the SIL Open Font
                            License 1.1. See LICENSE-Inter.txt and
                            LICENSE-JetBrainsMono.txt in that directory.
+
+  motion/output/           Generated animations that embed the prime mark.
+                           All rights reserved, on the same terms as the mark
+                           itself: brand/LICENSE-BRAND.md reserves the mark and
+                           every artefact generated from it, and these are such
+                           artefacts. The generator beside them is MIT; its
+                           output is not.
 
 Everything else in this repository is MIT under the terms above.

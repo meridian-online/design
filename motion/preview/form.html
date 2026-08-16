@@ -1,0 +1,50 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Meridian — form</title>
+<style>
+ body{background:#faf8f4;color:#1a1917;margin:0;padding:32px;font:13px/1.6 ui-sans-serif,system-ui}
+ h1{font-size:16px;font-weight:600;margin:0 0 6px}
+ p.s{color:#6b665e;margin:0 0 8px;max-width:900px}
+ .t{font:11px ui-monospace,monospace;color:#8a847a;margin:0 0 18px}
+ .row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
+ figure{margin:0}.box{background:#fff;border:1px solid #e5e0d8;border-radius:10px;padding:12px}
+ .box.dk{background:#16181c;border-color:#2b2f36}
+ h2{font-size:13px;font-weight:600;margin:10px 0 2px}
+ figcaption{color:#6b665e;font-size:12px;max-width:250px}
+ button{margin:14px 0;font:inherit;padding:7px 16px;border:1px solid #cfc8bd;
+        background:#fff;border-radius:6px;cursor:pointer}
+</style>
+<h1>Concept: form</h1>
+<p class="s"><strong>An arc laps the disc</strong>, running leftward over the top. Its length is
+the <em>speed</em> of its own eased ramp — head and tail are one curve offset by four frames —
+so it grows out of a point, opens to about 100&deg; across the top, and contracts back into
+that same point. The point is not the right limb: it is where the first S becomes visible, a
+row higher, so <strong>the arc dies exactly where and when the S appears</strong>. Then one S per
+row flows through, right to left, staggered. The S's ease the same way the arc does, slow at
+both limbs and quickest across the middle, which shapes the stroke as well as its travel —
+each enters short, opens to about 68% of its path, and closes as it leaves. Then the mark
+assembles row by row, same direction. It <strong>turns in</strong> rather than wiping: each row's
+edge travels like a meridian on a sphere, x = 300 + 300&thinsp;cos(&pi;t), so it is nearly still
+at each limb and quickest across the centre &mdash; measured 5&times; between limb and centre
+speed. Then it holds and turns out the same way. The S's run on the mark's own edges, so the
+fill lands on the line that predicted it. Real mark geometry, imported
+from <em>meridian_black.svg</em>.</p>
+<p class="t">orbit 0–40f · S seen 37–80f · turns in 75–115f · hold 24f · turns out 139–175f · loops · 7.08 s @ 25 fps · 17 KB · <a href="ink.html" style="color:inherit">ink per frame</a> · <a href="orbit-check.html" style="color:inherit">frame by frame</a></p>
+<button onclick="location.reload()">Replay</button>
+<div class="row">
+ <figure><div class="box"><div id="a" style="width:300px;height:300px"></div></div>
+  <h2>Ink</h2><figcaption>The bare version.</figcaption></figure>
+ <figure><div class="box"><div id="b" style="width:300px;height:300px"></div></div>
+  <h2>Maritime</h2><figcaption>&nbsp;</figcaption></figure>
+ <figure><div class="box dk"><div id="c" style="width:300px;height:300px"></div></div>
+  <h2>White on dark</h2><figcaption>Warm off-white, the same value the dark theme uses for ink.</figcaption></figure>
+ <figure><div class="box"><div id="d" style="width:120px;height:120px"></div></div>
+  <h2>At 120px</h2><figcaption>&nbsp;</figcaption></figure>
+</div>
+<script src="lottie.min.js"></script>
+<script>
+const go=(el,f,loop)=>lottie.loadAnimation({container:document.getElementById(el),
+  renderer:'svg',loop:loop,autoplay:true,path:f});
+go('a','../output/form-ink.json',true); go('b','../output/form-maritime.json',true);
+go('c','../output/form-paper.json',true); go('d','../output/form-ink.json',true);
+</script>

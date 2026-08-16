@@ -21,6 +21,7 @@ shell grew a private shadow palette.
 | `decisions/` | ADRs 0001–0012 — the scoping decisions and every amendment to them. `_template.md` is the shape. |
 | `guidelines/` | Six citable pages — identity, density, speed, colour, typography, icons — plus `README.md`, their index. The rules tokens cannot carry. |
 | `validation/` | Colour maths and its evidence: the reproducible `.mts` pipeline (with its own private `package.json`), the vendored Radix scale generator, the approved-palette record and the review gallery. |
+| `motion/` | An offline, dependency-free Python generator for brand motion and the Lottie it emits, plus preview and measurement pages. **Exploratory** — ADR 0012's sanctioned home is `brand/`, pinned by a conformance test and paired with an SVG emitter, and none of that exists yet. The generator reads the mark from `brand/` rather than copying it; `motion/output/` embeds the mark and is carved out of the MIT grant. |
 | `scripts/` | Repo gates that are not Rust tests — currently the public-hygiene check and its self-test. |
 | `README.md`, `ROADMAP.md`, `LICENSE` | The public face, the sequence of work, and the MIT grant. |
 

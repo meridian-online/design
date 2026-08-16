@@ -16,6 +16,7 @@ and the chart ink both of them render.
 | `decisions/` | Architecture decision records, ADRs 0001–0012 — the scoping decisions that shaped the system, and the record of every amendment to them. |
 | `guidelines/` | Six citable pages: identity, density, speed budgets, colour method, typography, icons. |
 | `validation/` | Palette gates and evidence — colour maths runs in CI, never by eye. |
+| `motion/` | An offline generator for brand motion, and the animations it emits. Exploratory — ADR 0012's sanctioned home is `brand/`. Output embeds the mark and is **not MIT** — see below. |
 
 `meridian-design` is the token crate, and its dependency-free,
 framework-neutral contract binds **that crate**, not the repository (ADR 0003).
@@ -62,7 +63,9 @@ is unchanged.
 
 ## Licence
 
-MIT for the code — with two carve-outs, both stated in [LICENSE](LICENSE):
-`meridian-design/brand/` holds Meridian trademarks (all rights reserved), and
+MIT for the code — with three carve-outs, all stated in [LICENSE](LICENSE):
+`meridian-design/brand/` holds Meridian trademarks (all rights reserved),
 `meridian-design/fonts/` holds Inter and JetBrains Mono under the SIL Open Font
-License 1.1. Neither is covered by the MIT grant.
+License 1.1, and `motion/output/` holds generated animations that embed the
+mark, reserved on the mark's own terms — the generator beside them is MIT, its
+output is not. None of the three is covered by the MIT grant.

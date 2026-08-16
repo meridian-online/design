@@ -1,0 +1,111 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Meridian — ink per frame</title>
+<style>
+ body{background:#faf8f4;color:#1a1917;margin:0;padding:28px;
+      font:13px/1.6 ui-sans-serif,system-ui}
+ h1{font-size:16px;margin:0 0 6px}
+ p{margin:0 0 16px;color:#5a564f;max-width:78ch}
+ select{font:inherit;padding:3px 6px;margin-bottom:18px}
+ .chart{display:flex;align-items:flex-end;gap:1px;height:190px;
+        border-bottom:1px solid #d8d4cc;margin-bottom:6px}
+ .chart i{flex:1;background:#1a1917;min-height:0}
+ .chart i.empty{background:#c0392b;min-height:3px}
+ .chart i.thin{background:#e08a2e}
+ .axis{display:flex;justify-content:space-between;color:#a09a90;
+       font:11px ui-monospace,monospace;margin-bottom:20px}
+ table{border-collapse:collapse;font:12px ui-monospace,monospace}
+ td,th{padding:3px 14px 3px 0;text-align:left;vertical-align:top}
+ th{color:#5a564f;font-weight:600;border-bottom:1px solid #d8d4cc}
+ .bad{color:#c0392b} .ok{color:#3f7d4e}
+</style>
+<h1>Ink per frame</h1>
+<p>Counts opaque pixels on every frame of the loop. It exists because looking
+at thumbnails does not catch a hole: the S&nbsp;→&nbsp;mark handover once had
+<b>eleven fully empty frames</b> and read as fine in a filmstrip. Red bars are
+frames with no ink at all, amber are under 1.2% of peak. A run of red anywhere
+except the loop's last few frames is a defect.</p>
+
+<select id="pick"></select>
+<div class="chart" id="chart"></div>
+<div class="axis"><span>0</span><span id="last"></span></div>
+<div id="report"></div>
+
+<script src="lottie.min.js"></script>
+<script>
+const FILES = ['form-ink', 'form-maritime', 'form-paper', 'form-ink-limb'];
+const pick = document.getElementById('pick');
+FILES.forEach(f => pick.add(new Option(f, f)));
+
+const stage = document.createElement('div');
+stage.style.cssText = 'position:absolute;left:-9999px;width:600px;height:600px';
+document.body.append(stage);
+
+function runs(xs){
+  const r = [];
+  for (const x of xs) {
+    if (r.length && x === r[r.length-1][1] + 1) r[r.length-1][1] = x;
+    else r.push([x, x]);
+  }
+  return r;
+}
+const fmt = rs => rs.length
+  ? rs.map(([a,b]) => a === b ? a : `${a}–${b}`).join(', ') : 'none';
+
+let anim;
+function measure(name){
+  stage.innerHTML = '';
+  if (anim) anim.destroy();
+  anim = lottie.loadAnimation({container: stage, renderer: 'canvas',
+    loop: false, autoplay: false, path: `../output/${name}.json`});
+  anim.addEventListener('DOMLoaded', () => {
+    const cv = stage.querySelector('canvas');
+    const ctx = cv.getContext('2d', {willReadFrequently: true});
+    // Any opaque pixel counts, not any DARK one. The paper variant is light
+    // ink for dark surfaces, so a darkness test would read it as blank
+    // throughout; opacity asks the same question for either polarity.
+    const out = [];
+    for (let f = 0; f <= anim.totalFrames; f++) {
+      anim.goToAndStop(f, true);
+      const d = ctx.getImageData(0, 0, cv.width, cv.height).data;
+      let ink = 0;
+      for (let i = 3; i < d.length; i += 4) if (d[i] > 20) ink++;
+      out.push(ink);
+    }
+    draw(out);
+  });
+}
+
+function draw(out){
+  const peak = Math.max(...out), thinAt = peak * 0.012;
+  const chart = document.getElementById('chart');
+  chart.innerHTML = '';
+  out.forEach(v => {
+    const b = document.createElement('i');
+    b.style.height = (v / peak * 100) + '%';
+    if (v === 0) b.className = 'empty';
+    else if (v < thinAt) b.className = 'thin';
+    chart.append(b);
+  });
+  document.getElementById('last').textContent = (out.length - 1) + ' f';
+
+  const idx = p => out.map((v, i) => p(v) ? i : -1).filter(i => i >= 0);
+  const empty = runs(idx(v => v === 0));
+  const thin  = runs(idx(v => v > 0 && v < thinAt));
+  const tail  = out.length - 6;        // the deliberate blank frames at the end
+  const mid   = empty.filter(([a]) => a > 0 && a < tail);
+  document.getElementById('report').innerHTML = `
+    <table>
+      <tr><th>frames</th><th>peak ink</th><th>empty</th><th>under 1.2%</th></tr>
+      <tr><td>${out.length - 1}</td><td>${peak.toLocaleString()} px</td>
+          <td>${fmt(empty)}</td><td>${fmt(thin)}</td></tr>
+    </table>
+    <p style="margin-top:14px" class="${mid.length ? 'bad' : 'ok'}">
+      ${mid.length
+        ? '✗ empty frames mid-loop at ' + fmt(mid) + ' — that is a hole'
+        : '✓ no empty frames except the loop breath at either end'}</p>`;
+}
+
+pick.onchange = () => measure(pick.value);
+measure(FILES[0]);
+</script>
