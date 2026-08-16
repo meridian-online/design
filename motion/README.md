@@ -6,11 +6,20 @@ result is committed rather than computed at build time (ADR 0007).
 
 **What it emits lives in
 [`meridian-design/brand/motion/`](../meridian-design/brand/motion), not here.**
-Four files — `form.json` and `form_dark.json` for the desktop, `form.svg` and
-`form_dark.svg` for the web — which is [ADR
+Two assets, each as four files — Lottie for the desktop and animated SVG for the
+web, in both themes — which is [ADR
 0012](../decisions/0012-brand-motion-on-brand-surfaces.md)'s home for brand
 motion, inside the crate so the desktop can take the bytes as a cargo
 dependency. Nothing downstream builds this directory.
+
+| Asset | Generator | What it is | Where it plays |
+|---|---|---|---|
+| `form{,_dark}.{json,svg}` | `build_form.py` | The mark forming. 7.2 s. | The >100 ms work cue, plus brand surfaces. |
+| `lockup{,_dark}.{json,svg}` | `build_lockup.py` | Mark and wordmark forming together. 6.2 s. | Brand surfaces only — front door, install, OG, README. |
+
+Two of ADR 0012's three capped assets. The third is not a third animation: the
+work indicator is a cut of `form`, and the bare wordmark forming is a cut of
+`lockup` — its second beat, frames 33-73.
 
 ## `form` is the mark-motion asset
 
@@ -40,13 +49,24 @@ the other. That is the same rule `CLAUDE.md` puts on the crate's emitters, moved
 one level up: the value at risk here is the *schedule*, and a second
 choreography would restate it.
 
+**One emitter serves both assets.** `svg_form.emit(doc, verbatim)` takes the
+tracked artwork the document is allowed to draw — the mark's teeth for `form`,
+the mark and the eight letters for `lockup` — and a filled shape whose geometry
+is in neither raises. That parameter is the whole of the generalisation, and it
+exists to keep the property the emitter is for: every filled path is written as
+the tracked file's own `d` text, so the animated artefact carries the artwork to
+the character rather than to four decimal places. A path it cannot name is one
+it would have to re-serialise, and a re-serialised artefact is no longer tied to
+the file it came from.
+
 Three gates hold the result, and none of them replaces another:
 
 | Gate | What it catches |
 |---|---|
 | `scripts/check-motion.sh` | The artefacts no longer match the generator — a schedule change committed without regenerating. Runs in CI, needs only Python 3. |
-| `meridian-design/tests/motion.rs` | What a byte comparison cannot say: the mark is the tracked mark, every colour is a token value, both formats loop for the same time, dark is light recoloured rather than redrawn, the SVG stops for reduced motion and fetches nothing. |
-| `meridian-design/tests/packaging.rs` | The four artefacts ship, under `brand/`'s terms rather than the crate's MIT grant. |
+| `meridian-design/tests/motion.rs` | What a byte comparison cannot say: each animation draws its own tracked artwork, every colour is a token value, both formats loop for the same time and share the artwork's canvas, dark is light recoloured rather than redrawn, the SVG stops for reduced motion and fetches nothing. |
+| `meridian-design/src/brand.rs` | That the lockup is *made of* the tracked components — its mark uniformly scaled, its wordmark purely translated — which is what lets `build_lockup.py` read the composite instead of composing one. Plus the winding both renderers depend on. |
+| `meridian-design/tests/packaging.rs` | The eight artefacts ship, under `brand/`'s terms rather than the crate's MIT grant. |
 
 ### What the web artefact leans on
 
@@ -92,9 +112,11 @@ the mark "and every artefact generated from" it. The root
 ## Running it
 
 ```
-python3 build_form.py             # writes the four artefacts into brand/motion/
+python3 build_form.py             # writes form's four artefacts into brand/motion/
 python3 build_form.py --check     # are they still what this generator produces?
 python3 build_form.py --explore   # plus every scheme and lag, into ./output/
+python3 build_lockup.py           # the same four for the lockup
+python3 build_lockup.py --check
 python3 -m http.server 8803       # from the REPOSITORY ROOT
 ```
 
@@ -113,6 +135,7 @@ to get them back.
 | Page | What it is |
 |---|---|
 | `preview/form.html` | The concept, three renderings, one at 120px. |
+| `preview/lockup.html` | The lockup asset: filmstrip, both themes, and the reduced-motion still. |
 | `preview/svg.html` | The SVG artefact against the Lottie it came from, frame by frame. |
 | `preview/schemes.html` | Wake schemes and lags side by side, light and dark, kept in step. Needs `--explore`. |
 | `preview/orbit-check.html` | One player per frame, stopped — what the renderer actually draws. |
@@ -256,6 +279,96 @@ gone.
 
 The cost is that two symmetric-eased things meet at their slowest moments, which
 is what the seam overlap exists to cover.
+
+## `lockup`
+
+**Landed 2026-08-16.** ADR 0012's second capped asset: one edge crosses the
+brand, the mark's three rows arrive behind it, and the edge carries on and
+writes the word. 6.24 s at 25 fps, looping, in the same three colours `form`
+uses — the scheme is read out of `build_form.SCHEMES` rather than restated.
+
+### One instrument, four times
+
+Every beat is the same thing: a rectangular matte whose edge sweeps, with a wake
+of ghost copies that uncover slightly more than the ink in front of them. That
+is `form`'s mark-arrival mechanism exactly, applied to the mark's three rows and
+then to the word. Using one instrument is the point rather than an economy — a
+lockup is a mark and a word that belong together, and drawing them with two
+different gestures would say the opposite.
+
+No orbit and no S-strokes. Both are about the *mark's* construction and have
+nothing to say about a word; borrowing them would have made this a longer `form`
+with a wordmark appended, and pushed the loop past ten seconds for a front door.
+
+### It runs left to right, where `form` runs right to left
+
+Not a preference. A word is read left to right, and the lockup is the mark
+*then* the word; an edge crossing the other way would write the word backwards
+and hand the eye to the mark last. The direction follows what the artwork is, so
+the two assets differ here and should.
+
+### The sweep is scoped to each beat's own ink
+
+The one real defect in the first build, and worth recording because it looked
+fine in a filmstrip. `form` sweeps its canvas, which is correct there because
+its mark fills it. Here the mark occupies 58 units of a 336-wide canvas, so a
+canvas-wide edge cleared it at **21% of the sweep** and the row then sat fully
+drawn while the wipe finished somewhere off to the right.
+
+It also flattened the wake, which is the part a still cannot show: a wake's
+width is the edge's speed times its lag, so an edge crossing five times the
+distance in the same time is five times too fast, and the colour arrived as a
+block covering a whole row instead of a band at its leading edge. `matte()` now
+takes the beat's own extent, read off the paths that beat draws.
+
+### The wake runs early, so the loop starts late
+
+A ghost opens *before* its leader — that is how a matte-revealed wake works at
+all, since colour only shows where a ghost has uncovered something the ink in
+front of it has not. With the first row at frame 0 the outermost ghost wanted
+frame -2, which the composition clips; the row entered with a truncated wake and
+the two lost frames reappeared as a stray blue sliver at the far end of the
+loop, wrapped around. `LEAD_IN` is that depth, and nothing is now asked to
+happen before the composition starts.
+
+### Reading the composite, not composing one
+
+`lockup.py` parses `meridian_lockup.svg`, which already carries the mark and the
+wordmark in one coordinate space. The alternative — reading the two components
+and applying a scale and an offset here — would put the lockup's placement in
+Python as a third copy of something two tracked SVGs already state, and it would
+cost the property `svg_form.py` depends on: geometry transformed in Python has
+no `d` text to be verbatim about.
+
+That trade only holds while the composite really is made of the tracked files,
+so it is not assumed. `brand.rs` registers the lockup's mark against
+`meridian_black.svg` as a uniform scale — least squares over every coordinate,
+absolute residual, which catches a non-uniform scale as sharply as a redraw —
+and its wordmark against `meridian_wordmark.svg` as a pure translation, where
+the path text after each opening move must match character for character.
+
+### Two export shapes that bite a reader
+
+**The two I's are `<rect>`, not `<path>`.** Affinity optimises axis-aligned
+rectangles that way, and a reader that looks only at `d` attributes drops them
+and animates MER DAN without raising. They convert to four vertices exactly.
+
+**The mark is last in document order despite being leftmost**, so reading order
+maps to letter order for the wordmark but not for the file. It is found by
+`id="prime_black"` — which is also why any reader here has to match `' d="'`
+*with the leading space*, since matching `d="` alone finds the `d` in `id="` and
+reads `prime_black` as path data.
+
+### The counters are holes because of how they wind
+
+velato parses a fill rule into its schema and then hardcodes `Fill::NonZero` in
+`runtime/vello.rs` without reading it back, and the SVG declares
+`fill-rule:nonzero` too. Under that rule a counter is a hole only if it winds
+against its outline. Every outline here winds clockwise and every counter
+anticlockwise, so R, D and A come out right in both — and `brand.rs` asserts it,
+because it is a property both renderers depend on and neither declares. A
+flipped winding would fail in both at once rather than in one, which is why
+nothing else would catch it.
 
 ## The schedule is derived, not typed
 

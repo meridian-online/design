@@ -17,8 +17,8 @@ carries its own OFL terms.
 | `meridian_wordmark.svg` | The wordmark, MERIDIAN, as outlined curves on a 237×32 canvas. Eight elements in reading order, one per letter. |
 | `meridian_lockup.svg` | Mark and wordmark together on a 336×84 canvas, at the placement the brand uses — see below. |
 | `meridian_wordmark.png` | The wordmark, 1000×410 raster. Superseded by the SVG for anything that can take a vector; kept because raster contexts exist. |
-| `motion/form.json`, `form_dark.json` | `form`, the mark-motion asset, as Lottie for the desktop. See below. |
-| `motion/form.svg`, `form_dark.svg` | The same animation as animated SVG, for the web. |
+| `motion/form.{json,svg}`, `form_dark.{json,svg}` | `form` — the mark forming. ADR 0012's first capped asset and the >100 ms work cue. Lottie for the desktop, animated SVG for the web. |
+| `motion/lockup.{json,svg}`, `lockup_dark.{json,svg}` | `lockup` — mark and wordmark forming together, at the placement below. The second capped asset, and a **front-door** animation rather than a work cue. |
 | `sources/*.af` | Affinity Designer originals. The editable truth. |
 | `sources/Meridian Prime Components.svg` | The mark's *construction* file — see below. It is not an artefact to ship. |
 

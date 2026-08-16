@@ -182,8 +182,12 @@ class Emitter:
     is the wake's definition, kept legible in the output.
     """
 
-    def __init__(self, doc):
+    def __init__(self, doc, verbatim=None):
         self.doc = doc
+        #: (parsed path, its tracked `d` text) for every fillable shape this
+        #: document may draw. Defaults to the mark alone, which is what `form`
+        #: needs; `build_lockup.py` passes the mark and the wordmark together.
+        self.verbatim = list(zip(MARK, MARK_D)) if verbatim is None else verbatim
         self.fps = doc["fr"]
         self.loop = doc["op"]
         # AN INLINED SVG IS NOT SANDBOXED. Its ids join the host page's
@@ -456,13 +460,20 @@ class Emitter:
                 f'stroke="{colour}" stroke-width="{num(width)}" opacity="0"/>')
 
     def filled(self, items):
-        """One row of the mark: its teeth, in one ink, under a wipe.
+        """One beat's artwork: its paths, in one ink, under a wipe.
 
-        The teeth come out of `mark.MARK_D` — the tracked SVG's own path text —
-        rather than being re-serialised from the Lottie's vertices, so the
-        animated file carries the mark to the character. Which tooth each shape
-        is comes from matching its geometry against the parsed mark, not from
-        its layer name: a name can be edited without the drawing changing.
+        The paths come out of the tracked SVG's own `d` text rather than being
+        re-serialised from the Lottie's vertices, so the animated file carries
+        the artwork to the character. Which path each shape is comes from
+        matching its geometry against the parsed source, not from its layer
+        name: a name can be edited without the drawing changing.
+
+        `verbatim` is what makes this emitter serve more than one asset. For
+        `form` it is the mark's six teeth from `mark.py`; for the lockup it is
+        the mark AND the eight letters, from `lockup.py`. A shape whose
+        geometry is in neither raises, because a path this emitter cannot name
+        is one it would otherwise have to re-serialise — and a re-serialised
+        artefact is no longer tied to the file it came from.
         """
         fl = only(items, "fl")
         if static(fl["o"], "a fill's opacity") != 100 or fl["r"] != 1:
@@ -473,21 +484,25 @@ class Emitter:
             if it["ty"] != "sh":
                 continue
             path = static(it["ks"], "a filled path")
-            if path not in MARK:
-                raise ValueError("a filled path that is not one of the mark's teeth")
-            d.append(MARK_D[MARK.index(path)])
+            for known, text in self.verbatim:
+                if path == known:
+                    d.append(text)
+                    break
+            else:
+                raise ValueError("a filled path that is not in the tracked "
+                                 "artwork this emitter was given")
         if not d:
             raise ValueError("a fill with no paths")
         d = "".join(d)
 
-        # Which copy of this row is this? Lottie order runs leader first, so
-        # the first time a set of teeth appears it is the ink and every later
+        # Which copy of this beat is this? Lottie order runs leader first, so
+        # the first time a set of paths appears it is the ink and every later
         # appearance is a ghost. Only the reduced-motion rule needs to know:
-        # with the animation off, all nine row copies are fully revealed and
-        # stacked on identical geometry, and the leader covers the wake
-        # everywhere except along its own antialiased edge — which left the
-        # still mark with a measurable blue fringe, 616 pixels of it at 300px.
-        # The still frame is the mark, so the ghosts stand down.
+        # with the animation off, every copy is fully revealed and stacked on
+        # identical geometry, and the leader covers the wake everywhere except
+        # along its own antialiased edge — which left the still mark with a
+        # measurable blue fringe, 616 pixels of it at 300px. The still frame is
+        # the artwork, so the ghosts stand down.
         ghost = d in self.teeth_seen
         self.teeth_seen.add(d)
         return f'<path{" class=\"w\"" if ghost else ""} d="{d}" fill="{colour}"/>'
@@ -551,9 +566,13 @@ class Emitter:
             f"{body}</svg>\n")
 
 
-def emit(doc):
-    """One Lottie document as one animated SVG, plus its sampling error."""
-    e = Emitter(doc)
+def emit(doc, verbatim=None):
+    """One Lottie document as one animated SVG, plus its sampling error.
+
+    `verbatim` names the tracked artwork the document is allowed to draw; see
+    `Emitter.filled`. Omitted, it is the mark.
+    """
+    e = Emitter(doc, verbatim)
     svg = e.render()
     return svg, e.max_sampling_error
 

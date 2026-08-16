@@ -1,0 +1,123 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Meridian — lockup</title>
+<style>
+ :root{--paper:#faf8f4;--ink:#1a1917;--dim:#5a564f;--rule:#d8d4cc}
+ body{background:var(--paper);color:var(--ink);margin:0;padding:28px;
+      font:13px/1.6 ui-sans-serif,system-ui}
+ h1{font-size:16px;margin:0 0 6px}
+ h2{font-size:13px;margin:28px 0 10px;color:var(--dim);font-weight:600;
+    border-bottom:1px solid var(--rule);padding-bottom:6px}
+ p{margin:0 0 14px;color:var(--dim);max-width:80ch}
+ .live{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:8px}
+ .cell{border:1px solid var(--rule)}
+ .cell.dark{background:#16161a;border-color:#2a2a30}
+ .cell img{display:block;width:520px;height:130px}
+ .strip{display:flex;flex-direction:column;gap:2px}
+ .row{display:flex;align-items:center;gap:10px}
+ .row b{width:52px;text-align:right;font:11px ui-monospace,monospace;
+        color:#a09a90;font-weight:400}
+ .row .f{width:520px;height:130px}
+ .row.dark .f{background:#16161a}
+ .row svg{display:block;width:520px;height:130px}
+ button{font:inherit;padding:3px 10px;margin:0 6px 14px 0}
+ code{font:12px ui-monospace,monospace;background:#efece6;padding:1px 4px}
+</style>
+
+<h1>lockup</h1>
+<p>ADR 0012's second capped asset: one edge crosses the brand, the mark's three
+rows arrive behind it, and the edge carries on and writes the word. The same
+instrument four times — a rectangular matte with a wake — which is
+<code>form</code>'s mark-arrival mechanism applied to three rows and then to a
+word. It runs left to right because a word is read left to right, which is the
+opposite of <code>form</code>.</p>
+
+<h2>As shipped, in an <code>&lt;img&gt;</code></h2>
+<p>How a consumer takes it: one request, no runtime, no script. The two files
+are separate documents, so each carries its own ink rather than adapting — an
+<code>&lt;img&gt;</code>-hosted SVG cannot see the page's theme.</p>
+<div class="live">
+  <div class="cell"><img src="../../meridian-design/brand/motion/lockup.svg" alt="lockup, light"></div>
+  <div class="cell dark"><img src="../../meridian-design/brand/motion/lockup_dark.svg" alt="lockup, dark"></div>
+</div>
+
+<h2>Frame by frame</h2>
+<p>Inlined and driven to a set time, because a filmstrip is the only way to see
+where a beat actually lands. Each copy has its ids rewritten — two inlined
+copies of one file collide on ids, which is exactly why
+<code>&lt;img&gt;</code> is what the README recommends for real use.</p>
+<button id="theme">show dark</button>
+<div class="strip" id="strip"></div>
+
+<h2>Reduced motion</h2>
+<p>Under <code>prefers-reduced-motion: reduce</code> every animation stops and
+the file settles to the assembled lockup. Unlike the work cue, this still frame
+needs no textual cue beside it: it is saying the brand, which is all it was
+ever saying.</p>
+<div class="live" id="still"></div>
+
+<script>
+const TIMES = [0, 400, 700, 900, 1200, 1500, 1800, 2200, 2600, 2900,
+               3600, 4600, 5000, 5300, 5700, 6100];
+const SRC = "../../meridian-design/brand/motion/";
+let dark = false;
+
+async function load(file) {
+  const text = await (await fetch(SRC + file)).text();
+  return new DOMParser().parseFromString(text, "image/svg+xml").documentElement;
+}
+
+// Every id in the file, prefixed per copy. clipPath ids and @keyframes names
+// are both global to the host document once inlined.
+function rename(svg, n) {
+  const root = svg.getAttribute("id");
+  const tag = `${root}-c${n}`;
+  svg.innerHTML = svg.innerHTML.split(root).join(tag);
+  svg.setAttribute("id", tag);
+  return svg;
+}
+
+async function draw() {
+  const file = dark ? "lockup_dark.svg" : "lockup.svg";
+  const strip = document.getElementById("strip");
+  strip.textContent = "";
+  for (const [n, t] of TIMES.entries()) {
+    const svg = rename(await load(file), n);
+    svg.removeAttribute("width");
+    svg.removeAttribute("height");
+    const row = document.createElement("div");
+    row.className = "row" + (dark ? " dark" : "");
+    const label = document.createElement("b");
+    label.textContent = (t / 1000).toFixed(2) + "s";
+    const frame = document.createElement("div");
+    frame.className = "f";
+    frame.appendChild(svg);
+    row.append(label, frame);
+    strip.appendChild(row);
+    // Pause first, then seek: an unpaused animation keeps running and the
+    // whole strip converges on the same frame.
+    for (const a of svg.getAnimations({subtree: true})) {
+      a.pause();
+      a.currentTime = t;
+    }
+  }
+  const still = document.getElementById("still");
+  still.textContent = "";
+  for (const [file, cls] of [["lockup.svg", "cell"], ["lockup_dark.svg", "cell dark"]]) {
+    const box = document.createElement("div");
+    box.className = cls;
+    const img = document.createElement("img");
+    img.src = SRC + file;
+    img.alt = "lockup, still";
+    box.appendChild(img);
+    still.appendChild(box);
+  }
+}
+
+document.getElementById("theme").addEventListener("click", (e) => {
+  dark = !dark;
+  e.target.textContent = dark ? "show light" : "show dark";
+  draw();
+});
+draw();
+</script>

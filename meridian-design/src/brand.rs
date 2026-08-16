@@ -106,6 +106,34 @@ pub const MOTION_FORM_SVG: &str = include_str!("../brand/motion/form.svg");
 /// [`MOTION_FORM_SVG`] in the dark theme's ink.
 pub const MOTION_FORM_SVG_DARK: &str = include_str!("../brand/motion/form_dark.svg");
 
+/// `lockup`: one edge crosses the brand — the mark's rows arrive behind it,
+/// then it carries on and writes the word. 6.2 s at 25 fps, looping. ADR 0012's
+/// second capped asset, at the placement [`LOCKUP`] holds.
+///
+/// **This is the front-door animation, not the work cue.** [`MOTION_FORM_SVG`]
+/// is what a surface reaches for while something is happening; this one says
+/// who the software is, so it belongs on marketing, install, an OG image, a
+/// desktop front door or a README — the brand surfaces ADR 0012 lists, and
+/// nowhere in application chrome.
+///
+/// It travels left to right, where `form` travels right to left, because a word
+/// is read left to right and the lockup is the mark *then* the word. The two
+/// assets differ here on purpose.
+pub const MOTION_LOCKUP_LOTTIE: &str = include_str!("../brand/motion/lockup.json");
+/// [`MOTION_LOCKUP_LOTTIE`] in the dark theme's ink.
+pub const MOTION_LOCKUP_LOTTIE_DARK: &str = include_str!("../brand/motion/lockup_dark.json");
+
+/// [`MOTION_LOCKUP_LOTTIE`] as animated SVG — the form the web takes.
+///
+/// Self-contained and script-free, on the same terms as [`MOTION_FORM_SVG`]:
+/// serve it and reference it with `<img>`. Under `prefers-reduced-motion` it
+/// settles to the assembled lockup, which is the whole statement rather than a
+/// fragment of one — so unlike the work cue, this still frame needs no textual
+/// cue beside it. It is saying the brand, which is all it was ever saying.
+pub const MOTION_LOCKUP_SVG: &str = include_str!("../brand/motion/lockup.svg");
+/// [`MOTION_LOCKUP_SVG`] in the dark theme's ink.
+pub const MOTION_LOCKUP_SVG_DARK: &str = include_str!("../brand/motion/lockup_dark.svg");
+
 /// The mark's design canvas: `viewBox="0 0 600 600"`, centred, radius 300.
 pub const MARK_VIEWBOX: f32 = 600.0;
 
@@ -315,6 +343,183 @@ mod tests {
         assert!(
             !MARK_WHITE.contains("<rect"),
             "meridian_white.svg has gained a plate, which is what whiteob is for"
+        );
+    }
+
+    /// Every ` d="…"` in a document, in order.
+    fn path_data(svg: &str) -> Vec<&str> {
+        svg.match_indices(" d=\"")
+            .map(|(at, _)| {
+                svg[at + 4..]
+                    .split_once('"')
+                    .expect("a d attribute is quoted")
+                    .0
+            })
+            .collect()
+    }
+
+    /// Every number in a path, in order, as written.
+    ///
+    /// A scan rather than a parser: after the opening move every command in
+    /// these exports is relative, so the numbers ARE the geometry and their
+    /// order is the drawing order.
+    fn numbers(d: &str) -> Vec<f64> {
+        let mut out = Vec::new();
+        let bytes = d.as_bytes();
+        let mut i = 0;
+        while i < bytes.len() {
+            let c = bytes[i] as char;
+            if c.is_ascii_digit() || c == '.' || (c == '-' && i + 1 < bytes.len()) {
+                let start = i;
+                if c == '-' {
+                    i += 1;
+                }
+                while i < bytes.len() && ((bytes[i] as char).is_ascii_digit() || bytes[i] == b'.') {
+                    i += 1;
+                }
+                if i > start + usize::from(c == '-') {
+                    if let Ok(n) = d[start..i].parse() {
+                        out.push(n);
+                    }
+                }
+            } else {
+                i += 1;
+            }
+        }
+        out
+    }
+
+    /// The lockup's mark is [`MARK_BLACK`] scaled, not a second drawing of it.
+    ///
+    /// This is the claim `brand/motion/lockup.*` rests on. The lockup is the
+    /// authority on placement, and the motion generator reads its geometry
+    /// straight out of it rather than composing the two components in Python —
+    /// which is only sound while the composite really is made of the tracked
+    /// files. A redrawn or squashed mark inside the lockup would animate
+    /// perfectly and be wrong, and nothing else would notice.
+    ///
+    /// Scale rather than the tail-comparison the padded forms get: the mark is
+    /// placed at about a tenth of its own canvas here, so the text cannot
+    /// match. Every number is compared instead, in order — same count, and one
+    /// ratio across all of them. That catches a non-uniform scale, which is
+    /// what `guidelines/identity.md` actually forbids, as sharply as it catches
+    /// a redraw.
+    #[test]
+    fn the_lockups_mark_is_the_tracked_mark_scaled() {
+        // From the first drawing command, not from the start: the opening move
+        // is the one ABSOLUTE pair in the path, so it carries the translation
+        // as well as the scale and would report a ratio of its own. Everything
+        // after it is relative, and therefore pure scale. The same seam the
+        // padded forms are compared across, for the same reason.
+        let tail = |d: &str| {
+            d.split_once(['l', 'c'])
+                .expect("a drawn subpath")
+                .1
+                .to_owned()
+        };
+        let plain = numbers(&tail(mark_path().expect("the mark has path data")));
+        let placed = numbers(&tail(
+            LOCKUP
+                .split_once("id=\"prime_black\" d=\"")
+                .expect("the lockup names its mark")
+                .1
+                .split_once('"')
+                .unwrap()
+                .0,
+        ));
+        assert_eq!(
+            plain.len(),
+            placed.len(),
+            "the lockup's mark has a different number of coordinates from the \
+             tracked mark, so it has been redrawn rather than placed"
+        );
+
+        // Least squares over every pair, so no single coordinate decides the
+        // scale and the estimate is not hostage to whichever one comes first.
+        let dot: f64 = placed.iter().zip(&plain).map(|(&q, &p)| q * p).sum();
+        let norm: f64 = plain.iter().map(|&p| p * p).sum();
+        assert!(norm > 0.0, "the mark has no non-zero coordinates");
+        let scale = dot / norm;
+        assert!(
+            (0.0..1.0).contains(&scale),
+            "the lockup's mark is not smaller than the tracked mark"
+        );
+
+        // ABSOLUTE residual, not a ratio. The lockup is written to three
+        // decimals, so a coordinate the mark states as 0.002 arrives as 0.0002
+        // and is rounded away entirely — a ratio test reads that as a scale of
+        // zero and cries distortion over a rounding step. What actually has to
+        // hold is that every coordinate lands within half a step of where the
+        // scale puts it.
+        let step = 1.0e-3;
+        for (i, (&q, &p)) in placed.iter().zip(&plain).enumerate() {
+            assert!(
+                (q - p * scale).abs() <= step,
+                "coordinate {i}: the lockup has {q} where a uniform scale of \
+                 {scale} puts {} — the mark is distorted, not merely placed",
+                p * scale
+            );
+        }
+    }
+
+    /// The lockup's wordmark is [`WORDMARK`] translated, and nothing else.
+    ///
+    /// Stronger than the mark's check and by the same trick the padded forms
+    /// use: the wordmark is placed at scale 1, so after each subpath's opening
+    /// move — every later command being relative — the text must be identical
+    /// character for character. A single retouched control point fails here.
+    #[test]
+    fn the_lockups_wordmark_is_the_tracked_wordmark_translated() {
+        let letters: Vec<&str> = path_data(WORDMARK);
+        let placed: Vec<&str> = path_data(LOCKUP)
+            .into_iter()
+            .filter(|d| !LOCKUP.contains(&format!("id=\"prime_black\" d=\"{d}\"")))
+            .collect();
+        assert_eq!(
+            letters.len(),
+            placed.len(),
+            "the lockup carries a different number of letter paths than the \
+             tracked wordmark"
+        );
+        assert!(!letters.is_empty(), "the wordmark has no path data");
+
+        let tail = |d: &str| {
+            let (_, rest) = d.split_once(['l', 'c']).expect("a drawn subpath");
+            rest.to_owned()
+        };
+        for (i, (a, b)) in letters.iter().zip(&placed).enumerate() {
+            assert_eq!(
+                tail(a),
+                tail(b),
+                "letter path {i} differs between the wordmark and the lockup — \
+                 the lockup has been redrawn, not merely placed"
+            );
+        }
+
+        // The two I's are <rect>, which carry no path text at all. Their size
+        // is the whole of their geometry, so it is what has to match.
+        let sizes = |svg: &str| -> Vec<String> {
+            svg.match_indices("<rect")
+                .map(|(at, _)| {
+                    let el = &svg[at..at + svg[at..].find("/>").expect("a closed rect")];
+                    let of = |k: &str| {
+                        el.split_once(&format!("{k}=\""))
+                            .expect("a rect has width and height")
+                            .1
+                            .split_once('"')
+                            .unwrap()
+                            .0
+                            .to_owned()
+                    };
+                    format!("{}x{}", of("width"), of("height"))
+                })
+                .collect()
+        };
+        assert_eq!(
+            sizes(WORDMARK),
+            sizes(LOCKUP),
+            "the lockup's rectangular letters are a different size from the \
+             wordmark's, so it is not a pure translation"
         );
     }
 
