@@ -30,6 +30,11 @@ const PACKAGED: &[&str] = &[
     "brand/motion/form_dark.svg",
     "brand/meridian_black.svg",
     "brand/meridian_black_pad.svg",
+    // The wordmark as outlined curves, and the lockup that places it against
+    // the mark. The raster wordmark below stays excluded: these supersede it
+    // for anything that can take a vector, and nothing embeds the PNG.
+    "brand/meridian_lockup.svg",
+    "brand/meridian_wordmark.svg",
     "brand/meridian_white.svg",
     "brand/meridian_white_pad.svg",
     "brand/meridian_whiteob.svg",
@@ -189,7 +194,7 @@ fn every_brand_file_the_crate_embeds_is_packaged() {
         .collect();
     assert_eq!(
         embedded.len(),
-        11,
+        13,
         "src/brand.rs embeds a different number of brand files than this gate reads; \
          if a line was wrapped, the match above stopped seeing it"
     );
