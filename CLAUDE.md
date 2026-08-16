@@ -16,7 +16,7 @@ If you are about to hard-code a colour, a radius, a control height, a duration o
 | `validation/` | Colour maths and its evidence: the reproducible `.mts` pipeline (with its own private `package.json`), the vendored Radix scale generator, the approved-palette record and the review gallery. |
 | `motion/` | The offline, dependency-free Python generator for brand motion, plus preview and measurement pages. It emits **into `meridian-design/brand/motion/`** — ADR 0012's home — in both formats, reading the mark from `brand/` and every colour from `tokens.css` rather than copying either. `motion/output/` is untracked scratch for schemes that lost. |
 | `reference/` | Generated reference material, never hand-written. `tokens.md` today — every token, both themes, and every contrast ratio a gate defends. The published file *is* the pin; `reference/README.md` carries the regeneration ritual and what each gate holds. |
-| `scripts/` | Repo gates that are not Rust tests — currently the public-hygiene check and its self-test. |
+| `scripts/` | Repo gates that are not Rust tests — the public-hygiene check and its self-test, the brand-motion pin, and `build-pages.py`, which assembles the published evidence site and refuses to publish a dangling reference. |
 | `README.md`, `ROADMAP.md`, `LICENSE` | The public face, the sequence of work, and the MIT grant. |
 
 Toolchain is pinned by `rust-toolchain.toml` (1.95.0). CI: `.github/workflows/ci.yml`.
@@ -74,7 +74,9 @@ Run the crate's gates from `meridian-design/`: `cargo build` and `cargo test`.
 
 ## This repo is public
 
-Public on GitHub, MIT, and read by people outside the project. Concretely:
+Public on GitHub, MIT, and read by people outside the project — and since the evidence site went up, public as a *rendered* surface too, not only as source. `.github/workflows/pages.yml` publishes the palette review gallery and the six brand-motion harnesses from `main`, assembled by `scripts/build-pages.py`. Anything those pages reach for is published with them, so a file becoming a preview page's dependency is a decision to publish it. The build runs on pull requests as well, because a reference that dangles once published is invisible to every other gate here: the file is tracked, the HTML is valid, CI is green, and the page is broken for everyone who has not got the repo checked out.
+
+Concretely:
 
 - **No private planning identifiers.** Decision-record refs, task ids, milestone ids, acceptance-criterion shorthand, document ids, card ids and spec AC ids from the private planning tracker mean nothing here and leak the shape of private work. If one slips in, delete the pointer and, where it carried meaning, write the actual rationale in plain English.
 - **`scripts/check-public-hygiene.sh` catches part of that, and only part.** It is `git grep` over the tracked files of the current checkout: code, comments, prose. It does **not** read commit messages, PR titles or descriptions, review comments, branch names, or history no longer in the tree. Those are exactly where these identifiers have leaked before, so the script is a floor and the discipline is still yours. It runs first in CI, takes seconds, and needs no arguments locally. The allowlist is a last resort: an entry that does not parse, or that no longer suppresses anything, is a hard failure. Prefer tightening the pattern and adding the innocent string to `scripts/public-hygiene-innocent-strings.txt`, then re-run `scripts/check-public-hygiene-selftest.sh`.
