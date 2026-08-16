@@ -54,11 +54,27 @@ One request, no runtime, no script. Reference it with `<img>`. Inlining works �
 its ids and CSS rules are scoped to its own root so it cannot restyle the page
 around it — but two inlined copies of the *same* file collide on ids.
 
-Verified in Chromium, which is the only engine reachable from this repository.
-The features it uses are all long-settled, but they are worth knowing if a
-consumer reports something: CSS animations inside SVG-as-image, animated
+**Verified in all three engines** — Chromium 149, Firefox 153 and Safari 26.1 —
+by driving the artefact to two animation times and reading back the *computed*
+style, so a feature that parses and never moves fails the check rather than
+looking plausible. All three agree to seven significant figures on the wipe
+transform, the dash and the offset. The features worth knowing about if a
+consumer ever reports something: CSS animations inside SVG-as-image, animated
 `stroke-dasharray`/`stroke-dashoffset` with `pathLength="1"`, and a CSS
 `transform` on a `<rect>` inside a `<clipPath>`.
+
+Firefox shares one animation clock across every `<img>` pointing at the same
+URL, so several copies on a page stay in step there and drift apart in Chromium.
+Nothing depends on either behaviour.
+
+**The desktop was checked too.** velato 0.11 imports both Lottie files and draws
+every beat, all nine matted row precomps included, with alpha mattes arriving as
+`Compose::SrcIn`. That was measured without a GPU: velato renders through a
+`RenderSink` trait, so a sink that records instead of rasterising says exactly
+what the desktop would be asked to draw, with the layer names attached. What is
+*not* covered is vello painting that compositing on the GPU — velato pulls vello
+without its renderer — and the desktop shell exercises that for every scene it
+draws anyway. ADR 0012 has the detail.
 
 Under `prefers-reduced-motion: reduce` every animation stops and the file
 settles to the assembled mark. **A surface using it as the work cue owes the
