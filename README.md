@@ -39,6 +39,10 @@ The single source of truth for how Meridian looks, reads, and feels — across t
 
 Generated from the crate, not drawn — every chip's fill is the string the web consumes, and a CI gate fails if one is a colour `tokens.css` does not emit. It has a dark twin because the system does; both are pinned byte-for-byte.
 
+## The evidence
+
+These pages are published at **<https://meridian-online.github.io/design/>** — the palette review gallery ADR 0006 rests on, and the six harnesses the brand motion was measured with. They were always in the repo and always unreadable without cloning it and serving from the repository root, which is a strange place to keep the evidence for a decision anyone might want to check.
+
 ## Looking things up
 
 [`reference/tokens.md`](reference/tokens.md) is every value the system defines, in both themes: the six 12-step ramps, the chart palettes, the semantic layer, all six interaction roles across their six states, the box model, and the keyboard-and-role contract.

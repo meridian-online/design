@@ -4,7 +4,7 @@ Colour maths runs in CI, never by eye.
 
 ## Palette gate
 
-Every shipped palette is checked in BOTH modes against the Meridian surfaces: lightness band, chroma floor, adjacent-pair CVD separation (OKLab ΔE ≥ 8, Machado 2009 severity-1.0 simulation), the normal-vision floor (≥ 15, hard fail), first-4 all-pairs, ordinal ramp bounds, and surface contrast. The standing CI gate is the Rust port in `meridian-design/src/validate.rs` + `tests/palette_gate.rs` — our own implementation of the published maths, so the repo owns its gate end-to-end. `record-2026-07-16.txt` is the canonical validator's output for the approved Phase 1 palettes (32 PASS lines); `gallery-2026-07-16.html` is the review page those approvals were made on.
+Every shipped palette is checked in BOTH modes against the Meridian surfaces: lightness band, chroma floor, adjacent-pair CVD separation (OKLab ΔE ≥ 8, Machado 2009 severity-1.0 simulation), the normal-vision floor (≥ 15, hard fail), first-4 all-pairs, ordinal ramp bounds, and surface contrast. The standing CI gate is the Rust port in `meridian-design/src/validate.rs` + `tests/palette_gate.rs` — our own implementation of the published maths, so the repo owns its gate end-to-end. `record-2026-07-16.txt` is the canonical validator's output for the approved Phase 1 palettes (32 PASS lines); `gallery-2026-07-16.html` is the review page those approvals were made on, published at <https://meridian-online.github.io/design/validation/gallery-2026-07-16.html>.
 
 ## Reproducible pipeline
 
