@@ -14,7 +14,9 @@ carries its own OFL terms.
 | `meridian_white.svg` | The prime mark in white. Dark contexts. |
 | `meridian_whiteob.svg` | The white mark on an opaque black plate that fills the canvas — a filled rectangle behind the path, not an outline around it. Favicons, and surfaces whose background cannot be controlled. |
 | `meridian_*_pad.svg` | The same three with the standard clear-space padding baked in. Use these when you cannot control the surrounding margin. |
-| `meridian_wordmark.png` | The wordmark, 1000×410 raster. **There is no wordmark SVG yet** — see below. |
+| `meridian_wordmark.svg` | The wordmark, MERIDIAN, as outlined curves on a 237×32 canvas. Eight elements in reading order, one per letter. |
+| `meridian_lockup.svg` | Mark and wordmark together on a 336×84 canvas, at the placement the brand uses — see below. |
+| `meridian_wordmark.png` | The wordmark, 1000×410 raster. Superseded by the SVG for anything that can take a vector; kept because raster contexts exist. |
 | `motion/form.json`, `form_dark.json` | `form`, the mark-motion asset, as Lottie for the desktop. See below. |
 | `motion/form.svg`, `form_dark.svg` | The same animation as animated SVG, for the web. |
 | `sources/*.af` | Affinity Designer originals. The editable truth. |
@@ -85,19 +87,51 @@ is the shipped mark exactly, which is how the generator is checked.
 
 Keep this file. Re-deriving it from the flattened mark is real work.
 
-## Two gaps, stated rather than discovered later
+## The wordmark, and how the lockup places it
 
-**There is no wordmark SVG.** The wordmark exists as a 1000×410 PNG and as
-`sources/Meridian Wordmark.af`, nothing else. Any vector use — and the
-wordmark-forming animation in particular — needs an outlined SVG exported from
-Affinity first. Outlined, not live text: the desktop Lottie renderer has no text
-layers at all, so live type would silently render as nothing.
+The wordmark is **outlined curves, never live text**, and that is not a
+preference: the desktop Lottie renderer has no text layers at all, so live type
+would render as nothing and say nothing about it. Outlining also means the file
+carries no font dependency — and that it has absorbed everything the character
+panel knew, which is why the settings are written down here.
 
-**Web still inlines the mark as source.** `components/datasets/dataset-explorer.tsx`
-carries the 600×600 path as a React component rather than referencing a tracked
-file, and that copy has already drifted from this one by a byte (`c0,-35.056`
-against `c-0,-35.056` — same geometry, different export). Nothing pins them
-together yet. `scripts/check-brand.mjs` on the web side is what closes it.
+Set in **[Anybody](https://fonts.google.com/specimen/Anybody) at 46 pt**,
+tracking 0‰, no horizontal or vertical scaling, no baseline shift. Anybody is a
+variable family with weight *and* width axes, so the family name alone does not
+identify these outlines. Measured off the curves, as a fingerprint anyone can
+re-derive without the source file:
+
+| | Wordmark | Anybody SemiBold (600), standard width |
+|---|---|---|
+| cap height / em | 0.6763 | 0.6750 |
+| stem / cap height | 0.2186 | 0.2096 |
+| ink width / cap height | 7.5945 | 6.8215 |
+
+The cap height confirms 46 pt in point units. The other two do not match the
+600 the web app renders live text in: the same string is **11% wider** at
+barely 4% heavier stems, which is the signature of the width axis rather than
+the weight axis. Treat the wordmark and any live-text setting of "MERIDIAN" as
+different things until the exact instance is recorded here.
+
+**The lockup is the authority on placement, and the rule is not the obvious
+one.** The wordmark is centred on its **cap-height midline**, not its baseline,
+and that midline sits on the mark's centre. On the 336×84 canvas the mark has
+radius 29.28 at (40.32, 42.0) — dead on the canvas centreline — and the
+wordmark's ink begins at x 87.836, a gap of 18.236 or 0.623 mark radii.
+
+Both components are the tracked files unchanged, and that is checkable rather
+than asserted: the lockup's wordmark is `meridian_wordmark.svg` translated by
+exactly (87.6, 26.239) at scale 1 — one unique offset across all 104 vertices —
+and its mark is `meridian_black.svg` at a uniform 0.0976, matching to 0.001
+units with 1.5 ppm of anisotropy. Nothing in the lockup was redrawn or
+stretched.
+
+One export detail that bites readers: **the two I's are `<rect>`, not
+`<path>`**, in both files. Affinity optimises axis-aligned rectangles that way,
+so a reader that looks only at `d` attributes drops them and animates MER DAN
+without complaining. In the lockup the mark is also *last* in document order
+despite being leftmost — key off `id="prime_black"` rather than position, and
+match `' d="'` with the leading space or `id="` answers instead.
 
 ## Rules
 

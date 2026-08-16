@@ -43,6 +43,37 @@ pub const MARK_WHITEOB_PAD: &str = include_str!("../brand/meridian_whiteob_pad.s
 /// the motion work derives from, kept here so it cannot be lost.
 pub const MARK_COMPONENTS: &str = include_str!("../brand/sources/Meridian Prime Components.svg");
 
+/// The wordmark, MERIDIAN, as outlined curves on a `viewBox="0 0 237 32"`.
+///
+/// **There is no text here and there must never be.** The letterforms are
+/// curves, so this file needs no font to render and cannot reflow — which is
+/// what makes it a wordmark rather than a string set in a typeface. Set in
+/// Anybody; `brand/README.md` records the size and the measured fingerprint, and
+/// that record is the only thing standing between this file and an unreproducible
+/// asset, because the curves have absorbed everything the character panel knew.
+///
+/// Eight drawable elements in left-to-right reading order, one per letter, each
+/// carrying its own counters as subpaths. Note that the two I's are `<rect>`
+/// rather than `<path>` — Affinity optimises axis-aligned rectangles that way,
+/// and a reader that looks only at `d` attributes drops them silently.
+pub const WORDMARK: &str = include_str!("../brand/meridian_wordmark.svg");
+
+/// The horizontal lockup: [`MARK_BLACK`] and [`WORDMARK`] in one
+/// `viewBox="0 0 336 84"`, at the placement the brand actually uses.
+///
+/// This is the authority on how the two sit together, and it is worth stating
+/// what that placement is, because it is not the obvious one: the wordmark is
+/// centred on its **cap-height midline**, not its baseline, and that midline
+/// lands on the mark's centre. The mark is on the canvas centreline, radius
+/// 29.28 at (40.32, 42.0); the wordmark's ink starts 18.24 further right, which
+/// is 0.623 mark radii of gap.
+///
+/// Both components are the tracked files unchanged rather than redrawn: the
+/// wordmark here is [`WORDMARK`] translated by exactly (87.6, 26.239) with no
+/// scale, and the mark is [`MARK_BLACK`] at a uniform 0.0976 — verified vertex
+/// by vertex, so a distorted or restyled copy cannot hide in here.
+pub const LOCKUP: &str = include_str!("../brand/meridian_lockup.svg");
+
 /// `form`: an arc laps the disc, three strokes flow through, and the mark
 /// assembles row by row. 7.2 s at 25 fps, looping. ADR 0012's mark-formation
 /// asset, and the >100 ms work cue `guidelines/speed.md` requires.
