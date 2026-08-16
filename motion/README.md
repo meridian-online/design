@@ -5,12 +5,36 @@ An offline generator for brand motion, and its output. Same shape as
 result is committed rather than computed at build time (ADR 0007). Nothing
 downstream builds this, and no consumer takes it yet.
 
-**This is exploration, not the sanctioned asset.** [ADR
-0012](../decisions/0012-brand-motion-on-brand-surfaces.md) puts brand motion in
-`meridian-design/brand/`, pinned by a conformance test, with an animated-SVG
-emitter for web alongside the Lottie one for desktop. None of that exists here.
-When a form is settled, it moves there and the ADR is amended to name it; until
-then this directory is where candidates are built and looked at.
+## Decided: `seq3-flash` is the loading animation
+
+**2026-08-16 — `form`, scheme `seq3`, one-frame lag, is the loading animation
+for web and desktop.** Files: `output/form-seq3-flash.json` and
+`form-seq3-flash-dark.json`. `blue-violet` was the runner-up and is kept beside
+it; everything else that was tried has been removed from `SCHEMES` and the
+reasoning is in this file.
+
+Three colours: the theme's own ink, then two steps of the Meridian blue-240
+sequential ramp — `--m-seq-500` and `--m-seq-300` on light, `350` and `550` on
+dark. Nothing here is a picked colour; see *Colour comes from the crate* below.
+
+**This is a decision, not yet the sanctioned asset**, and the difference is
+work that has not been done. [ADR
+0012](../decisions/0012-brand-motion-on-brand-surfaces.md) requires brand motion
+to live in `meridian-design/brand/`, pinned by a conformance test, with an
+**animated-SVG emitter for web** beside the Lottie one for desktop — because web
+takes no Lottie runtime. None of those three exist. Until they do, this is a
+chosen candidate in an exploration directory, and a consumer that takes it takes
+an unpinned file.
+
+Outstanding, in the order it has to happen:
+
+1. An **animated-SVG emitter**, so web has an artefact it can actually use.
+2. A **conformance test** pinning both emitted artefacts byte-for-byte.
+3. The move into `brand/`, and the **ADR 0012 amendment** naming the form — the
+   amendment that section explicitly leaves open, and which also has to say
+   which of the three capped assets this occupies. It is the honest-work cue
+   `guidelines/speed.md` already requires, which is the one asset ADR 0012
+   admits *inside* the apps rather than only on brand surfaces.
 
 ## Licence
 
@@ -26,10 +50,10 @@ carve-out in the root [`LICENSE`](../LICENSE).
 
 ```
 python3 build_form.py                    # writes output/*.json
-python3 -m http.server 8801              # from THIS directory
+python3 -m http.server 8802              # from THIS directory
 ```
 
-Then `localhost:8801/preview/form.html`. Plain Python 3, no dependencies.
+Then `localhost:8802/preview/form.html`. Plain Python 3, no dependencies.
 
 Serve from `motion/`, not from `preview/`: the pages fetch `../output/*.json`,
 and a server rooted at `preview/` will not look above its own root, so every
@@ -38,7 +62,8 @@ the JSON is fetched, and that is blocked.
 
 | Page | What it is |
 |---|---|
-| `preview/form.html` | The concept, four colourways, one at 120px. |
+| `preview/form.html` | The concept, three renderings, one at 120px. |
+| `preview/schemes.html` | Wake schemes and lags side by side, light and dark, kept in step. |
 | `preview/orbit-check.html` | One player per frame, stopped — what the renderer actually draws. |
 | `preview/ink.html` | Opaque pixels per frame, flagging empty and near-empty runs. |
 
@@ -71,9 +96,9 @@ Three beats.
    frames 0–40
 2. **S curves** — one per row, flowing right to left, staggered, seen 37–80
 3. **fills** — the mark assembles row by row, same direction, then holds and
-   disperses, frames 75–175
+   disperses, frames 75–181
 
-7.08 s at 25 fps, 17 KB. The S is the figure the mark repeats three times: two
+7.20 s at 25 fps, 65 KB. Every movement carries a coloured wake; see below. The S is the figure the mark repeats three times: two
 quarter circles of radius 100, centres ±100 either side of a pinch, meeting with
 colinear tangents. The strokes run on the mark's own edges, so each fill lands
 on the line that predicted it.
@@ -100,6 +125,72 @@ Abutting them exactly leaves a one-frame hole, because the frame the head
 crosses the disc is the frame it has zero length: a boundary, not a mark.
 `SEAM_OVERLAP` covers it, and the handover measures as a continuous V bottoming
 at about 24px of stroke.
+
+### The wake, and its colour
+
+Every movement carries one. A ghost is not a copy that has been moved — it is
+the **same path with the same trim, run three frames late**, so the wake is the
+stroke's own past and nothing about the geometry or the schedule changes. Its
+length is therefore the stroke's speed, like everything else here.
+
+The mark's rows are built the other way round, because a row is revealed by a
+matte rather than drawn by a trim: a ghost that simply starts late has
+uncovered *less* than the ink in front of it and is completely hidden. So each
+ghost is on screen slightly **longer at both ends** — earlier in, later out —
+and colour runs ahead of the ink as a row arrives and is left behind as it
+leaves. They also take a shorter lag than the strokes (`MARK_TRAIL_LAG`),
+because a fill carries colour as *area* where a stroke carries it as a line: at
+the stroke's three frames each row came out 41% coloured, which read as
+colour-blocking rather than as a trail.
+
+`SCHEMES` sets what the wake is made of. The leader is always the theme's own
+ink — black on light, paper on dark — so a scheme only describes what happens
+behind it, and every one of them is black/white plus a single family:
+
+| Scheme | Wake | Note |
+|---|---|---|
+| `seq3` | Sequential blue-240, 500 / 300 | **Chosen.** The gallery's Meridian ramp, two steps. |
+| `blue-violet` | Sequential 500, then categorical violet | Runner-up. Blue starts the wake; violet is the thing you catch at the end. |
+
+**Ruled out, so they are not re-proposed blind.** The *categorical set* as a
+wake — 1/3/8 and every other combination tried: its eight slots are tuned to
+roughly equal weight so that no data series outranks another, and that is
+exactly the property that stops them stacking into a fade, so they read as equal
+bands rather than as a receding wake. Where a categorical slot survives it is
+spent **once**, at the tail, with sequential blue doing the fading in front of
+it — which is what `blue-violet` is. The *Maritime scale*, the *diverging blue
+arm* and the `m-blue` scale all work but are softer than `m-seq`. *Grey* reads
+as motion blur rather than colour, which may yet be the right register for the
+in-app indicator. *Amber* muddies on dark, where the scale runs through brown.
+
+Four wake steps, then three, then two were compared. Three keeps enough gradient
+to dissolve rather than stop, and at 120px is indistinguishable from four.
+
+The 12-step scales flip with the theme, so one list of steps serves both: light
+runs pale to deep, dark runs deep to pale, with 9 the accent in each. **The
+chart ramps do not.** `m-seq` and `m-div-blue` are defined once, in `:root`
+only, because a data ramp is the same ramp whichever theme surrounds it — so
+the dark wake walks them the other way round to recede into its background
+rather than out of it. `m-seq` also respects its own ordinal guidance: on light
+nothing paler than step 250, on dark nothing deeper than 600.
+
+### How fleeting
+
+`TRAIL_LAG` is the second axis, and it decides whether the colour is a wake or
+a **flash**. The visible wake is speed × lag, so a small lag means colour
+appears only where a stroke is quickest and is gone at the limbs — you catch it
+rather than watch it, which is what the `5uvsTa4DXp` reference does with four
+copies one frame apart at 25 fps.
+
+At 3 the wake was continuously visible and read as a coloured stroke. At 1 each
+ghost sits about a ninth of a dash length behind, and the colour is a tip that
+opens across the middle of a travel and closes at both ends. `mark_lag()`
+derives the mark's from it, so one knob keeps the two in proportion.
+
+There is a measurable cost. The longer wake had been covering the orbit → S
+seam; at a one-frame lag frames 36–40 return to being flagged near-empty by
+`ink.html`, which is where they sat before the wake existed. Nothing is empty,
+and `blue-quick` at two frames still covers them.
 
 ### Everything eases symmetrically
 

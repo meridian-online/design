@@ -64,10 +64,11 @@ nothing overlaps more than it needs to.
 import json
 import math
 import pathlib
-import re
+
+import tokens
+from mark import MARK
 
 HERE = pathlib.Path(__file__).resolve().parent
-MARK_SVG = HERE.parent / "meridian-design" / "brand" / "meridian_black.svg"
 
 FPS = 25
 W = H = 600
@@ -109,6 +110,107 @@ INK = [0.102, 0.098, 0.090, 1]
 MARITIME = [0.294, 0.478, 0.608, 1]
 PAPER = [0.914, 0.902, 0.878, 1]      # the warm off-white, for dark surfaces
 
+# THE TRAIL. Every travelling stroke here is drawn by a trim pair, so a ghost
+# of it is not a copy that has been moved — it is the SAME path with the SAME
+# trim, run a few frames late. Nothing about the geometry or the schedule
+# changes; the wake is the stroke's own past.
+#
+# The gap between one ghost and the next is the stroke's speed times the lag,
+# which is the same relationship the dash length already has to the ramp. So
+# the wake stretches where the stroke is quick and closes up where it is slow,
+# without being told to.
+#: Frames between one ghost and the next, and the knob that decides whether
+#: the colour is a wake or a FLASH. The visible wake is speed x lag, so a small
+#: lag means colour appears only where the stroke is quickest and is gone at
+#: the limbs — you catch it rather than watch it, which is what the 5uvsTa4DXp
+#: reference does with four copies one frame apart at 25 fps.
+#:
+#: At 3 the wake was continuously visible and read as a coloured stroke. At 1
+#: each ghost sits 1/11 of a dash length behind, so the colour is a tip that
+#: opens across the middle of a travel and closes at both ends.
+#: Per-variant; this is the ceiling LOOP is sized against.
+TRAIL_LAG = 2
+#: Ghosts BEHIND the leader. Three, as the reference uses.
+TRAIL_N = 3
+
+#: Each entry is (family, light steps, dark steps). The leader is always the
+#: theme's own ink — black on light, paper on dark — so a scheme only ever
+#: describes what happens BEHIND it.
+#:
+#: The 12-step scales flip with the theme, so one list of steps serves both:
+#: light runs pale to deep, dark runs deep to pale, with 9 the accent in each.
+#: The chart ramps do NOT. `m-seq` and `m-div-blue` are defined once, in
+#: `:root` only, because a data ramp is the same ramp whichever theme surrounds
+#: it — so the dark wake has to walk them the other way round to recede into
+#: its background rather than out of it.
+#:
+#: `m-seq` respects its own ordinal guidance: on light nothing paler than step
+#: 250, on dark nothing deeper than 600.
+#: A scheme is the wake, front to back — the leader is always the theme's own
+#: ink, so the COLOUR COUNT of a variant is len(wake) + 1. Wakes need not all
+#: be the same length: a shorter one simply finishes earlier inside the same
+#: LOOP, which is sized against the longest.
+#:
+#: The categorical set is eight discrete hues, not a ramp. Every slot sits at
+#: roughly the same weight — that is the point of a categorical palette, since
+#: no series should outrank another — so a wake built from three of them does
+#: not recede, it reads as three equal bands. Where a categorical slot appears
+#: below it is spent ONCE, as a spark at the tail, with sequential blue doing
+#: the fading in front of it.
+#: A scheme is the wake, front to back — the leader is always the theme's own
+#: ink, so a variant's COLOUR COUNT is len(wake) + 1. Wakes need not be the same
+#: length: a shorter one finishes earlier inside the same LOOP, which is sized
+#: against the longest.
+#:
+#: ORDER IS BY LUMINANCE, not by taste. A wake has to recede, so each step is
+#: closer to the surface than the one in front of it — lighter on light, darker
+#: on dark. For the 12-step scales that falls out of the scale itself. For the
+#: categorical slots it does not, because they are eight discrete hues chosen
+#: to sit at roughly equal weight, so the order has to be measured:
+#:
+#:     light   gold .385  >  orange .297  >  violet .130
+#:     dark    gold .297  >  violet .184  >  orange .174
+#:
+#: which is why the warm schemes below reverse between themes, and why violet
+#: leads on light but trails on dark.
+#: A scheme is the wake, front to back — the leader is always the theme's own
+#: ink, so a variant's COLOUR COUNT is len(wake) + 1.
+#:
+#: ORDER IS BY LUMINANCE, not by taste. A wake has to recede, so each step sits
+#: closer to the surface than the one in front of it — lighter on light, darker
+#: on dark. The 12-step scales and `m-seq` do that by construction. The
+#: CATEGORICAL slots do not: they are eight discrete hues tuned to roughly
+#: equal weight, so that no data series outranks another, and that is exactly
+#: the property that stops them stacking into a fade. Their order has to be
+#: measured, and it differs by theme:
+#:
+#:     light   gold .385  >  orange .297  >  violet .130
+#:     dark    gold .297  >  violet .184  >  orange .174
+#:
+#: which is why `blue-violet` puts violet behind the blue on light and keeps it
+#: there on dark, where violet is still the dimmer of the two.
+SCHEMES = {
+    # CHOSEN 2026-08-16 — see README. Ink and two steps of the Meridian
+    # blue-240 sequential ramp; three colours in total.
+    "seq3": (["m-seq-500", "m-seq-300"],
+             ["m-seq-350", "m-seq-550"]),
+    # Runner-up. Blue leads and violet trails, so the mark's own family starts
+    # the wake and the categorical slot is the thing you catch at the end.
+    "blue-violet": (["m-seq-500", "m-cat-5"], ["m-seq-350", "m-cat-5"]),
+}
+#: The mark's rows take a SHORTER lag than the strokes do, because a fill
+#: carries its colour as area where a stroke carries it as a line: at the
+#: stroke's lag each row came out 41% coloured, which read as colour-blocking
+#: rather than as a trail. Derived from the stroke's lag rather than set
+#: independently, so turning one knob keeps the two in proportion.
+def mark_lag(trail_lag):
+    return max(1, round(trail_lag * 2 / 3))
+
+
+#: The ceiling, used to size LOOP so every variant is the same length and can
+#: be compared frame for frame.
+MARK_TRAIL_LAG = mark_lag(TRAIL_LAG)
+
 # Rows on the mark's ladder. Each S sits where that row's real edge sits.
 ROWS = [200.0, 400.0, 600.0]
 # Which imported teeth make up each row, from their y extents: tooth 0 spans
@@ -139,84 +241,6 @@ XF = {"ty": "tr", "p": {"a": 0, "k": [0, 0]}, "a": {"a": 0, "k": [0, 0]},
       "s": {"a": 0, "k": [100, 100]}, "r": {"a": 0, "k": 0},
       "o": {"a": 0, "k": 100}, "sk": {"a": 0, "k": 0}, "sa": {"a": 0, "k": 0},
       "nm": "Transform"}
-
-def mark_paths(svg_text):
-    """The six teeth of the mark, read out of the tracked SVG as Lottie paths.
-
-    This reads `meridian-design/brand/meridian_black.svg` rather than carrying
-    a copy of the geometry, and that is deliberate. A second copy of the mark
-    is the exact defect `brand/README.md` documents: the web app inlined the
-    path as source and its copy drifted from the tracked file by a byte before
-    anyone noticed. A generator with its own private mark would drift the same
-    way, and nothing would say so.
-
-    It is also a licence boundary. The mark is a trademark reserved outside
-    this repository's MIT grant; the geometry stays in `brand/`, under the
-    terms that actually govern it, and this file borrows it at build time.
-
-    The mark uses five path commands — M, m, l, c and Z — so this is a
-    complete parser for that path and not for SVG in general. Lottie wants
-    tangents as offsets from their vertex, which is the whole of the
-    conversion: a cubic's first control point becomes the previous vertex's
-    `o`, its second becomes the new vertex's `i`, and a line leaves both zero.
-    """
-    found = re.search(r' d="([^"]*)"', svg_text)
-    if not found:
-        raise ValueError(f"{MARK_SVG.name} has no path data")
-    tokens = re.findall(r'([MmLlCcZz])|(-?\d*\.?\d+)', found.group(1))
-
-    out = []
-    sub = {"v": [], "i": [], "o": [], "c": True}
-    cur, start, cmd, i = [0.0, 0.0], [0.0, 0.0], "", 0
-
-    def flush():
-        nonlocal sub
-        if len(sub["v"]) > 1:
-            out.append(sub)
-        sub = {"v": [], "i": [], "o": [], "c": True}
-
-    def vertex(p):
-        sub["v"].append(list(p))
-        sub["i"].append([0.0, 0.0])
-        sub["o"].append([0.0, 0.0])
-
-    while i < len(tokens):
-        if tokens[i][0]:                         # a command letter, else a number
-            cmd, i = tokens[i][0], i + 1
-            if cmd in "Zz":
-                flush()
-                cur = list(start)                # Z returns to the subpath start
-                continue
-        n = [float(tokens[i + k][1]) for k in range(6 if cmd == "c" else 2)]
-
-        if cmd in "Mm":
-            cur = n[:2] if cmd == "M" else [cur[0] + n[0], cur[1] + n[1]]
-            i += 2
-            flush()
-            start = list(cur)
-            vertex(cur)
-        elif cmd == "l":
-            cur = [cur[0] + n[0], cur[1] + n[1]]
-            i += 2
-            vertex(cur)                          # a line leaves both tangents 0
-        elif cmd == "c":
-            c1 = [cur[0] + n[0], cur[1] + n[1]]
-            c2 = [cur[0] + n[2], cur[1] + n[3]]
-            end = [cur[0] + n[4], cur[1] + n[5]]
-            i += 6
-            sub["o"][-1] = [c1[0] - cur[0], c1[1] - cur[1]]
-            vertex(end)
-            sub["i"][-1] = [c2[0] - end[0], c2[1] - end[1]]
-            cur = end
-        else:
-            raise ValueError(f"{MARK_SVG.name} uses an unhandled command {cmd!r}")
-    flush()
-    return out
-
-
-MARK = mark_paths(MARK_SVG.read_text())
-if len(MARK) != 6:
-    raise SystemExit(f"expected 6 teeth in {MARK_SVG.name}, parsed {len(MARK)}")
 
 
 def s_path(cy):
@@ -377,7 +401,7 @@ MARK_IN = S_VANISH - WIPE_LATENCY - MARK_OVER
 # direction, same stagger — and lands on an empty frame so the loop restarts.
 MARK_ALL_IN = MARK_IN + 2 * STAGGER + MARK_DUR
 OUT_AT = MARK_ALL_IN + HOLD
-LOOP = OUT_AT + 2 * STAGGER + OUT_DUR + 2
+LOOP = OUT_AT + 2 * STAGGER + TRAIL_N * MARK_TRAIL_LAG + OUT_DUR + 2
 
 
 LIN_I = {"x": [1], "y": [1]}
@@ -424,9 +448,9 @@ def track(t0, dur, ease_o=EASE_O, ease_i=EASE_I):
         {"t": t0 + dur, "s": [100]}]}
 
 
-def s_layer(ind, cy, t0, colour):
+def s_layer(ind, cy, t0, colour, nm="S"):
     return {
-        "ddd": 0, "ind": ind, "ty": 4, "nm": f"S {ind}", "sr": 1, "bm": 0,
+        "ddd": 0, "ind": ind, "ty": 4, "nm": f"{nm} {ind}", "sr": 1, "bm": 0,
         "ao": 0,
         "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0},
                "p": {"a": 0, "k": [0, 0, 0]}, "a": {"a": 0, "k": [0, 0, 0]},
@@ -449,7 +473,19 @@ def s_layer(ind, cy, t0, colour):
     }
 
 
-def orbit_layer(ind, colour):
+def trail_colours(leader, wake):
+    """The leader's own colour, then the wake's, front to back.
+
+    The leader keeps the variant's ink so the stroke that predicts the mark is
+    still the mark's colour; only what follows it carries the scheme. That
+    ordering matters for drawing too: layers[0] is topmost in Lottie, so the
+    leader is emitted FIRST and the wake falls in behind it. Reversing that
+    buries the stroke meant to be read under its own ghosts.
+    """
+    return [leader] + list(wake)
+
+
+def orbit_layer(ind, colour, t0=0):
     """One lap of the disc outline, drawn by the same trim pair as an S.
 
     Lives at the TOP level, outside the disc matte, because the arc sits on
@@ -467,7 +503,9 @@ def orbit_layer(ind, colour):
     sitting at the right limb after the arc had gone.
     """
     return {
-        "ddd": 0, "ind": ind, "ty": 4, "nm": "orbit", "sr": 1, "bm": 0, "ao": 0,
+        "ddd": 0, "ind": ind, "ty": 4,
+        "nm": "orbit" if not t0 else f"orbit wake {t0}", "sr": 1, "bm": 0,
+        "ao": 0,
         "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0},
                "p": {"a": 0, "k": [0, 0, 0]}, "a": {"a": 0, "k": [0, 0, 0]},
                "s": {"a": 0, "k": [100, 100, 100]}},
@@ -476,18 +514,18 @@ def orbit_layer(ind, colour):
              "ks": {"a": 0, "k": circle_path(W / 2, H / 2, ORBIT_R,
                                              ORBIT_THETA)}},
             {"ty": "tm", "nm": "Trim Paths 1", "m": 1,
-             "s": track(ORBIT_LAG, ORBIT_DUR, ORBIT_EASE_O, ORBIT_EASE_I),
-             "e": track(0, ORBIT_DUR, ORBIT_EASE_O, ORBIT_EASE_I),
+             "s": track(t0 + ORBIT_LAG, ORBIT_DUR, ORBIT_EASE_O, ORBIT_EASE_I),
+             "e": track(t0, ORBIT_DUR, ORBIT_EASE_O, ORBIT_EASE_I),
              "o": {"a": 0, "k": 0}},
             {"ty": "st", "nm": "Stroke 1", "c": {"a": 0, "k": colour},
              "o": {"a": 0, "k": 100}, "w": {"a": 0, "k": STROKE},
              "lc": 2, "lj": 2},
             XF]}],
-        "ip": 0, "op": ORBIT_DUR + ORBIT_LAG, "st": 0,
+        "ip": t0, "op": t0 + ORBIT_DUR + ORBIT_LAG, "st": 0,
     }
 
 
-def build(name, colour, limb=None):
+def build(name, colour, wake, lag=TRAIL_LAG, limb=None):
     flow = []
     ind = 1
 
@@ -514,53 +552,78 @@ def build(name, colour, limb=None):
     # it, and approximating it is what made the arrival read as a wipe.
     assets = []
     for n, teeth in enumerate(ROW_TEETH):
-        t_in = MARK_IN + n * STAGGER
-        t_out = OUT_AT + n * STAGGER
-        wipe = {
-            "ddd": 0, "ind": 1, "ty": 4, "nm": f"wipe {n}", "sr": 1, "bm": 0,
-            "ao": 0, "td": 1,
-            "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0},
-                   "a": {"a": 0, "k": [0, 0, 0]},
-                   "s": {"a": 0, "k": [100, 100, 100]},
-                   # in-turn, the static hold, out-turn — deduped, and every
-                   # keyframe but the last carries interpolation handles.
-                   "p": {"a": 1, "k": seq(
-                       turn(t_in, MARK_DUR, 2 * W, W)
-                       + turn(t_out, OUT_DUR, 0, -W))}},
-            "shapes": [{"ty": "gr", "nm": "wipe", "it": [
-                {"ty": "rc", "nm": "Rect", "p": {"a": 0, "k": [0, 0]},
-                 "s": {"a": 0, "k": [2 * W, 2 * H]}, "r": {"a": 0, "k": 0}},
-                {"ty": "fl", "nm": "Fill", "c": {"a": 0, "k": [0, 0, 0, 1]},
-                 "o": {"a": 0, "k": 100}, "r": 1}, XF]}],
-            "ip": t_in, "op": t_out + OUT_DUR + 1, "st": 0,
-        }
-        row = {
-            "ddd": 0, "ind": 2, "ty": 4, "nm": f"teeth {n}", "sr": 1, "bm": 0,
-            "ao": 0, "tt": 1,
-            "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0},
-                   "p": {"a": 0, "k": [0, 0, 0]}, "a": {"a": 0, "k": [0, 0, 0]},
-                   "s": {"a": 0, "k": [100, 100, 100]}},
-            "shapes": [{"ty": "gr", "nm": "teeth", "it": (
-                [{"ty": "sh", "ind": i, "nm": f"tooth {i}",
-                  "ks": {"a": 0, "k": MARK[i]}} for i in teeth]
-                + [{"ty": "fl", "nm": "Fill", "c": {"a": 0, "k": colour},
-                    "o": {"a": 0, "k": 100}, "r": 1}, XF])}],
-            "ip": t_in, "op": t_out + OUT_DUR + 1, "st": 0,
-        }
-        assets.append({"id": f"row{n}", "layers": [wipe, row]})
-        flow.append({
-            "ddd": 0, "ind": ind, "ty": 0, "nm": f"row {n}", "refId": f"row{n}",
-            "sr": 1, "bm": 0, "ao": 0, "w": W, "h": H,
-            "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0},
-                   "p": {"a": 0, "k": [W / 2, H / 2, 0]},
-                   "a": {"a": 0, "k": [W / 2, H / 2, 0]},
-                   "s": {"a": 0, "k": [100, 100, 100]}},
-            "ip": t_in, "op": t_out + OUT_DUR + 1, "st": 0})
-        ind += 1
+        # THE MARK'S WAKE IS BUILT THE OTHER WAY ROUND. A row is revealed by a
+        # matte, not drawn by a trim, so a ghost that simply starts late is
+        # hidden: it has uncovered LESS than the ink in front of it, and the
+        # ink covers it completely. Colour only shows where a ghost has got
+        # somewhere the ink has not.
+        #
+        # So each ghost is on screen slightly LONGER than the copy in front of
+        # it, at both ends — earlier in, later out. On the way in its edge
+        # leads, so colour runs ahead of the ink; on the way out it lingers, so
+        # colour is left behind. One band travelling with the wiping edge in
+        # both directions.
+        #
+        # Its width is the edge's speed times the lag, and `turn` makes that
+        # edge slowest at the limbs and quickest across the centre — so the
+        # band is thin where the row starts and ends, widest as it crosses.
+        # The same relationship the dash and the arc already have.
+        for k, ink in enumerate(trail_colours(colour, wake)):
+            t_in = MARK_IN + n * STAGGER - k * mark_lag(lag)
+            t_out = OUT_AT + n * STAGGER + k * mark_lag(lag)
+            rid = f"row{n}_{k}"
+            wipe = {
+                "ddd": 0, "ind": 1, "ty": 4, "nm": f"wipe {n}.{k}", "sr": 1,
+                "bm": 0, "ao": 0, "td": 1,
+                "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0},
+                       "a": {"a": 0, "k": [0, 0, 0]},
+                       "s": {"a": 0, "k": [100, 100, 100]},
+                       # in-turn, the static hold, out-turn — deduped, and
+                       # every keyframe but the last carries handles.
+                       "p": {"a": 1, "k": seq(
+                           turn(t_in, MARK_DUR, 2 * W, W)
+                           + turn(t_out, OUT_DUR, 0, -W))}},
+                "shapes": [{"ty": "gr", "nm": "wipe", "it": [
+                    {"ty": "rc", "nm": "Rect", "p": {"a": 0, "k": [0, 0]},
+                     "s": {"a": 0, "k": [2 * W, 2 * H]},
+                     "r": {"a": 0, "k": 0}},
+                    {"ty": "fl", "nm": "Fill", "c": {"a": 0, "k": [0, 0, 0, 1]},
+                     "o": {"a": 0, "k": 100}, "r": 1}, XF]}],
+                "ip": t_in, "op": t_out + OUT_DUR + 1, "st": 0,
+            }
+            row = {
+                "ddd": 0, "ind": 2, "ty": 4, "nm": f"teeth {n}.{k}", "sr": 1,
+                "bm": 0, "ao": 0, "tt": 1,
+                "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0},
+                       "p": {"a": 0, "k": [0, 0, 0]},
+                       "a": {"a": 0, "k": [0, 0, 0]},
+                       "s": {"a": 0, "k": [100, 100, 100]}},
+                "shapes": [{"ty": "gr", "nm": "teeth", "it": (
+                    [{"ty": "sh", "ind": i, "nm": f"tooth {i}",
+                      "ks": {"a": 0, "k": MARK[i]}} for i in teeth]
+                    + [{"ty": "fl", "nm": "Fill", "c": {"a": 0, "k": ink},
+                        "o": {"a": 0, "k": 100}, "r": 1}, XF])}],
+                "ip": t_in, "op": t_out + OUT_DUR + 1, "st": 0,
+            }
+            assets.append({"id": rid, "layers": [wipe, row]})
+            flow.append({
+                "ddd": 0, "ind": ind, "ty": 0, "nm": f"row {n}.{k}",
+                "refId": rid, "sr": 1, "bm": 0, "ao": 0, "w": W, "h": H,
+                "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0},
+                       "p": {"a": 0, "k": [W / 2, H / 2, 0]},
+                       "a": {"a": 0, "k": [W / 2, H / 2, 0]},
+                       "s": {"a": 0, "k": [100, 100, 100]}},
+                "ip": t_in, "op": t_out + OUT_DUR + 1, "st": 0})
+            ind += 1
 
+    # Each row is a leader and its wake: the same S, the same trim, started
+    # TRAIL_LAG frames later per ghost. Emitted leader-first so the wake falls
+    # in behind it rather than over it.
     for n, cy in enumerate(ROWS):
-        flow.append(s_layer(ind, cy, LEAD + n * STAGGER, colour))
-        ind += 1
+        for k, ink in enumerate(trail_colours(colour, wake)):
+            flow.append(s_layer(ind, cy, LEAD + n * STAGGER + k * lag,
+                                ink, "S" if k == 0 else "S wake"))
+            ind += 1
 
     matte = {
         "ddd": 0, "ind": 1, "ty": 4, "nm": "disc", "sr": 1, "bm": 0, "ao": 0,
@@ -585,10 +648,12 @@ def build(name, colour, limb=None):
     # The matte has to sit immediately above the layer it mattes, so the orbit
     # goes AFTER the pair rather than on top of it. It draws under the mark,
     # which costs nothing: by the time any tooth is on screen the arc is gone.
-    layers = [matte, content, orbit_layer(3, colour)]
+    orbit = [orbit_layer(3 + k, ink, k * lag)
+             for k, ink in enumerate(trail_colours(colour, wake))]
+    layers = [matte, content] + orbit
     if limb:
         layers.append({
-            "ddd": 0, "ind": 4, "ty": 4, "nm": "limb", "sr": 1, "bm": 0,
+            "ddd": 0, "ind": 3 + len(orbit) + 1, "ty": 4, "nm": "limb", "sr": 1, "bm": 0,
             "ao": 0,
             "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0},
                    "p": {"a": 0, "k": [0, 0, 0]}, "a": {"a": 0, "k": [0, 0, 0]},
@@ -608,22 +673,30 @@ def build(name, colour, limb=None):
 
 if __name__ == "__main__":
     import os
-    d = str(HERE / "output") + "/"
-    for fn, colour, limb in (("form-ink.json", INK, None),
-                             ("form-paper.json", PAPER, None),
-                             ("form-maritime.json", MARITIME, None),
-                             ("form-ink-limb.json", INK,
-                              [0.855, 0.839, 0.816, 1])):
-        doc = build(fn[:-5], colour, limb)
-        with open(d + fn, "w") as f:
-            json.dump(doc, f, separators=(",", ":"))
-        print(f"{fn:<24} {os.path.getsize(d + fn) / 1024:>5.1f} KB  "
-              f"{doc['op'] / doc['fr']:.2f}s  "
-              # The VISIBLE window in both cases. The S layer starts at LEAD,
-              # but its head spends S_IN_U of the ramp off-canvas first; and it
-              # stops being seen at S_VANISH, a dozen frames before its tail
-              # reaches the end of the path.
-              f"orbit 0-{ORBIT_END}f | S seen "
-              f"{round(LEAD + S_IN_U * DRAW)}-{S_VANISH}f"
-              f" | in {MARK_IN}-{MARK_ALL_IN}f"
-              f" | hold {HOLD}f | out {OUT_AT}-{LOOP - 2}f")
+
+    d = HERE / "output"
+    # Two axes: what the wake is made of, and how FLEETING it is. Every file is
+    # the same length, so they can be stopped on the same frame and compared.
+    jobs = []
+    for lag, tag in ((1, "flash"), (2, "quick")):
+        for name, (light, dark) in SCHEMES.items():
+            if lag == 2 and name != "seq3":
+                continue                  # the slower cut, on the chosen scheme only
+            for theme, steps in (("light", light), ("dark", dark)):
+                suffix = "" if theme == "light" else "-dark"
+                jobs.append((f"form-{name}-{tag}{suffix}.json", steps, theme,
+                             lag, None))
+    jobs.append(("form-limb.json", SCHEMES["seq3"][0], "light", 1,
+                 [0.855, 0.839, 0.816, 1]))
+
+    for fn, steps, theme, lag, limb in jobs:
+        wake = [tokens.colour(n, theme) for n in steps]
+        colour = INK if theme == "light" else PAPER
+        doc = build(fn[:-5], colour, wake, lag, limb)
+        (d / fn).write_text(json.dumps(doc, separators=(",", ":")))
+        swatch = " ".join(tokens.hex_of(n, theme) for n in steps)
+        print(f"{fn:<30} {os.path.getsize(d / fn) / 1024:>5.1f} KB  "
+              f"lag {lag}f  {len(steps) + 1} colours  {swatch}")
+    print(f"\n  schedule  orbit 0-{ORBIT_END}f | S seen "
+          f"{round(LEAD + S_IN_U * DRAW)}-{S_VANISH}f | in {MARK_IN}-"
+          f"{MARK_ALL_IN}f | hold {HOLD}f | out {OUT_AT}-{LOOP - 2}f")

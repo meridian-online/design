@@ -29,15 +29,27 @@ at each limb and quickest across the centre &mdash; measured 5&times; between li
 speed. Then it holds and turns out the same way. The S's run on the mark's own edges, so the
 fill lands on the line that predicted it. Real mark geometry, imported
 from <em>meridian_black.svg</em>.</p>
-<p class="t">orbit 0–40f · S seen 37–80f · turns in 75–115f · hold 24f · turns out 139–175f · loops · 7.08 s @ 25 fps · 17 KB · <a href="ink.html" style="color:inherit">ink per frame</a> · <a href="orbit-check.html" style="color:inherit">frame by frame</a></p>
+<p class="s"><strong>Every movement carries a coloured wake.</strong> A ghost is not a copy that
+has been moved &mdash; it is the <em>same</em> path with the <em>same</em> trim, run three frames
+late, so the wake is the stroke's own past and nothing about the geometry or the schedule changes.
+Its length is the stroke's <em>speed</em> &mdash; and at a one-frame lag that makes the colour a
+<strong>flash</strong> rather than a wake: it opens only where a stroke is quickest and is gone at
+both limbs, so you catch it rather than watch it. The mark's rows work the other way round, because
+a row is revealed by a matte rather than drawn by a trim: each ghost is on screen slightly
+<em>longer</em> at both ends, so colour runs ahead of the ink as a row arrives and is left behind as
+it leaves. The hues are <code>--m-seq-500/300</code> &mdash; the Meridian blue-240 sequential
+ramp from the <a href="../../validation/gallery-2026-07-16.html" style="color:inherit">palette
+gallery</a>, read from <code>tokens.css</code>, not picked. Other schemes and lags are side by side
+on <a href="schemes.html" style="color:inherit">schemes.html</a>.</p>
+<p class="t">orbit 0–40f · S seen 37–80f · turns in 75–115f · hold 24f · turns out 139–178f · loops · 7.20 s @ 25 fps · 65 KB · wake 2×1f, mark 1f · 3 colours · <a href="ink.html" style="color:inherit">ink per frame</a> · <a href="orbit-check.html" style="color:inherit">frame by frame</a></p>
 <button onclick="location.reload()">Replay</button>
 <div class="row">
  <figure><div class="box"><div id="a" style="width:300px;height:300px"></div></div>
-  <h2>Ink</h2><figcaption>The bare version.</figcaption></figure>
+  <h2>Light — chosen</h2><figcaption><code>seq3</code>: black leader, two steps of sequential blue.</figcaption></figure>
  <figure><div class="box"><div id="b" style="width:300px;height:300px"></div></div>
-  <h2>Maritime</h2><figcaption>&nbsp;</figcaption></figure>
+  <h2>Runner-up</h2><figcaption><code>blue-violet</code> — blue leads, categorical violet trails.</figcaption></figure>
  <figure><div class="box dk"><div id="c" style="width:300px;height:300px"></div></div>
-  <h2>White on dark</h2><figcaption>Warm off-white, the same value the dark theme uses for ink.</figcaption></figure>
+  <h2>Dark</h2><figcaption>Paper leader; the ramp walks the other way so the flash recedes into the background.</figcaption></figure>
  <figure><div class="box"><div id="d" style="width:120px;height:120px"></div></div>
   <h2>At 120px</h2><figcaption>&nbsp;</figcaption></figure>
 </div>
@@ -45,6 +57,6 @@ from <em>meridian_black.svg</em>.</p>
 <script>
 const go=(el,f,loop)=>lottie.loadAnimation({container:document.getElementById(el),
   renderer:'svg',loop:loop,autoplay:true,path:f});
-go('a','../output/form-ink.json',true); go('b','../output/form-maritime.json',true);
-go('c','../output/form-paper.json',true); go('d','../output/form-ink.json',true);
+go('a','../output/form-seq3-flash.json',true); go('b','../output/form-blue-violet-flash.json',true);
+go('c','../output/form-seq3-flash-dark.json',true); go('d','../output/form-seq3-flash.json',true);
 </script>

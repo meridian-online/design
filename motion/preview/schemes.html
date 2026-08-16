@@ -1,0 +1,99 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Meridian — wake colour schemes</title>
+<style>
+ body{background:#faf8f4;color:#1a1917;margin:0;padding:28px;
+      font:13px/1.6 ui-sans-serif,system-ui}
+ h1{font-size:16px;font-weight:600;margin:0 0 6px}
+ p{color:#6b665e;margin:0 0 16px;max-width:82ch}
+ .bar{display:flex;gap:14px;align-items:center;margin:0 0 20px;flex-wrap:wrap}
+ button{font:inherit;padding:6px 14px;border:1px solid #cfc8bd;background:#fff;
+        border-radius:6px;cursor:pointer}
+ label{font:12px ui-sans-serif;color:#6b665e;display:flex;gap:6px;
+       align-items:center}
+ .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+ figure{margin:0}
+ .box{border:1px solid #e5e0d8;border-radius:10px;padding:10px;background:#fcfcfb}
+ .box.dk{background:#0e0c0b;border-color:#2b2f36}
+ .box div{width:100%;aspect-ratio:1}
+ h2{font-size:13px;font-weight:600;margin:9px 0 3px}
+ .sw{display:flex;width:max-content;border-radius:3px;overflow:hidden;
+     margin:3px 0 2px;border:1px solid #e5e0d8}
+ .sw i{width:34px;height:15px;display:block}
+ code{font:11px ui-monospace,monospace;color:#8a847a}
+</style>
+<h1>Wake colour scheme — chosen, and runner-up</h1>
+<p>What survived. <code>seq3</code> is the loading animation for web and desktop as of
+2026-08-16; <code>blue-violet</code> was the runner-up and is kept beside it. A scheme is the
+<strong>wake</strong>; the leader is always the theme's own ink, so a variant's total is the wake
+plus one. The <strong>one-frame lag</strong> is what makes the colour a flash rather than a wake:
+the visible length is speed&nbsp;&times;&nbsp;lag, so it opens only where a stroke is quickest.
+Swatches come out of the built files, nearest the leader first. Everything ruled out along the way,
+and why, is in <a href="../README.md" style="color:inherit">the README</a>.</p>
+
+<div class="bar">
+  <button id="replay">Replay all</button>
+  <label><input type="radio" name="th" value="light" checked> Light</label>
+  <label><input type="radio" name="th" value="dark"> Dark</label>
+  <label><input type="checkbox" id="sync" checked> Keep them in step</label>
+</div>
+<div class="grid" id="grid"></div>
+
+<script src="lottie.min.js"></script>
+<script>
+const SCHEMES = [
+  ['seq3-flash',        'CHOSEN. Ink + sequential 500 / 300 \u2014 three colours, one-frame lag.'],
+  ['blue-violet-flash', 'Runner-up. Blue leads, categorical violet trails.'],
+  ['seq3-quick',        'The chosen scheme at a two-frame lag, to show what that knob costs.'],
+];
+const hex = c => '#' + c.slice(0, 3)
+  .map(v => Math.round(v * 255).toString(16).padStart(2, '0')).join('');
+
+let players = [], theme = 'light';
+
+function render() {
+  players.forEach(p => p.destroy());
+  players = [];
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  SCHEMES.forEach(([name, note]) => {
+    const file = `../output/form-${name}${theme === 'dark' ? '-dark' : ''}.json`;
+    const fig = document.createElement('figure');
+    fig.innerHTML = `<div class="box${theme === 'dark' ? ' dk' : ''}"><div></div></div>
+      <h2>${name}</h2><div class="sw"></div>
+      <div style="color:#6b665e;font-size:12px">${note}</div>`;
+    grid.append(fig);
+    players.push(lottie.loadAnimation({
+      container: fig.querySelector('.box div'), renderer: 'svg',
+      loop: true, autoplay: true, path: file}));
+    // Swatches come out of the file itself, so they cannot claim a palette the
+    // animation does not use. Layer order is leader-first.
+    fetch(file).then(r => r.json()).then(d => {
+      const sw = fig.querySelector('.sw');
+      d.layers.filter(l => l.nm && l.nm.startsWith('orbit')).forEach(l => {
+        const c = l.shapes[0].it.find(i => i.ty === 'st').c.k;
+        const b = document.createElement('i');
+        b.style.background = hex(c);
+        b.title = hex(c);
+        sw.append(b);
+      });
+    });
+  });
+}
+
+document.getElementById('replay').onclick = () => {
+  players.forEach(p => p.goToAndPlay(0, true));
+};
+document.querySelectorAll('input[name=th]').forEach(r =>
+  r.onchange = e => { theme = e.target.value; render(); });
+// Lottie players drift apart over a long loop; nudging the followers back onto
+// the leader's frame each tick keeps a four-way comparison honest.
+setInterval(() => {
+  if (!document.getElementById('sync').checked || players.length < 2) return;
+  const f = players[0].currentFrame;
+  players.slice(1).forEach(p => {
+    if (Math.abs(p.currentFrame - f) > 1.5) p.goToAndPlay(f, true);
+  });
+}, 500);
+render();
+</script>
