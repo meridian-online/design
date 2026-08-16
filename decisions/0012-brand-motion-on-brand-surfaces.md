@@ -307,16 +307,35 @@ bytes cannot say: that the teeth are the tracked mark's own path text, that
 every colour is a value in `tokens.css`, that both formats loop for the same
 time, and that dark is light recoloured rather than redrawn.
 
-**The one authoring constraint above that the built asset does not keep.** This
-ADR advises *"prefer plain masks to track mattes"*, because velato's matte path
-carries an unresolved note where its masks apply cleanly. `form` reveals each
-row with a track matte, since a Lottie matte applies to exactly one layer and
-the three rows arrive on three separate beats. **The desktop path is therefore
-the one consumer this has not been rendered through** — it is verified in
-lottie-web, and the web artefact is verified in Chromium. If velato will not
-take the mattes, the change is bounded and known: emit Lottie masks instead, and
-teach the SVG emitter to read them where it reads mattes today. It already turns
-every matte into a `clipPath`, which is the shape a mask arrives in anyway.
+**The one authoring constraint above that the built asset does not keep — and
+what checking it found.** This ADR advises *"prefer plain masks to track
+mattes"*, because velato's matte path carried an unresolved note where its masks
+apply cleanly. `form` reveals each row with a track matte, since a Lottie matte
+applies to exactly one layer and the three rows arrive on three separate beats.
+That left the desktop as the one consumer the asset had not been put through, so
+it was put through it.
+
+**velato 0.11 takes the mattes.** Both artefacts import without error, and at
+every beat — the arc, the strokes, the mark assembling, holding and dispersing —
+all nine matted row precomps produce draw calls, in both themes. Alpha mattes
+arrive as `Compose::SrcIn`, which is the operator an alpha matte means. The note
+this ADR was written against is a dead `Matte` enum in `runtime/model`, never
+matched anywhere; the live path is `mask_layer`, set during import, which is
+what the advice above predates rather than describes.
+
+That was measured without a GPU. velato renders through a `RenderSink` trait, so
+a sink that records rather than rasterises says exactly what the desktop would
+be asked to draw, with the Lottie layer names attached. **The boundary is
+therefore compositing, not import**: what has not been exercised here is vello
+painting `SrcIn` on the GPU, because velato pulls vello without its renderer.
+The desktop shell already rasterises vello scenes for everything else it draws,
+so that half is exercised by the app rather than by this repository — but it is
+worth knowing which half is which.
+
+The advice stands as advice. If a later shell finds the compositing wrong, the
+change is bounded and known: emit Lottie masks instead, and teach the SVG
+emitter to read them where it reads mattes today. It already turns every matte
+into a `clipPath`, which is the shape a mask arrives in anyway.
 
 **Two consequences worth stating.**
 
