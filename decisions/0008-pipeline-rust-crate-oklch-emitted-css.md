@@ -7,44 +7,24 @@ date-modified: 2026-07-16
 
 ## Context and Problem Statement
 
-Token values must reach CSS custom properties (web), Rust constants
-(Brightfield render), and gpui-component `ThemeConfig` JSON (Brightfield app)
-without drift. How much machinery does that take at two-consumer scale?
+Token values must reach CSS custom properties (web), Rust constants (Brightfield render), and gpui-component `ThemeConfig` JSON (Brightfield app) without drift. How much machinery does that take at two-consumer scale?
 
 ## Considered Options
 
-- **Rust crate as source; emitters + conformance tests** — no external token
-  tooling
-- **W3C DTCG JSON + Style Dictionary/Terrazzo** — industry machinery,
-  future-proof, more to babysit
+- **Rust crate as source; emitters + conformance tests** — no external token tooling
+- **W3C DTCG JSON + Style Dictionary/Terrazzo** — industry machinery, future-proof, more to babysit
 - **Hand-synced tokens.css + tokens.rs** — least machinery, most discipline
 
 ## Decision Outcome
 
-Chosen: the `meridian-design` crate is the single definition point. Colours
-are designed in OKLCH (the space used for ramp generation) and stored as their
-sRGB conversion so consumers need no colour-space maths. The crate's emitters
-generate `tokens.css` (light + dark custom properties) and the gpui-component
-`ThemeConfig` pair; checked-in conformance tests pin the emitted artefacts so
-any drift fails CI. External token tooling (DTCG/Style Dictionary) is deferred
-until a third consumer materialises.
+Chosen: the `meridian-design` crate is the single definition point. Colours are designed in OKLCH (the space used for ramp generation) and stored as their sRGB conversion so consumers need no colour-space maths. The crate's emitters generate `tokens.css` (light + dark custom properties) and the gpui-component `ThemeConfig` pair; checked-in conformance tests pin the emitted artefacts so any drift fails CI. External token tooling (DTCG/Style Dictionary) is deferred until a third consumer materialises.
 
 ### Consequences
 
-- Good, because "source of truth" is enforced by the compiler and CI, not
-  convention.
-- Good, because emitted JSON means the gpui adapter in Brightfield is ~3 lines
-  of `apply_config`.
-- Bad, because non-Rust contributors edit token values in Rust source — the
-  values are plain consts, so the barrier is low but non-zero.
+- Good, because "source of truth" is enforced by the compiler and CI, not convention.
+- Good, because emitted JSON means the gpui adapter in Brightfield is ~3 lines of `apply_config`.
+- Bad, because non-Rust contributors edit token values in Rust source — the values are plain consts, so the barrier is low but non-zero.
 
 ### Update (2026-07-24 — the gpui-component `ThemeConfig` emitter is retired)
 
-Brightfield moved off GPUI onto egui (ADR 0011), which deleted the only consumer
-of the `ThemeConfig` JSON pair. That emitter (`emit::theme_config`, its
-`ThemeMode`, the `dump_theme` example, and the `theme-{light,dark}.json`
-snapshots) has been removed; the desktop is now themed through the
-`meridian-egui` adapter, which reads the token layer directly. The pipeline's
-shape is unchanged — the crate is still the single source of truth, still emits
-its artefact from Rust and pins it byte-for-byte in CI — but there is now **one**
-emitted artefact, `tokens.css` for the web, not two.
+Brightfield moved off GPUI onto egui (ADR 0011), which deleted the only consumer of the `ThemeConfig` JSON pair. That emitter (`emit::theme_config`, its `ThemeMode`, the `dump_theme` example, and the `theme-{light,dark}.json` snapshots) has been removed; the desktop is now themed through the `meridian-egui` adapter, which reads the token layer directly. The pipeline's shape is unchanged — the crate is still the single source of truth, still emits its artefact from Rust and pins it byte-for-byte in CI — but there is now **one** emitted artefact, `tokens.css` for the web, not two.
