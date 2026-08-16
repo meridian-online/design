@@ -202,20 +202,22 @@ impl Sheet {
 
 /// The six 12-step ramps, as a step-by-hue matrix rather than 144 flat rows.
 fn scales(sheet: &mut Sheet) {
-    const HUES: [&str; 6] = ["gray", "maritime", "red", "amber", "green", "blue"];
-    let prefixes: Vec<String> = HUES.iter().map(|h| format!("--m-{h}-")).collect();
+    // The hue names come from the CSS emitter's own ramp table, so a seventh
+    // ramp widens this matrix rather than quietly falling out of it.
+    let hues: Vec<&str> = super::ramps(false).iter().map(|(n, _)| *n).collect();
+    let prefixes: Vec<String> = hues.iter().map(|h| format!("--m-{h}-")).collect();
     let refs: Vec<&str> = prefixes.iter().map(|s| s.as_str()).collect();
-    let steps = sheet.prefix(&refs).len() / HUES.len();
+    let steps = sheet.prefix(&refs).len() / hues.len();
 
     for (mode, dark) in [("Light", false), ("Dark", true)] {
         let mut rows = vec![
             format!("#### {mode}"),
             String::new(),
-            format!("| Step | {} |", HUES.join(" | ")),
-            format!("|---|{}", "---|".repeat(HUES.len())),
+            format!("| Step | {} |", hues.join(" | ")),
+            format!("|---|{}", "---|".repeat(hues.len())),
         ];
         for step in 1..=steps {
-            let cells: Vec<String> = HUES
+            let cells: Vec<String> = hues
                 .iter()
                 .map(|h| format!("`{}`", sheet.value(&format!("--m-{h}-{step}"), dark)))
                 .collect();
@@ -543,9 +545,15 @@ pub fn tokens_md() -> String {
          OKLCH design (ADR 0008); dimensions are logical pixels.",
     );
     sheet.line("");
+    sheet.line("<picture>");
+    sheet.line("  <source media=\"(prefers-color-scheme: dark)\" srcset=\"palette_dark.svg\">");
+    sheet.line("  <img src=\"palette.svg\" alt=\"The Meridian palette: six twelve-step ramps, the categorical chart set, the sequential and diverging ramps, and the status colours\">");
+    sheet.line("</picture>");
+    sheet.line("");
     sheet.line(
-        "GitHub renders no colour swatch for a hex code in a repository file, so this \
-         page is the numbers. For the reasoning behind them, read `guidelines/`; for \
+        "That sheet is generated from these same values — GitHub renders no colour swatch \
+         for a hex code in a repository file, so the picture is SVG and the tables below \
+         are the numbers. For the reasoning rather than either, read `guidelines/`; for \
          the decisions, `decisions/`.",
     );
     sheet.line("");

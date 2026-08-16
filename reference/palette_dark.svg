@@ -1,0 +1,223 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 725" width="880" height="725" role="img" aria-label="The Meridian palette, dark theme"><title>The Meridian palette, dark theme</title><rect width="880" height="725" fill="#0e0c0b"/><g font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#efeeec">
+<text font-size="9" fill="#7e7a75" x="120.42" y="22" text-anchor="middle">1</text>
+<text font-size="9" fill="#7e7a75" x="185.25" y="22" text-anchor="middle">2</text>
+<text font-size="9" fill="#7e7a75" x="250.08" y="22" text-anchor="middle">3</text>
+<text font-size="9" fill="#7e7a75" x="314.92" y="22" text-anchor="middle">4</text>
+<text font-size="9" fill="#7e7a75" x="379.75" y="22" text-anchor="middle">5</text>
+<text font-size="9" fill="#7e7a75" x="444.58" y="22" text-anchor="middle">6</text>
+<text font-size="9" fill="#7e7a75" x="509.42" y="22" text-anchor="middle">7</text>
+<text font-size="9" fill="#7e7a75" x="574.25" y="22" text-anchor="middle">8</text>
+<text font-size="9" fill="#7e7a75" x="639.08" y="22" text-anchor="middle">9</text>
+<text font-size="9" fill="#7e7a75" x="703.92" y="22" text-anchor="middle">10</text>
+<text font-size="9" fill="#7e7a75" x="768.75" y="22" text-anchor="middle">11</text>
+<text font-size="9" fill="#7e7a75" x="833.58" y="22" text-anchor="middle">12</text>
+<text x="80" y="50" text-anchor="end">gray</text>
+<rect x="90" y="30" width="60.83" height="34" rx="2" fill="#0d0c0c" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="120.42" y="75" text-anchor="middle">#0d0c0c</text>
+<rect x="154.83" y="30" width="60.83" height="34" rx="2" fill="#191817" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="185.25" y="75" text-anchor="middle">#191817</text>
+<rect x="219.67" y="30" width="60.83" height="34" rx="2" fill="#232221" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="250.08" y="75" text-anchor="middle">#232221</text>
+<rect x="284.5" y="30" width="60.83" height="34" rx="2" fill="#2a2928" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="314.92" y="75" text-anchor="middle">#2a2928</text>
+<rect x="349.33" y="30" width="60.83" height="34" rx="2" fill="#32302f" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="379.75" y="75" text-anchor="middle">#32302f</text>
+<rect x="414.17" y="30" width="60.83" height="34" rx="2" fill="#3c3a38" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="444.58" y="75" text-anchor="middle">#3c3a38</text>
+<rect x="479" y="30" width="60.83" height="34" rx="2" fill="#4a4744" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="509.42" y="75" text-anchor="middle">#4a4744</text>
+<rect x="543.83" y="30" width="60.83" height="34" rx="2" fill="#64605c" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="574.25" y="75" text-anchor="middle">#64605c</text>
+<rect x="608.67" y="30" width="60.83" height="34" rx="2" fill="#716c67" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="639.08" y="75" text-anchor="middle">#716c67</text>
+<rect x="673.5" y="30" width="60.83" height="34" rx="2" fill="#7e7a75" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="703.92" y="75" text-anchor="middle">#7e7a75</text>
+<rect x="738.33" y="30" width="60.83" height="34" rx="2" fill="#b7b2ae" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="768.75" y="75" text-anchor="middle">#b7b2ae</text>
+<rect x="803.17" y="30" width="60.83" height="34" rx="2" fill="#efeeec" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="833.58" y="75" text-anchor="middle">#efeeec</text>
+<text x="80" y="102" text-anchor="end">maritime</text>
+<rect x="90" y="82" width="60.83" height="34" rx="2" fill="#080d12" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="120.42" y="127" text-anchor="middle">#080d12</text>
+<rect x="154.83" y="82" width="60.83" height="34" rx="2" fill="#12191e" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="185.25" y="127" text-anchor="middle">#12191e</text>
+<rect x="219.67" y="82" width="60.83" height="34" rx="2" fill="#172835" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="250.08" y="127" text-anchor="middle">#172835</text>
+<rect x="284.5" y="82" width="60.83" height="34" rx="2" fill="#1b3547" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="314.92" y="127" text-anchor="middle">#1b3547</text>
+<rect x="349.33" y="82" width="60.83" height="34" rx="2" fill="#244256" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="379.75" y="127" text-anchor="middle">#244256</text>
+<rect x="414.17" y="82" width="60.83" height="34" rx="2" fill="#2f5068" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="444.58" y="127" text-anchor="middle">#2f5068</text>
+<rect x="479" y="82" width="60.83" height="34" rx="2" fill="#3c627d" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="509.42" y="127" text-anchor="middle">#3c627d</text>
+<rect x="543.83" y="82" width="60.83" height="34" rx="2" fill="#4a799a" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="574.25" y="127" text-anchor="middle">#4a799a</text>
+<rect x="608.67" y="82" width="60.83" height="34" rx="2" fill="#4b7a9b" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="639.08" y="127" text-anchor="middle">#4b7a9b</text>
+<rect x="673.5" y="82" width="60.83" height="34" rx="2" fill="#466c87" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="703.92" y="127" text-anchor="middle">#466c87</text>
+<rect x="738.33" y="82" width="60.83" height="34" rx="2" fill="#8fc1e4" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="768.75" y="127" text-anchor="middle">#8fc1e4</text>
+<rect x="803.17" y="82" width="60.83" height="34" rx="2" fill="#cde8fc" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="833.58" y="127" text-anchor="middle">#cde8fc</text>
+<text x="80" y="154" text-anchor="end">red</text>
+<rect x="90" y="134" width="60.83" height="34" rx="2" fill="#130a09" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="120.42" y="179" text-anchor="middle">#130a09</text>
+<rect x="154.83" y="134" width="60.83" height="34" rx="2" fill="#21110f" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="185.25" y="179" text-anchor="middle">#21110f</text>
+<rect x="219.67" y="134" width="60.83" height="34" rx="2" fill="#410a09" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="250.08" y="179" text-anchor="middle">#410a09</text>
+<rect x="284.5" y="134" width="60.83" height="34" rx="2" fill="#590001" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="314.92" y="179" text-anchor="middle">#590001</text>
+<rect x="349.33" y="134" width="60.83" height="34" rx="2" fill="#6c0004" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="379.75" y="179" text-anchor="middle">#6c0004</text>
+<rect x="414.17" y="134" width="60.83" height="34" rx="2" fill="#7f0f11" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="444.58" y="179" text-anchor="middle">#7f0f11</text>
+<rect x="479" y="134" width="60.83" height="34" rx="2" fill="#9a211f" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="509.42" y="179" text-anchor="middle">#9a211f</text>
+<rect x="543.83" y="134" width="60.83" height="34" rx="2" fill="#c62d2b" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="574.25" y="179" text-anchor="middle">#c62d2b</text>
+<rect x="608.67" y="134" width="60.83" height="34" rx="2" fill="#c9302d" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="639.08" y="179" text-anchor="middle">#c9302d</text>
+<rect x="673.5" y="134" width="60.83" height="34" rx="2" fill="#b91c1e" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="703.92" y="179" text-anchor="middle">#b91c1e</text>
+<rect x="738.33" y="134" width="60.83" height="34" rx="2" fill="#ff9083" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="768.75" y="179" text-anchor="middle">#ff9083</text>
+<rect x="803.17" y="134" width="60.83" height="34" rx="2" fill="#ffcec6" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="833.58" y="179" text-anchor="middle">#ffcec6</text>
+<text x="80" y="206" text-anchor="end">amber</text>
+<rect x="90" y="186" width="60.83" height="34" rx="2" fill="#0f0c08" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="120.42" y="231" text-anchor="middle">#0f0c08</text>
+<rect x="154.83" y="186" width="60.83" height="34" rx="2" fill="#1b1711" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="185.25" y="231" text-anchor="middle">#1b1711</text>
+<rect x="219.67" y="186" width="60.83" height="34" rx="2" fill="#2b2011" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="250.08" y="231" text-anchor="middle">#2b2011</text>
+<rect x="284.5" y="186" width="60.83" height="34" rx="2" fill="#3a2709" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="314.92" y="231" text-anchor="middle">#3a2709</text>
+<rect x="349.33" y="186" width="60.83" height="34" rx="2" fill="#47300a" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="379.75" y="231" text-anchor="middle">#47300a</text>
+<rect x="414.17" y="186" width="60.83" height="34" rx="2" fill="#563c13" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="444.58" y="231" text-anchor="middle">#563c13</text>
+<rect x="479" y="186" width="60.83" height="34" rx="2" fill="#6a4c1d" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="509.42" y="231" text-anchor="middle">#6a4c1d</text>
+<rect x="543.83" y="186" width="60.83" height="34" rx="2" fill="#886122" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="574.25" y="231" text-anchor="middle">#886122</text>
+<rect x="608.67" y="186" width="60.83" height="34" rx="2" fill="#da950b" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="639.08" y="231" text-anchor="middle">#da950b</text>
+<rect x="673.5" y="186" width="60.83" height="34" rx="2" fill="#ce8a00" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="703.92" y="231" text-anchor="middle">#ce8a00</text>
+<rect x="738.33" y="186" width="60.83" height="34" rx="2" fill="#ebb15b" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="768.75" y="231" text-anchor="middle">#ebb15b</text>
+<rect x="803.17" y="186" width="60.83" height="34" rx="2" fill="#f9e1c1" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="833.58" y="231" text-anchor="middle">#f9e1c1</text>
+<text x="80" y="258" text-anchor="end">green</text>
+<rect x="90" y="238" width="60.83" height="34" rx="2" fill="#070f08" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="120.42" y="283" text-anchor="middle">#070f08</text>
+<rect x="154.83" y="238" width="60.83" height="34" rx="2" fill="#111a12" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="185.25" y="283" text-anchor="middle">#111a12</text>
+<rect x="219.67" y="238" width="60.83" height="34" rx="2" fill="#142b19" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="250.08" y="283" text-anchor="middle">#142b19</text>
+<rect x="284.5" y="238" width="60.83" height="34" rx="2" fill="#0c3d1c" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="314.92" y="283" text-anchor="middle">#0c3d1c</text>
+<rect x="349.33" y="238" width="60.83" height="34" rx="2" fill="#0f4b23" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="379.75" y="283" text-anchor="middle">#0f4b23</text>
+<rect x="414.17" y="238" width="60.83" height="34" rx="2" fill="#125b2b" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="444.58" y="283" text-anchor="middle">#125b2b</text>
+<rect x="479" y="238" width="60.83" height="34" rx="2" fill="#136c33" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="509.42" y="283" text-anchor="middle">#136c33</text>
+<rect x="543.83" y="238" width="60.83" height="34" rx="2" fill="#0e7f3b" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="574.25" y="283" text-anchor="middle">#0e7f3b</text>
+<rect x="608.67" y="238" width="60.83" height="34" rx="2" fill="#218a45" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="639.08" y="283" text-anchor="middle">#218a45</text>
+<rect x="673.5" y="238" width="60.83" height="34" rx="2" fill="#057c38" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="703.92" y="283" text-anchor="middle">#057c38</text>
+<rect x="738.33" y="238" width="60.83" height="34" rx="2" fill="#6fd087" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="768.75" y="283" text-anchor="middle">#6fd087</text>
+<rect x="803.17" y="238" width="60.83" height="34" rx="2" fill="#aaf7ba" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="833.58" y="283" text-anchor="middle">#aaf7ba</text>
+<text x="80" y="310" text-anchor="end">blue</text>
+<rect x="90" y="290" width="60.83" height="34" rx="2" fill="#040e16" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="120.42" y="335" text-anchor="middle">#040e16</text>
+<rect x="154.83" y="290" width="60.83" height="34" rx="2" fill="#0b1a25" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="185.25" y="335" text-anchor="middle">#0b1a25</text>
+<rect x="219.67" y="290" width="60.83" height="34" rx="2" fill="#04293f" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="250.08" y="335" text-anchor="middle">#04293f</text>
+<rect x="284.5" y="290" width="60.83" height="34" rx="2" fill="#003755" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="314.92" y="335" text-anchor="middle">#003755</text>
+<rect x="349.33" y="290" width="60.83" height="34" rx="2" fill="#004568" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="379.75" y="335" text-anchor="middle">#004568</text>
+<rect x="414.17" y="290" width="60.83" height="34" rx="2" fill="#0a547c" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="444.58" y="335" text-anchor="middle">#0a547c</text>
+<rect x="479" y="290" width="60.83" height="34" rx="2" fill="#146694" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="509.42" y="335" text-anchor="middle">#146694</text>
+<rect x="543.83" y="290" width="60.83" height="34" rx="2" fill="#177bb2" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="574.25" y="335" text-anchor="middle">#177bb2</text>
+<rect x="608.67" y="290" width="60.83" height="34" rx="2" fill="#1479b0" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="639.08" y="335" text-anchor="middle">#1479b0</text>
+<rect x="673.5" y="290" width="60.83" height="34" rx="2" fill="#1c6b99" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="703.92" y="335" text-anchor="middle">#1c6b99</text>
+<rect x="738.33" y="290" width="60.83" height="34" rx="2" fill="#78c3f7" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="768.75" y="335" text-anchor="middle">#78c3f7</text>
+<rect x="803.17" y="290" width="60.83" height="34" rx="2" fill="#c9edff" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="833.58" y="335" text-anchor="middle">#c9edff</text>
+<text font-size="11" font-weight="600" fill="#b7b2ae" x="16" y="371">Categorical — the Harbour set</text>
+<rect x="90" y="377" width="93.25" height="34" rx="2" fill="#0b89c8" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="136.63" y="422" text-anchor="middle">#0b89c8</text>
+<rect x="187.25" y="377" width="93.25" height="34" rx="2" fill="#b68f1b" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="233.88" y="422" text-anchor="middle">#b68f1b</text>
+<rect x="284.5" y="377" width="93.25" height="34" rx="2" fill="#31aa8c" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="331.13" y="422" text-anchor="middle">#31aa8c</text>
+<rect x="381.75" y="377" width="93.25" height="34" rx="2" fill="#c74b47" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="428.38" y="422" text-anchor="middle">#c74b47</text>
+<rect x="479" y="377" width="93.25" height="34" rx="2" fill="#7b69c6" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="525.63" y="422" text-anchor="middle">#7b69c6</text>
+<rect x="576.25" y="377" width="93.25" height="34" rx="2" fill="#b45c03" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="622.88" y="422" text-anchor="middle">#b45c03</text>
+<rect x="673.5" y="377" width="93.25" height="34" rx="2" fill="#b55fa4" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="720.13" y="422" text-anchor="middle">#b55fa4</text>
+<rect x="770.75" y="377" width="93.25" height="34" rx="2" fill="#47944c" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="817.38" y="422" text-anchor="middle">#47944c</text>
+<rect fill="none" stroke="#8fc1e4" stroke-width="1" stroke-dasharray="3 2" x="87" y="374" width="391" height="40" rx="4"/>
+<text font-size="9" fill="#7e7a75" x="90" y="436">The outlined four validate all-pairs under simulated colour-vision deficiency, not merely pairwise-adjacent — take them in order and a four-series chart is safe by construction.</text>
+<text font-size="11" font-weight="600" fill="#b7b2ae" x="16" y="473">Sequential — Meridian blue</text>
+<rect x="90" y="479" width="55.85" height="34" rx="2" fill="#c6e4fb" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="149.85" y="479" width="55.85" height="34" rx="2" fill="#a6d7fa" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="209.69" y="479" width="55.85" height="34" rx="2" fill="#87c8f6" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="269.54" y="479" width="55.85" height="34" rx="2" fill="#69baf0" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="329.38" y="479" width="55.85" height="34" rx="2" fill="#4daae6" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="389.23" y="479" width="55.85" height="34" rx="2" fill="#359bd9" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="449.08" y="479" width="55.85" height="34" rx="2" fill="#238cc7" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="508.92" y="479" width="55.85" height="34" rx="2" fill="#1d7cb2" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="568.77" y="479" width="55.85" height="34" rx="2" fill="#216d9b" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="628.62" y="479" width="55.85" height="34" rx="2" fill="#285e81" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="688.46" y="479" width="55.85" height="34" rx="2" fill="#2d4f67" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="748.31" y="479" width="55.85" height="34" rx="2" fill="#274154" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="808.15" y="479" width="55.85" height="34" rx="2" fill="#1b3546" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-size="9" fill="#7e7a75" x="90" y="525">One hue, lightness strictly descending. Opt-in by name — the default ordinal scheme stays viridis.</text>
+<text font-size="11" font-weight="600" fill="#b7b2ae" x="16" y="562">Diverging — blue to brick red</text>
+<rect x="90" y="568" width="66.73" height="34" rx="2" fill="#a8c9e2" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="160.73" y="568" width="66.73" height="34" rx="2" fill="#79abcf" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="231.45" y="568" width="66.73" height="34" rx="2" fill="#478ebc" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="302.18" y="568" width="66.73" height="34" rx="2" fill="#0070a9" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="372.91" y="568" width="66.73" height="34" rx="2" fill="#005389" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="443.64" y="568" width="66.73" height="34" rx="2" fill="#2a2928" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="514.36" y="568" width="66.73" height="34" rx="2" fill="#e3b8b4" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="585.09" y="568" width="66.73" height="34" rx="2" fill="#d0938d" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="655.82" y="568" width="66.73" height="34" rx="2" fill="#bb6d67" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="726.55" y="568" width="66.73" height="34" rx="2" fill="#a54743" stroke="#3c3a38" stroke-width="0.5"/>
+<rect x="797.27" y="568" width="66.73" height="34" rx="2" fill="#8d1a1e" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-size="9" fill="#7e7a75" x="90" y="614">Each arm lightens toward the midpoint, and the midpoint carries no chroma.</text>
+<text font-size="11" font-weight="600" fill="#b7b2ae" x="16" y="651">Status, and the null ink</text>
+<rect x="90" y="657" width="151.6" height="34" rx="2" fill="#218a45" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="165.8" y="702" text-anchor="middle">#218a45</text>
+<rect x="245.6" y="657" width="151.6" height="34" rx="2" fill="#da950b" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="321.4" y="702" text-anchor="middle">#da950b</text>
+<rect x="401.2" y="657" width="151.6" height="34" rx="2" fill="#db703b" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="477" y="702" text-anchor="middle">#db703b</text>
+<rect x="556.8" y="657" width="151.6" height="34" rx="2" fill="#c9302d" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="632.6" y="702" text-anchor="middle">#c9302d</text>
+<rect x="712.4" y="657" width="151.6" height="34" rx="2" fill="#32302f" stroke="#3c3a38" stroke-width="0.5"/>
+<text font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="#7e7a75" x="788.2" y="702" text-anchor="middle">#32302f</text>
+<text font-size="9" fill="#7e7a75" x="90" y="716">Good, warning, serious, critical — then the null ink, which carries no chroma so it can never be read as a series.</text>
+</g></svg>

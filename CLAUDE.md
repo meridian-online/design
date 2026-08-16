@@ -45,6 +45,7 @@ Every downstream artefact is generated from the crate and pinned byte-for-byte b
 |---|---|---|---|
 | Web `tokens.css` | `emit::tokens_css` | `tests/snapshots/tokens.css` | `cargo run --example dump_css > tests/snapshots/tokens.css` |
 | `reference/tokens.md` | `emit::tokens_md`, **from `tokens_css` rather than from the token modules** | `reference/tokens.md` itself — the published file is the pin | `cargo run --example dump_md > ../reference/tokens.md` |
+| `reference/palette{,_dark}.svg` | `emit::palette_svg`, from `tokens_css` likewise | the published files, plus a gate that every fill is a token value in that mode | `cargo run --example dump_palette light > ../reference/palette.svg` (and `dark`) |
 | `brand/motion/form{,_dark}.json` | `motion/build_form.py` | `scripts/check-motion.sh` + `tests/motion.rs` | `cd motion && python3 build_form.py` |
 | `brand/motion/form{,_dark}.svg` | `motion/svg_form.py`, from the Lottie above | the same two | the same command |
 | `brand/motion/lockup{,_dark}.json` | `motion/build_lockup.py` | the same two | `cd motion && python3 build_lockup.py` |

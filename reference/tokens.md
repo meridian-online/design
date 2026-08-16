@@ -5,7 +5,12 @@
 
 Every value this design system defines, in both themes, generated from the crate. Nothing here is typed by hand: the tables are rendered from the same `emit::tokens_css()` the web consumes, so a value on this page and a value in production cannot disagree. Colours are sRGB hex, the sRGB conversion of an OKLCH design (ADR 0008); dimensions are logical pixels.
 
-GitHub renders no colour swatch for a hex code in a repository file, so this page is the numbers. For the reasoning behind them, read `guidelines/`; for the decisions, `decisions/`.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="palette_dark.svg">
+  <img src="palette.svg" alt="The Meridian palette: six twelve-step ramps, the categorical chart set, the sequential and diverging ramps, and the status colours">
+</picture>
+
+That sheet is generated from these same values — GitHub renders no colour swatch for a hex code in a repository file, so the picture is SVG and the tables below are the numbers. For the reasoning rather than either, read `guidelines/`; for the decisions, `decisions/`.
 
 ## Brand
 

@@ -316,3 +316,114 @@ fn every_colour_in_the_sheet_is_a_token_value() {
          reference that omits a colour reads as a colour that does not exist"
     );
 }
+
+/// Both palette sheets are pinned, and both are still the tokens' own colours.
+///
+/// The sheet exists because a hex code renders as text on GitHub and a design
+/// system's palette should be visible. That only holds while every fill is a
+/// token value: an SVG is the easiest artefact in the repo to nudge toward
+/// "looking right", because a chip whose colour was tweaked by hand looks
+/// exactly like a chip whose colour is correct.
+#[test]
+fn the_palette_sheets_are_pinned_and_drawn_in_tokens() {
+    let sheets = [
+        (
+            "palette.svg",
+            include_str!("../../reference/palette.svg"),
+            false,
+        ),
+        (
+            "palette_dark.svg",
+            include_str!("../../reference/palette_dark.svg"),
+            true,
+        ),
+    ];
+
+    // Every colour the CSS emits, in the mode's own resolution: the dark block
+    // redefines a subset and the rest cascades, so a dark sheet may legitimately
+    // draw a light-block value that dark never overrides.
+    let css = meridian_design::emit::tokens_css();
+    let (light, dark_block) = css.split_once("\n.dark {").expect("two mode blocks");
+
+    for (name, pinned, dark) in sheets {
+        assert_eq!(
+            meridian_design::emit::palette_svg(dark),
+            pinned,
+            "emit::palette_svg({dark}) no longer matches reference/{name} — \
+             regenerate in the same commit if the change is intentional: \
+             cargo run --example dump_palette {} > ../reference/{name}",
+            if dark { "dark" } else { "light" }
+        );
+
+        let mut allowed: Vec<String> = declarations(light).into_iter().map(|(_, v)| v).collect();
+        if dark {
+            allowed.extend(declarations(dark_block).into_iter().map(|(_, v)| v));
+        }
+        let mut drawn = 0;
+        for (at, _) in pinned.match_indices('#') {
+            let hex: String = pinned[at..]
+                .chars()
+                .take_while(|c| *c == '#' || c.is_ascii_hexdigit())
+                .collect();
+            if hex.len() != 7 && hex.len() != 9 {
+                continue;
+            }
+            assert!(
+                allowed.contains(&hex),
+                "{name} draws {hex}, which is not a colour tokens.css emits in that \
+                 mode — a swatch has been picked rather than read"
+            );
+            drawn += 1;
+        }
+        assert!(
+            drawn > 90,
+            "{name}: only {drawn} colours drawn — parse error?"
+        );
+    }
+}
+
+/// The palette sheets fetch nothing and script nothing.
+///
+/// Same claim `tests/motion.rs` makes of the brand artefacts, for the same
+/// reason: the site ships no runtime, GitHub serves these under a policy that
+/// forbids every outbound request, and a sheet that reached for a font file or
+/// a script would simply fail to draw where it matters most.
+///
+/// Asserted against the emitter's output rather than the committed file, so it
+/// fires on the change that introduces the problem instead of waiting for
+/// somebody to regenerate. The pin above already watches the file.
+#[test]
+fn the_palette_sheets_are_self_contained() {
+    for (name, svg) in [
+        ("palette.svg", meridian_design::emit::palette_svg(false)),
+        ("palette_dark.svg", meridian_design::emit::palette_svg(true)),
+    ] {
+        for reach in ["<script", "href=", "src=", "url(", "@import", "<image"] {
+            assert!(
+                !svg.contains(reach),
+                "{name} contains {reach:?} — it is served under a policy that blocks \
+                 every outbound request, so this would draw as nothing"
+            );
+        }
+        // No `<style>` and no `id`: an inlined SVG's styles apply to the whole
+        // host document, and its identifiers join the host's namespace.
+        assert!(
+            !svg.contains("<style") && !svg.contains(" id="),
+            "{name} carries a style block or an id, so inlining it would reach \
+             outside itself"
+        );
+    }
+}
+
+/// The sheet shows the picture, and the picture has a dark twin.
+#[test]
+fn the_reference_sheet_embeds_the_palette() {
+    let md = meridian_design::emit::tokens_md();
+    for src in ["palette.svg", "palette_dark.svg"] {
+        assert!(
+            md.contains(src),
+            "the reference sheet no longer shows {src} — the numbers are back to \
+             being the only representation of the palette"
+        );
+    }
+}

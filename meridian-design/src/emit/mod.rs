@@ -9,7 +9,9 @@
 //! the sheet restates no token name and no value, and the pair cannot drift.
 
 mod markdown;
+mod swatches;
 pub use markdown::tokens_md;
+pub use swatches::palette_svg;
 
 use crate::chrome::{InkTokens, INK_DARK, INK_LIGHT};
 use crate::colour::Rgba;
@@ -41,21 +43,35 @@ fn ink(css: &mut String, t: &InkTokens) {
     css.push_str(&format!("  --m-focus: {};\n", t.focus.hex()));
 }
 
+/// The six ramps in emission order, each with the name every artefact gives
+/// it. Stated once: three emitters need this pairing and a seventh hue should
+/// be added in one place, not found by grepping for the other five.
+pub(super) fn ramps(dark: bool) -> [(&'static str, &'static [Rgba; 12]); 6] {
+    if dark {
+        [
+            ("gray", &GRAY_DARK),
+            ("maritime", &MARITIME_DARK),
+            ("red", &RED_DARK),
+            ("amber", &AMBER_DARK),
+            ("green", &GREEN_DARK),
+            ("blue", &BLUE_DARK),
+        ]
+    } else {
+        [
+            ("gray", &GRAY_LIGHT),
+            ("maritime", &MARITIME_LIGHT),
+            ("red", &RED_LIGHT),
+            ("amber", &AMBER_LIGHT),
+            ("green", &GREEN_LIGHT),
+            ("blue", &BLUE_LIGHT),
+        ]
+    }
+}
+
 fn mode_block(css: &mut String, dark: bool) {
-    scale(css, "gray", if dark { &GRAY_DARK } else { &GRAY_LIGHT });
-    scale(
-        css,
-        "maritime",
-        if dark {
-            &MARITIME_DARK
-        } else {
-            &MARITIME_LIGHT
-        },
-    );
-    scale(css, "red", if dark { &RED_DARK } else { &RED_LIGHT });
-    scale(css, "amber", if dark { &AMBER_DARK } else { &AMBER_LIGHT });
-    scale(css, "green", if dark { &GREEN_DARK } else { &GREEN_LIGHT });
-    scale(css, "blue", if dark { &BLUE_DARK } else { &BLUE_LIGHT });
+    for (name, ramp) in ramps(dark) {
+        scale(css, name, ramp);
+    }
     let cat = if dark {
         &CATEGORICAL_DARK
     } else {

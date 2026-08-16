@@ -30,6 +30,15 @@ The single source of truth for how Meridian looks, reads, and feels — across t
 - **Brightfield** takes `meridian-design` as a cargo dependency. The renderer reads token values directly; the egui app shell is themed through the `meridian-egui` adapter (ADR 0011).
 - **Framework adapters are thin and they live here**, not in the consuming app — tokens are plain `Copy` structs with framework-neutral sRGB colours and logical-pixel dimensions, so a host change re-translates the adapter rather than the system (ADR 0003).
 
+## The palette
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="reference/palette_dark.svg">
+  <img src="reference/palette.svg" alt="The Meridian palette: six twelve-step ramps, the categorical chart set, the sequential and diverging ramps, and the status colours">
+</picture>
+
+Generated from the crate, not drawn — every chip's fill is the string the web consumes, and a CI gate fails if one is a colour `tokens.css` does not emit. It has a dark twin because the system does; both are pinned byte-for-byte.
+
 ## Looking things up
 
 [`reference/tokens.md`](reference/tokens.md) is every value the system defines, in both themes: the six 12-step ramps, the chart palettes, the semantic layer, all six interaction roles across their six states, the box model, and the keyboard-and-role contract.
