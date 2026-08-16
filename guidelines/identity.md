@@ -37,6 +37,10 @@ felt in restraint, not colour volume (ADR 0004).
   the desktop front door, the README — capped at three animations, and never in
   app chrome or on a data surface (ADR 0012, `speed.md`). The honest-work
   indicator is the one in-app use, and `speed.md` already required it.
+- **The animation is a tracked file too.** `brand/motion/form.*`, the mark
+  assembling — Lottie for the desktop, animated SVG for the web. It is the first
+  of the three, and it is the honest-work cue. The rule above applies to it
+  unchanged: reference the file, do not rebuild the motion from the path.
 
 ## Evidence
 

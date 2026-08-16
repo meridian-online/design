@@ -33,11 +33,19 @@ except the loop's last few frames is a defect.</p>
 
 <script src="lottie.min.js"></script>
 <script>
-const FILES = ['form-seq3-flash', 'form-seq3-flash-dark',
-               'form-blue-violet-flash', 'form-blue-violet-flash-dark',
-               'form-seq3-quick', 'form-seq3-quick-dark', 'form-limb'];
+// The shipped artefacts first, then whatever `build_form.py --explore` has
+// left in the scratch directory. The scratch files are untracked, so a fresh
+// checkout finds only the first two until that flag is run.
+const FILES = [
+  ['form', '../../meridian-design/brand/motion/form.json'],
+  ['form_dark', '../../meridian-design/brand/motion/form_dark.json'],
+  ['blue-violet (scratch)', '../output/form-blue-violet-flash.json'],
+  ['blue-violet dark (scratch)', '../output/form-blue-violet-flash-dark.json'],
+  ['seq3 at 2f (scratch)', '../output/form-seq3-quick.json'],
+  ['seq3 at 2f dark (scratch)', '../output/form-seq3-quick-dark.json'],
+];
 const pick = document.getElementById('pick');
-FILES.forEach(f => pick.add(new Option(f, f)));
+FILES.forEach(([label, path]) => pick.add(new Option(label, path)));
 
 const stage = document.createElement('div');
 stage.style.cssText = 'position:absolute;left:-9999px;width:600px;height:600px';
@@ -59,7 +67,7 @@ function measure(name){
   stage.innerHTML = '';
   if (anim) anim.destroy();
   anim = lottie.loadAnimation({container: stage, renderer: 'canvas',
-    loop: false, autoplay: false, path: `../output/${name}.json`});
+    loop: false, autoplay: false, path: name});
   anim.addEventListener('DOMLoaded', () => {
     const cv = stage.querySelector('canvas');
     const ctx = cv.getContext('2d', {willReadFrequently: true});
@@ -109,5 +117,5 @@ function draw(out){
 }
 
 pick.onchange = () => measure(pick.value);
-measure(FILES[0]);
+measure(FILES[0][1]);
 </script>

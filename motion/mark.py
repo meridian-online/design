@@ -95,6 +95,56 @@ def mark_paths(svg_text):
     return out
 
 
-MARK = mark_paths(MARK_SVG.read_text())
+def mark_subpaths(svg_text, parsed):
+    """The same six teeth, kept as the file's own path text where it can be.
+
+    The SVG emitter wants the mark verbatim rather than re-serialised: a round
+    trip through floats would carry geometry that is *equivalent* to the
+    tracked file, which is not a property any test can tie back to it. Text
+    that came out of the file is.
+
+    One thing has to change, and only one. The six subpaths are a chain — the
+    first opens `M300,100` and the other five open with a relative `m`, taken
+    from where `Z` left the pen, which is the previous subpath's start. That
+    chain is broken the moment a row draws teeth 5 and 4 as its own element,
+    so each subpath's opening move is rewritten as the absolute point the
+    parser already computed for it. **Everything after that first move is the
+    file's own characters**, because every later command in the mark is
+    relative and so cannot depend on where the subpath began.
+
+    That is the same seam `brand.rs` compares the padded mark across — text
+    from the first `l` onwards — and `tests/motion.rs` compares this one the
+    same way.
+    """
+    found = re.search(r' d="([^"]*)"', svg_text)
+    if not found:
+        raise ValueError(f"{MARK_SVG.name} has no path data")
+    pieces = [piece for piece in found.group(1).split("Z") if piece.strip()]
+    if len(pieces) != len(parsed):
+        raise ValueError(f"{MARK_SVG.name}: {len(parsed)} parsed teeth against "
+                         f"{len(pieces)} subpaths — the two readings disagree")
+
+    out = []
+    for piece, path in zip(pieces, parsed):
+        at = piece.find("l")
+        if at < 0:
+            raise ValueError("a subpath with no relative line; the mark has one each")
+        x, y = path["v"][0]
+        out.append(f"M{_num(x)},{_num(y)}{piece[at:]}Z")
+    return out
+
+
+def _num(x):
+    s = f"{x:.4f}".rstrip("0").rstrip(".")
+    return "0" if s in ("", "-", "-0") else s
+
+
+_SVG_TEXT = MARK_SVG.read_text()
+
+#: The six teeth as Lottie paths, for the animation's geometry.
+MARK = mark_paths(_SVG_TEXT)
 if len(MARK) != 6:
     raise SystemExit(f"expected 6 teeth in {MARK_SVG.name}, parsed {len(MARK)}")
+
+#: The same six as SVG path data, each standing on its own.
+MARK_D = mark_subpaths(_SVG_TEXT, MARK)

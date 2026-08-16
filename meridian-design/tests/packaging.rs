@@ -20,6 +20,14 @@ use std::process::Command;
 const PACKAGED: &[&str] = &[
     "brand/LICENSE-BRAND.md",
     "brand/README.md",
+    // Brand motion (ADR 0012): one animation, both formats. The desktop takes
+    // the Lottie; the SVG ships too, because `brand/` is how this repository
+    // hands an asset to a consumer and a Rust consumer serving web assets
+    // should not have to reach past the crate for it.
+    "brand/motion/form.json",
+    "brand/motion/form.svg",
+    "brand/motion/form_dark.json",
+    "brand/motion/form_dark.svg",
     "brand/meridian_black.svg",
     "brand/meridian_black_pad.svg",
     "brand/meridian_white.svg",
@@ -181,7 +189,7 @@ fn every_brand_file_the_crate_embeds_is_packaged() {
         .collect();
     assert_eq!(
         embedded.len(),
-        7,
+        11,
         "src/brand.rs embeds a different number of brand files than this gate reads; \
          if a line was wrapped, the match above stopped seeing it"
     );

@@ -30,6 +30,25 @@ jobs:
       - name: private planning identifiers
         run: ./scripts/check-public-hygiene.sh
 
+  # The byte-for-byte half of ADR 0012's brand-motion pin. Beside the hygiene
+  # gate rather than inside `crate` for the same reason: it is toolchain-free
+  # and takes a second, and a stale artefact should report before a build has
+  # resolved anything.
+  #
+  # `meridian-design/tests/motion.rs` carries the other half — what the two
+  # artefacts have to *be* — and runs under `crate`. Neither replaces the
+  # other: a byte comparison cannot say the mark is the tracked mark, and a
+  # structural test cannot say the file is still what the generator emits.
+  motion-artefacts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      # No `setup-python`: the generator is dependency-free by the same rule
+      # that keeps the crate dependency-free, and the runner ships a python3.
+      - name: brand motion matches its generator
+        run: ./scripts/check-motion.sh
+
   # Formatting + lint, split out from `crate` rather than appended to it so a
   # style regression reports without waiting on a build, and so a red build
   # cannot hide a lint failure (or the reverse).

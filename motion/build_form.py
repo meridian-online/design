@@ -65,7 +65,9 @@ import json
 import math
 import pathlib
 
+import svg_form
 import tokens
+from curves import ease_when as _ease_when, flatten as _flatten
 from mark import MARK
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -106,9 +108,19 @@ WIPE_LATENCY = 3
 # rather than merely abutting.
 MARK_OVER = 2
 
-INK = [0.102, 0.098, 0.090, 1]
-MARITIME = [0.294, 0.478, 0.608, 1]
-PAPER = [0.914, 0.902, 0.878, 1]      # the warm off-white, for dark surfaces
+#: The leader's ink, per theme — `--m-ink`, the colour the mark is drawn in on
+#: that surface.
+#:
+#: Read from the crate rather than typed. It WAS typed, for most of the
+#: exploration: `#1a1917` on light and `#e9e6e0` on dark, and neither appears
+#: anywhere in `tokens.css`. They were close enough to `--m-ink` to look right
+#: and were never the same colour as the mark beside them. That is ADR 0011's
+#: finding a third time — the shadow palette a consumer grows when nothing
+#: makes it read the real one — arriving in a generator instead of in an app,
+#: which is why the wake has always come from `tokens.py` and the leader now
+#: does too.
+def leader(theme):
+    return tokens.colour("m-ink", theme)
 
 # THE TRAIL. Every travelling stroke here is drawn by a trim pair, so a ghost
 # of it is not a copy that has been moved — it is the SAME path with the SAME
@@ -294,46 +306,6 @@ def circle_path(cx, cy, r, theta0=0.0):
 # S_EASE_O from silently reopening the eleven-frame hole described below.
 
 S_EASE_O, S_EASE_I = ORBIT_EASE_O, ORBIT_EASE_I   # the S's now ease like the arc
-
-
-def _ease_at(u, eo, ei):
-    """Value of a Lottie keyframe ease at normalised time u."""
-    ox, oy, ix, iy = eo["x"][0], eo["y"][0], ei["x"][0], ei["y"][0]
-    lo, hi = 0.0, 1.0
-    for _ in range(60):                      # invert the bezier's x(p) = u
-        p = (lo + hi) / 2
-        if 3 * (1 - p) ** 2 * p * ox + 3 * (1 - p) * p * p * ix + p ** 3 < u:
-            lo = p
-        else:
-            hi = p
-    p = (lo + hi) / 2
-    return 3 * (1 - p) ** 2 * p * oy + 3 * (1 - p) * p * p * iy + p ** 3
-
-
-def _ease_when(y, eo, ei):
-    """Normalised time at which that ease reaches value y."""
-    lo, hi = 0.0, 1.0
-    for _ in range(60):
-        m = (lo + hi) / 2
-        lo, hi = (m, hi) if _ease_at(m, eo, ei) < y else (lo, m)
-    return (lo + hi) / 2
-
-
-def _flatten(path, per=400):
-    v, o, i = path["v"], path["o"], path["i"]
-    n = len(v)
-    out = []
-    for a in range(n if path["c"] else n - 1):
-        b = (a + 1) % n
-        c0 = [v[a][k] + o[a][k] for k in (0, 1)]
-        c1 = [v[b][k] + i[b][k] for k in (0, 1)]
-        for k in range(per):
-            t, u = k / per, 1 - k / per
-            out.append([u ** 3 * v[a][j] + 3 * u * u * t * c0[j]
-                        + 3 * u * t * t * c1[j] + t ** 3 * v[b][j]
-                        for j in (0, 1)])
-    out.append(v[0] if path["c"] else v[-1])
-    return out
 
 
 def _visible_span(path):
@@ -525,7 +497,7 @@ def orbit_layer(ind, colour, t0=0):
     }
 
 
-def build(name, colour, wake, lag=TRAIL_LAG, limb=None):
+def build(name, colour, wake, lag=TRAIL_LAG):
     flow = []
     ind = 1
 
@@ -651,52 +623,115 @@ def build(name, colour, wake, lag=TRAIL_LAG, limb=None):
     orbit = [orbit_layer(3 + k, ink, k * lag)
              for k, ink in enumerate(trail_colours(colour, wake))]
     layers = [matte, content] + orbit
-    if limb:
-        layers.append({
-            "ddd": 0, "ind": 3 + len(orbit) + 1, "ty": 4, "nm": "limb", "sr": 1, "bm": 0,
-            "ao": 0,
-            "ks": {"o": {"a": 0, "k": 100}, "r": {"a": 0, "k": 0},
-                   "p": {"a": 0, "k": [0, 0, 0]}, "a": {"a": 0, "k": [0, 0, 0]},
-                   "s": {"a": 0, "k": [100, 100, 100]}},
-            "shapes": [{"ty": "gr", "nm": "limb", "it": [
-                {"ty": "el", "nm": "Ellipse", "p": {"a": 0, "k": [W / 2, H / 2]},
-                 "s": {"a": 0, "k": [2 * DISC - 3] * 2}},
-                {"ty": "st", "nm": "Stroke", "c": {"a": 0, "k": limb},
-                 "o": {"a": 0, "k": 100}, "w": {"a": 0, "k": 3},
-                 "lc": 2, "lj": 1}, XF]}],
-            "ip": 0, "op": LOOP, "st": 0})
     return {"v": "5.7.0", "fr": FPS, "ip": 0, "op": LOOP, "w": W, "h": H,
             "nm": name, "ddd": 0,
             "assets": assets + [{"id": "flow", "layers": flow}],
             "layers": layers}
 
 
-if __name__ == "__main__":
-    import os
+# ------------------------------------------------------------------ the build
+#
+# The shipped asset and the exploration go to different places on purpose.
+#
+# `meridian-design/brand/motion/` is where ADR 0012 puts brand motion, inside
+# the crate so the desktop can take the bytes as a cargo dependency, under
+# `brand/LICENSE-BRAND.md` rather than the crate's MIT grant. Four files: the
+# chosen scheme in both themes, each as Lottie for the desktop and as animated
+# SVG for the web. `tests/motion.rs` pins them, `scripts/check-motion.sh`
+# proves they are still what this generator produces.
+#
+# `motion/output/` is the scratch the comparison pages read, and it is
+# untracked. The runner-up and the slower cut belong to a decision that has
+# already been made; keeping them committed would leave files in the tree that
+# look like assets, that nothing pins, and that a consumer could take.
+ASSETS = HERE.parent / "meridian-design" / "brand" / "motion"
+SCRATCH = HERE / "output"
 
-    d = HERE / "output"
-    # Two axes: what the wake is made of, and how FLEETING it is. Every file is
-    # the same length, so they can be stopped on the same frame and compared.
-    jobs = []
+#: The scheme that ships, and the lag that makes its colour a flash rather than
+#: a wake. Everything else `SCHEMES` still knows how to build is exploration.
+CHOSEN = "seq3"
+CHOSEN_LAG = 1
+
+
+def artefacts():
+    """The four files that ship, as `{name: bytes}`.
+
+    Both formats come from one document per theme, which is what makes them
+    one animation rather than two that resemble each other.
+    """
+    out, error = {}, 0.0
+    for theme, steps in zip(("light", "dark"), SCHEMES[CHOSEN]):
+        stem = "form" if theme == "light" else "form_dark"
+        wake = [tokens.colour(n, theme) for n in steps]
+        doc = build(stem, leader(theme), wake, CHOSEN_LAG)
+        svg, err = svg_form.emit(doc)
+        error = max(error, err)
+        out[f"{stem}.json"] = json.dumps(doc, separators=(",", ":")) + "\n"
+        out[f"{stem}.svg"] = svg
+    return out, error
+
+
+def explore():
+    """Every scheme and lag in `SCHEMES`, into the untracked scratch directory.
+
+    Two axes: what the wake is made of, and how fleeting it is. Every file is
+    the same length, so they can be stopped on the same frame and compared.
+    """
+    SCRATCH.mkdir(exist_ok=True)
     for lag, tag in ((1, "flash"), (2, "quick")):
         for name, (light, dark) in SCHEMES.items():
-            if lag == 2 and name != "seq3":
-                continue                  # the slower cut, on the chosen scheme only
+            if lag == 2 and name != CHOSEN:
+                continue              # the slower cut, on the chosen scheme only
             for theme, steps in (("light", light), ("dark", dark)):
                 suffix = "" if theme == "light" else "-dark"
-                jobs.append((f"form-{name}-{tag}{suffix}.json", steps, theme,
-                             lag, None))
-    jobs.append(("form-limb.json", SCHEMES["seq3"][0], "light", 1,
-                 [0.855, 0.839, 0.816, 1]))
+                fn = f"form-{name}-{tag}{suffix}.json"
+                wake = [tokens.colour(n, theme) for n in steps]
+                doc = build(fn[:-5], leader(theme), wake, lag)
+                (SCRATCH / fn).write_text(json.dumps(doc, separators=(",", ":")))
+                swatch = " ".join(tokens.hex_of(n, theme) for n in steps)
+                print(f"  {fn:<30} lag {lag}f  {len(steps) + 1} colours  {swatch}")
 
-    for fn, steps, theme, lag, limb in jobs:
-        wake = [tokens.colour(n, theme) for n in steps]
-        colour = INK if theme == "light" else PAPER
-        doc = build(fn[:-5], colour, wake, lag, limb)
-        (d / fn).write_text(json.dumps(doc, separators=(",", ":")))
-        swatch = " ".join(tokens.hex_of(n, theme) for n in steps)
-        print(f"{fn:<30} {os.path.getsize(d / fn) / 1024:>5.1f} KB  "
-              f"lag {lag}f  {len(steps) + 1} colours  {swatch}")
-    print(f"\n  schedule  orbit 0-{ORBIT_END}f | S seen "
+
+if __name__ == "__main__":
+    import sys
+
+    check = "--check" in sys.argv
+    built, sampling = artefacts()
+
+    if check:
+        # What CI asks: are the committed artefacts still what this generator
+        # produces? A snapshot catches an edit to the file; this catches an
+        # edit to the generator that nobody regenerated for — the direction a
+        # committed artefact actually drifts.
+        stale = [fn for fn, text in built.items()
+                 if not (ASSETS / fn).is_file()
+                 or (ASSETS / fn).read_text() != text]
+        for fn in stale:
+            print(f"  STALE  brand/motion/{fn}")
+        if stale:
+            sys.exit("\nbrand/motion/ no longer matches build_form.py — run it, "
+                     "and commit the artefacts with the change that moved them")
+        print(f"brand/motion/ matches build_form.py ({len(built)} artefacts)")
+        sys.exit(0)
+
+    ASSETS.mkdir(exist_ok=True)
+    for fn, text in built.items():
+        (ASSETS / fn).write_text(text)
+        print(f"brand/motion/{fn:<20} {len(text) / 1024:>5.1f} KB")
+    print(f"\n  ink       {tokens.hex_of('m-ink')} / {tokens.hex_of('m-ink', 'dark')}"
+          f"   wake {' '.join(tokens.hex_of(n) for n in SCHEMES[CHOSEN][0])}"
+          f" / {' '.join(tokens.hex_of(n, 'dark') for n in SCHEMES[CHOSEN][1])}")
+    print(f"  schedule  orbit 0-{ORBIT_END}f | S seen "
           f"{round(LEAD + S_IN_U * DRAW)}-{S_VANISH}f | in {MARK_IN}-"
-          f"{MARK_ALL_IN}f | hold {HOLD}f | out {OUT_AT}-{LOOP - 2}f")
+          f"{MARK_ALL_IN}f | hold {HOLD}f | out {OUT_AT}-{LOOP - 2}f | "
+          f"{LOOP / FPS:.2f}s at {FPS}fps")
+    # The one place the SVG cannot be exact: a dash length is the difference of
+    # two eased ramps, which no CSS timing function expresses, so it is sampled
+    # per frame. Printed rather than asserted in a comment.
+    print(f"  sampling  SVG dash ends land at most {sampling:.3f} units from "
+          f"the Lottie's continuous ease, on a {W}-unit canvas "
+          f"({sampling / STROKE:.1%} of a stroke width)")
+
+    if "--explore" in sys.argv:
+        print("\n  scratch (untracked, for motion/preview/schemes.html)")
+        explore()

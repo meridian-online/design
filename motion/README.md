@@ -1,69 +1,104 @@
 # motion
 
-An offline generator for brand motion, and its output. Same shape as
+The generator for Meridian's brand motion. Same shape as
 [`validation/`](../validation): a reproducible pipeline that runs by hand, whose
-result is committed rather than computed at build time (ADR 0007). Nothing
-downstream builds this, and no consumer takes it yet.
+result is committed rather than computed at build time (ADR 0007).
 
-## Decided: `seq3-flash` is the loading animation
+**What it emits lives in
+[`meridian-design/brand/motion/`](../meridian-design/brand/motion), not here.**
+Four files — `form.json` and `form_dark.json` for the desktop, `form.svg` and
+`form_dark.svg` for the web — which is [ADR
+0012](../decisions/0012-brand-motion-on-brand-surfaces.md)'s home for brand
+motion, inside the crate so the desktop can take the bytes as a cargo
+dependency. Nothing downstream builds this directory.
 
-**2026-08-16 — `form`, scheme `seq3`, one-frame lag, is the loading animation
-for web and desktop.** Files: `output/form-seq3-flash.json` and
-`form-seq3-flash-dark.json`. `blue-violet` was the runner-up and is kept beside
-it; everything else that was tried has been removed from `SCHEMES` and the
-reasoning is in this file.
+## `form` is the mark-motion asset
 
-Three colours: the theme's own ink, then two steps of the Meridian blue-240
-sequential ramp — `--m-seq-500` and `--m-seq-300` on light, `350` and `550` on
-dark. Nothing here is a picked colour; see *Colour comes from the crate* below.
+**Decided 2026-08-16, landed 2026-08-16.** `form`, scheme `seq3`, one-frame
+lag: an arc laps the disc, three strokes flow through it, the mark assembles row
+by row, holds, and disperses. 7.2 s at 25 fps, looping. It is ADR 0012's first
+capped asset — the one the retired globe turn was going to be — and it is what
+plays as the >100 ms work cue `guidelines/speed.md` requires.
 
-**This is a decision, not yet the sanctioned asset**, and the difference is
-work that has not been done. [ADR
-0012](../decisions/0012-brand-motion-on-brand-surfaces.md) requires brand motion
-to live in `meridian-design/brand/`, pinned by a conformance test, with an
-**animated-SVG emitter for web** beside the Lottie one for desktop — because web
-takes no Lottie runtime. None of those three exist. Until they do, this is a
-chosen candidate in an exploration directory, and a consumer that takes it takes
-an unpinned file.
+Three colours: the theme's own `--m-ink`, then two steps of the Meridian
+blue-240 sequential ramp — `--m-seq-500` and `--m-seq-300` on light, `350` and
+`550` on dark. Nothing here is a picked colour; see *Colour comes from the
+crate* below. `blue-violet` was the runner-up and `SCHEMES` still knows how to
+build it; everything else tried has been removed and the reasoning is kept in
+this file.
 
-Outstanding, in the order it has to happen:
+### Two formats, and what stops them drifting apart
 
-1. An **animated-SVG emitter**, so web has an artefact it can actually use.
-2. A **conformance test** pinning both emitted artefacts byte-for-byte.
-3. The move into `brand/`, and the **ADR 0012 amendment** naming the form — the
-   amendment that section explicitly leaves open, and which also has to say
-   which of the three capped assets this occupies. It is the honest-work cue
-   `guidelines/speed.md` already requires, which is the one asset ADR 0012
-   admits *inside* the apps rather than only on brand surfaces.
+The split is ADR 0012's and it is deliberately asymmetric. The desktop takes
+Lottie through velato; **the web takes animated SVG**, because the site ships no
+motion library and `lottie-web` is ~75 KB gzipped for two brand animations.
+
+`svg_form.py` does not re-choreograph anything. It reads the built Lottie — the
+paths, the trim schedule, the colours, the stroke width, the loop length — so a
+change to `SEAM_OVERLAP` or to a wake's lag cannot land in one artefact and miss
+the other. That is the same rule `CLAUDE.md` puts on the crate's emitters, moved
+one level up: the value at risk here is the *schedule*, and a second
+choreography would restate it.
+
+Three gates hold the result, and none of them replaces another:
+
+| Gate | What it catches |
+|---|---|
+| `scripts/check-motion.sh` | The artefacts no longer match the generator — a schedule change committed without regenerating. Runs in CI, needs only Python 3. |
+| `meridian-design/tests/motion.rs` | What a byte comparison cannot say: the mark is the tracked mark, every colour is a token value, both formats loop for the same time, dark is light recoloured rather than redrawn, the SVG stops for reduced motion and fetches nothing. |
+| `meridian-design/tests/packaging.rs` | The four artefacts ship, under `brand/`'s terms rather than the crate's MIT grant. |
+
+### What the web artefact leans on
+
+One request, no runtime, no script. Reference it with `<img>`. Inlining works —
+its ids and CSS rules are scoped to its own root so it cannot restyle the page
+around it — but two inlined copies of the *same* file collide on ids.
+
+Verified in Chromium, which is the only engine reachable from this repository.
+The features it uses are all long-settled, but they are worth knowing if a
+consumer reports something: CSS animations inside SVG-as-image, animated
+`stroke-dasharray`/`stroke-dashoffset` with `pathLength="1"`, and a CSS
+`transform` on a `<rect>` inside a `<clipPath>`.
+
+Under `prefers-reduced-motion: reduce` every animation stops and the file
+settles to the assembled mark. **A surface using it as the work cue owes the
+reader a textual cue as well** — a still mark says the brand, not that anything
+is happening.
 
 ## Licence
 
-The generator is MIT with the rest of the repository's code.
-
-**`output/` is not.** Those files embed the Meridian prime mark, which is a
-trademark reserved outside the MIT grant — see
-[`meridian-design/brand/LICENSE-BRAND.md`](../meridian-design/brand/LICENSE-BRAND.md),
-which reserves the mark "and every artefact generated from" it, and the
-carve-out in the root [`LICENSE`](../LICENSE).
+The generator is MIT with the rest of the repository's code. **What it emits is
+not.** `brand/motion/` embeds the prime mark, and
+[`brand/LICENSE-BRAND.md`](../meridian-design/brand/LICENSE-BRAND.md) reserves
+the mark "and every artefact generated from" it. The root
+[`LICENSE`](../LICENSE) states the carve-out.
 
 ## Running it
 
 ```
-python3 build_form.py                    # writes output/*.json
-python3 -m http.server 8802              # from THIS directory
+python3 build_form.py             # writes the four artefacts into brand/motion/
+python3 build_form.py --check     # are they still what this generator produces?
+python3 build_form.py --explore   # plus every scheme and lag, into ./output/
+python3 -m http.server 8803       # from the REPOSITORY ROOT
 ```
 
-Then `localhost:8802/preview/form.html`. Plain Python 3, no dependencies.
+Then `localhost:8803/motion/preview/form.html`. Plain Python 3, no dependencies.
 
-Serve from `motion/`, not from `preview/`: the pages fetch `../output/*.json`,
-and a server rooted at `preview/` will not look above its own root, so every
-animation 404s and the canvases sit blank. `file://` fails for the same reason —
-the JSON is fetched, and that is blocked.
+Serve from the repository root, not from `motion/` or `preview/`: the pages
+reach `../../meridian-design/brand/motion/*`, and a server will not look above
+its own root, so a server started lower leaves every canvas blank. `file://`
+fails for the same reason — the artefacts are fetched, and that is blocked.
+
+`output/` is untracked. The runner-up and the slower cut belong to a decision
+that has been made; leaving them committed would put files in the tree that look
+like assets, that nothing pins, and that a consumer could take. Run `--explore`
+to get them back.
 
 | Page | What it is |
 |---|---|
 | `preview/form.html` | The concept, three renderings, one at 120px. |
-| `preview/schemes.html` | Wake schemes and lags side by side, light and dark, kept in step. |
+| `preview/svg.html` | The SVG artefact against the Lottie it came from, frame by frame. |
+| `preview/schemes.html` | Wake schemes and lags side by side, light and dark, kept in step. Needs `--explore`. |
 | `preview/orbit-check.html` | One player per frame, stopped — what the renderer actually draws. |
 | `preview/ink.html` | Opaque pixels per frame, flagging empty and near-empty runs. |
 
@@ -96,12 +131,15 @@ Three beats.
    frames 0–40
 2. **S curves** — one per row, flowing right to left, staggered, seen 37–80
 3. **fills** — the mark assembles row by row, same direction, then holds and
-   disperses, frames 75–181
+   disperses, frames 75–180
 
-7.20 s at 25 fps, 65 KB. Every movement carries a coloured wake; see below. The S is the figure the mark repeats three times: two
-quarter circles of radius 100, centres ±100 either side of a pinch, meeting with
-colinear tangents. The strokes run on the mark's own edges, so each fill lands
-on the line that predicted it.
+7.20 s at 25 fps. 49 KB as Lottie, 16 KB as SVG — the SVG is smaller because
+every wake ghost is one `@keyframes` block reused at a different delay, which
+is the wake's own definition rather than a compression trick. Every movement
+carries a coloured wake; see below. The S is the figure the mark repeats three
+times: two quarter circles of radius 100, centres ±100 either side of a pinch,
+meeting with colinear tangents. The strokes run on the mark's own edges, so
+each fill lands on the line that predicted it.
 
 ### The arc's length is its own speed
 
@@ -226,7 +264,15 @@ had **eleven fully empty frames** between the last S and the mark's arrival and
 looked fine in every still. Open it after any timing change; a run of red
 outside the loop's last few frames is a defect.
 
-Two renderer notes worth having:
+`preview/svg.html` is the same discipline applied to the second format: the SVG
+paused through the Web Animations API, beside the Lottie seeked to the same
+frame. The pairs should be indistinguishable apart from the dash ends, which sit
+up to 1.6 units apart on a 600-unit canvas — 13% of a stroke width — because a
+dash *length* is the difference of two eased ramps and CSS has no timing
+function that says that, so it is sampled once per frame. The build prints the
+figure rather than this file asserting it.
+
+Renderer notes worth having:
 
 - **python-lottie cannot render these.** Its SVG exporter ignores precomps and
   track mattes, which is all of the S's and the mark. It draws the orbit,
@@ -234,4 +280,15 @@ Two renderer notes worth having:
   else — which reads exactly like a broken animation. Use lottie-web.
 - **A round cap on a zero-length trim is not nothing.** lottie-web draws it as a
   dot of the full stroke width, so a layer whose trim closes on its last frame
-  wants `op` on that frame rather than after it.
+  wants `op` on that frame rather than after it. SVG does the same, and for the
+  same reason — `stroke-dasharray: 0 10` with a round cap *is* how a dotted line
+  is drawn — so each stroke carries a visibility animation bounding it to the
+  frames its dash has length.
+- **A `@keyframes` block with no `100%` stop does not hold its last value.** CSS
+  synthesises the missing keyframe from the element's *underlying* value and
+  interpolates toward it. Left open, every dash ran back toward `none` — an
+  undashed path is a solid stroke — and every wipe drifted back toward
+  untranslated, which covers the whole canvas, so all three rows of the mark
+  stood on screen throughout the orbit. Both artefacts had the same schedule and
+  only one of them was showing it. `svg_form.py` closes both ends of every
+  block.

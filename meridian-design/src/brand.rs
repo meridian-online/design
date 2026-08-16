@@ -43,6 +43,38 @@ pub const MARK_WHITEOB_PAD: &str = include_str!("../brand/meridian_whiteob_pad.s
 /// the motion work derives from, kept here so it cannot be lost.
 pub const MARK_COMPONENTS: &str = include_str!("../brand/sources/Meridian Prime Components.svg");
 
+/// `form`: an arc laps the disc, three strokes flow through, and the mark
+/// assembles row by row. 7.2 s at 25 fps, looping. ADR 0012's mark-formation
+/// asset, and the >100 ms work cue `guidelines/speed.md` requires.
+///
+/// **Two formats, one animation.** The desktop takes the Lottie through velato;
+/// the web takes the SVG, because the site ships no motion library and a Lottie
+/// runtime is ~75 KB gzipped for two brand animations. Both are generated from
+/// one source by `motion/build_form.py` — the SVG is a translation of the very
+/// bytes in the Lottie, not a second choreography — and `tests/motion.rs` pins
+/// what they have to agree on.
+///
+/// Which variant: the plain forms on light, the `_DARK` forms on dark. There is
+/// no adaptive single file; the ink and the wake are different token values in
+/// each theme, and the chart ramp they walk runs the other way round.
+pub const MOTION_FORM_LOTTIE: &str = include_str!("../brand/motion/form.json");
+/// [`MOTION_FORM_LOTTIE`] in the dark theme's ink.
+pub const MOTION_FORM_LOTTIE_DARK: &str = include_str!("../brand/motion/form_dark.json");
+
+/// [`MOTION_FORM_LOTTIE`] as animated SVG — the form the web takes.
+///
+/// Self-contained and script-free: serve it and reference it with `<img>`. It
+/// honours `prefers-reduced-motion`, where it settles to the assembled mark; a
+/// surface using it as the work cue owes the reader a textual cue as well,
+/// because a still mark says the brand and not that anything is happening.
+///
+/// Inlining it into a page works — its ids and CSS rules are scoped to its own
+/// root so it cannot restyle the document around it — but two inlined copies of
+/// the *same* file collide on ids, which `<img>` avoids.
+pub const MOTION_FORM_SVG: &str = include_str!("../brand/motion/form.svg");
+/// [`MOTION_FORM_SVG`] in the dark theme's ink.
+pub const MOTION_FORM_SVG_DARK: &str = include_str!("../brand/motion/form_dark.svg");
+
 /// The mark's design canvas: `viewBox="0 0 600 600"`, centred, radius 300.
 pub const MARK_VIEWBOX: f32 = 600.0;
 

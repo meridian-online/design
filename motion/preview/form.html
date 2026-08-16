@@ -47,7 +47,8 @@ on <a href="schemes.html" style="color:inherit">schemes.html</a>.</p>
  <figure><div class="box"><div id="a" style="width:300px;height:300px"></div></div>
   <h2>Light — chosen</h2><figcaption><code>seq3</code>: black leader, two steps of sequential blue.</figcaption></figure>
  <figure><div class="box"><div id="b" style="width:300px;height:300px"></div></div>
-  <h2>Runner-up</h2><figcaption><code>blue-violet</code> — blue leads, categorical violet trails.</figcaption></figure>
+  <h2>Runner-up</h2><figcaption><code>blue-violet</code> &mdash; blue leads, categorical violet
+  trails. Scratch, not a shipped artefact: run <code>build_form.py --explore</code> to build it.</figcaption></figure>
  <figure><div class="box dk"><div id="c" style="width:300px;height:300px"></div></div>
   <h2>Dark</h2><figcaption>Paper leader; the ramp walks the other way so the flash recedes into the background.</figcaption></figure>
  <figure><div class="box"><div id="d" style="width:120px;height:120px"></div></div>
@@ -57,6 +58,8 @@ on <a href="schemes.html" style="color:inherit">schemes.html</a>.</p>
 <script>
 const go=(el,f,loop)=>lottie.loadAnimation({container:document.getElementById(el),
   renderer:'svg',loop:loop,autoplay:true,path:f});
-go('a','../output/form-seq3-flash.json',true); go('b','../output/form-blue-violet-flash.json',true);
-go('c','../output/form-seq3-flash-dark.json',true); go('d','../output/form-seq3-flash.json',true);
+// The two shipped artefacts, straight out of brand/motion/. The runner-up is
+// scratch and needs --explore.
+go('a','../../meridian-design/brand/motion/form.json',true); go('b','../output/form-blue-violet-flash.json',true);
+go('c','../../meridian-design/brand/motion/form_dark.json',true); go('d','../../meridian-design/brand/motion/form.json',true);
 </script>

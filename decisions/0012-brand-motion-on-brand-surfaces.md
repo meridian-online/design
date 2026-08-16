@@ -1,7 +1,7 @@
 ---
 status: accepted
 date-created: 2026-07-27
-date-modified: 2026-08-05
+date-modified: 2026-08-16
 ---
 # 0012. Brand motion lives on brand surfaces, and there are three of it
 
@@ -248,6 +248,92 @@ available either.
 derived from it are still assets the cap allows; their *form* is open, and a
 later amendment names it. This changes what an asset looks like, not how many
 there are or where they may play.
+
+### Update (2026-08-16 — the first asset is named, and both artefacts exist)
+
+The Update above left the first asset's form open and said a later amendment
+would name it. This is that amendment. It names one asset and records that it
+is built; the cap, the surfaces and the format split are untouched.
+
+**The asset is `form`, and it is the mark assembling.** An arc laps the disc
+outline, right over the top, and collapses into the point where the first stroke
+appears. Three strokes then flow through, one per row of the mark, right to
+left. The mark fills in behind them row by row, holds, and disperses the same
+way. 7.2 s at 25 fps, looping. Every movement carries a coloured wake one frame
+behind it, which makes the colour a flash you catch rather than a trail you
+watch.
+
+It is derived from the mark the way the retired turn was meant to be, and the
+derivation is the reason it reads. The stroke that crosses each row is the
+figure the mark repeats three times — two quarter circles of radius 100 meeting
+at a pinch with colinear tangents — run along that row's own edges, so each fill
+lands exactly on the line that predicted it. And the wipe that reveals a row
+does not travel linearly: its edge moves as a meridian on a turning sphere,
+`x = 300 + 300·cos(πt)`, nearly still at each limb and quickest across the
+centre. That is the foreshortening the eye reads as rotation, and it is what
+survived of the globe turn. The mark is never redrawn, mirrored or closed with a
+straight edge, so `guidelines/identity.md` binds nothing here.
+
+**It occupies the first slot, and the work cue is still not a third animation.**
+The cap stated above reads *the globe turn; the wordmark forming; the work
+indicator, which is the globe turn at reduced amplitude*. Read it now as **`form`;
+the wordmark forming; the work indicator, which is `form` rather than a third
+animation**. The count is unchanged and so is the relationship: the indicator is
+a cut of the first asset, not a new one.
+
+`form` is long for a >100 ms cue, and that is a property rather than a problem.
+The beats run shortest first: a wait that resolves in a few hundred milliseconds
+shows only the arc growing on the disc, which is what a spinner is; a wait long
+enough to matter shows the mark assemble. Nothing has to be chosen in advance.
+If measurement later shows the long loop is wrong in an application, the cut to
+make is the arc alone — frames 0–40, 1.6 s — which is already inside the asset
+and needs no new decision.
+
+**Both artefacts exist, and the pin this ADR asked for is two gates rather than
+one.** `meridian-design/brand/motion/` holds `form.json` and `form_dark.json`
+for the desktop and `form.svg` and `form_dark.svg` for the web, under
+`brand/LICENSE-BRAND.md` rather than the crate's MIT grant, embedded by
+`src/brand.rs` so the desktop reaches them as a cargo dependency.
+
+This ADR said *"one generator, two emitted artefacts… without the pin it would
+be two animations that merely resemble each other."* That is right and it is not
+sufficient, because a byte comparison can only say a file has not changed. So
+the SVG emitter **reads the built Lottie** — the paths, the trim schedule, the
+colours, the loop length — rather than choreographing the same thing twice; the
+two files cannot describe different animations, because only one of them
+describes an animation at all. `scripts/check-motion.sh` then holds the bytes
+against the generator in CI, and `meridian-design/tests/motion.rs` holds what
+bytes cannot say: that the teeth are the tracked mark's own path text, that
+every colour is a value in `tokens.css`, that both formats loop for the same
+time, and that dark is light recoloured rather than redrawn.
+
+**The one authoring constraint above that the built asset does not keep.** This
+ADR advises *"prefer plain masks to track mattes"*, because velato's matte path
+carries an unresolved note where its masks apply cleanly. `form` reveals each
+row with a track matte, since a Lottie matte applies to exactly one layer and
+the three rows arrive on three separate beats. **The desktop path is therefore
+the one consumer this has not been rendered through** — it is verified in
+lottie-web, and the web artefact is verified in Chromium. If velato will not
+take the mattes, the change is bounded and known: emit Lottie masks instead, and
+teach the SVG emitter to read them where it reads mattes today. It already turns
+every matte into a `clipPath`, which is the shape a mask arrives in anyway.
+
+**Two consequences worth stating.**
+
+The web artefact settles to the assembled mark under
+`prefers-reduced-motion: reduce`. That satisfies the letter of this ADR and of
+`guidelines/speed.md`, and it is worth being plain that a still mark says the
+brand rather than that work is happening — **a surface using `form` as the work
+cue owes a reader who has asked for less motion a textual cue as well.** The
+still frame carries the same information only when the surface supplies that
+half.
+
+The leader's ink was a picked colour for the whole exploration — `#1a1917` on
+light, `#e9e6e0` on dark, neither of them a token value, both close enough to
+`--m-ink` to pass every review. The mark beside them was never quite the same
+colour as the animation of it. That is ADR 0011's shadow palette a third time,
+in a generator rather than an app, and it is why the gate reads `tokens.css`
+instead of a list of approved hexes written beside the test.
 
 ### Consequences
 

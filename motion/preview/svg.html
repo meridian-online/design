@@ -1,0 +1,120 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Meridian — the SVG artefact against the Lottie</title>
+<style>
+ body{background:#fbfaf9;color:#231f1c;margin:0;padding:28px;
+      font:13px/1.6 ui-sans-serif,system-ui}
+ h1{font-size:16px;font-weight:600;margin:0 0 6px}
+ h2{font-size:13px;font-weight:600;margin:18px 0 6px}
+ p{color:#605c58;margin:0 0 14px;max-width:84ch}
+ .row{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;margin:0 0 8px}
+ figure{margin:0}
+ .box{border:1px solid #e5e0d8;border-radius:10px;padding:10px;background:#fff;
+      width:240px;height:240px;box-sizing:content-box}
+ .box.dk{background:#0e0c0b;border-color:#2b2f36}
+ .box>*{width:240px;height:240px;display:block}
+ figcaption{color:#605c58;font-size:12px;margin-top:6px;max-width:240px}
+ code{font:11px ui-monospace,monospace;color:#716c67}
+ .strip{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;max-width:1100px}
+ .cell{border:1px solid #e5e0d8;border-radius:5px;background:#fff;overflow:hidden}
+ .cell>svg{width:100%;height:auto;display:block}
+ .lot{aspect-ratio:1}
+ .lot svg{width:100%!important;height:100%!important;display:block}
+ .cell b{display:block;font:10px ui-monospace,monospace;color:#8a847f;
+         text-align:center;border-top:1px solid #f0ece6}
+ button{font:inherit;padding:6px 14px;border:1px solid #cfc8bd;background:#fff;
+        border-radius:6px;cursor:pointer;margin:0 8px 12px 0}
+</style>
+
+<h1>The SVG artefact, against the Lottie it came from</h1>
+<p>Two artefacts, one animation. The desktop takes the Lottie through velato; <strong>the web takes
+this SVG</strong>, because the site ships no motion library and a Lottie runtime is ~75&nbsp;KB
+gzipped for two brand animations (ADR&nbsp;0012). <code>svg_form.py</code> does not re-choreograph
+anything &mdash; it reads the built Lottie, so a change to the schedule cannot land in one file and
+miss the other. This page is where you check that claim by eye.</p>
+<p>The filmstrip below is the real test. Each pair is the same frame: the SVG on top, paused through
+the Web Animations API, and the Lottie beneath it, seeked to the same frame. They should be
+indistinguishable apart from the dash ends, which sit up to about 1.6 units apart because a dash
+<em>length</em> is the difference of two eased ramps and CSS has no way to say that &mdash; so it is
+sampled once per frame.</p>
+
+<h2>Playing</h2>
+<p>The first two are the shipping form: an <code>&lt;img&gt;</code>, which is how a page should take
+it &mdash; no script, no runtime, and the file's <code>&lt;style&gt;</code> stays inside it.</p>
+<div class="row">
+ <figure><div class="box"><img src="../../meridian-design/brand/motion/form.svg" alt=""></div>
+  <figcaption><code>form.svg</code> as <code>&lt;img&gt;</code>. Light.</figcaption></figure>
+ <figure><div class="box dk"><img src="../../meridian-design/brand/motion/form_dark.svg" alt=""></div>
+  <figcaption><code>form_dark.svg</code> as <code>&lt;img&gt;</code>. Dark.</figcaption></figure>
+ <figure><div class="box"><div id="lot"></div></div>
+  <figcaption><code>form.json</code> through lottie-web, for comparison.</figcaption></figure>
+ <figure><div class="box" id="inline"></div>
+  <figcaption>The same SVG <em>inlined</em>. Its ids and rules are scoped to its own root, so it
+  cannot restyle this page.</figcaption></figure>
+</div>
+
+<h2>Frame by frame</h2>
+<button id="again">Rebuild the strip</button>
+<label><input type="checkbox" id="every" checked> every 6th frame</label>
+<div class="strip" id="strip"></div>
+
+<script src="lottie.min.js"></script>
+<script>
+const SVG_SRC = '../../meridian-design/brand/motion/form.svg';
+const LOTTIE_SRC = '../../meridian-design/brand/motion/form.json';
+
+lottie.loadAnimation({container: document.getElementById('lot'), renderer: 'svg',
+                      loop: true, autoplay: true, path: LOTTIE_SRC});
+
+// An inlined SVG lands in this document's id namespace, so every copy on the
+// page needs its own. The artefact prefixes its ids for exactly this reason;
+// what a second copy needs is one more level of it.
+let copies = 0;
+function inject(host, text) {
+  const tag = `x${copies++}`;
+  host.innerHTML = text
+    .replace(/id="([^"]+)"/g, (_, id) => `id="${tag}-${id}"`)
+    .replace(/url\(#([^)]+)\)/g, (_, id) => `url(#${tag}-${id})`)
+    .replace(/#meridian-form\b/g, `#${tag}-meridian-form`)
+    .replace(/(@keyframes |animation:|,)(meridian-form-k)/g, `$1${tag}-$2`);
+  return host.firstElementChild;
+}
+
+(async () => {
+  const [svgText, doc] = await Promise.all([
+    fetch(SVG_SRC).then(r => r.text()),
+    fetch(LOTTIE_SRC).then(r => r.json()),
+  ]);
+  inject(document.getElementById('inline'), svgText);
+
+  const build = () => {
+    const strip = document.getElementById('strip');
+    strip.innerHTML = '';
+    const step = document.getElementById('every').checked ? 6 : 12;
+    for (let f = 0; f < doc.op; f += step) {
+      const svgCell = document.createElement('div');
+      svgCell.className = 'cell';
+      const root = inject(svgCell, svgText);
+      svgCell.insertAdjacentHTML('beforeend', `<b>svg ${f}</b>`);
+      strip.append(svgCell);
+
+      // Pausing through getAnimations is what makes this comparable: the CSS
+      // is driven to an exact time rather than screenshotted mid-flight.
+      root.getAnimations({subtree: true}).forEach(a => {
+        a.currentTime = (f / doc.fr) * 1000; a.pause();
+      });
+
+      const lotCell = document.createElement('div');
+      lotCell.className = 'cell';
+      lotCell.innerHTML = `<div class="lot"></div><b>lottie ${f}</b>`;
+      strip.append(lotCell);
+      lottie.loadAnimation({container: lotCell.firstElementChild, renderer: 'svg',
+                            loop: false, autoplay: false, animationData: doc})
+            .goToAndStop(f, true);
+    }
+  };
+  document.getElementById('again').onclick = build;
+  document.getElementById('every').onchange = build;
+  build();
+})();
+</script>
