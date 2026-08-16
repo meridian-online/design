@@ -16,10 +16,10 @@ use meridian_design::semantic::{semantic, Role, Semantic};
 use meridian_design::validate::contrast;
 use meridian_design::Rgba;
 
-/// Text that carries meaning, and ink on a solid.
-const TEXT: f64 = 4.5;
-/// Non-text boundaries (WCAG 1.4.11) and quiet ink.
-const NON_TEXT: f64 = 3.0;
+/// The two floors now live in `validate.rs`, because the reference sheet
+/// publishes them beside the ratios it measures and a threshold stated twice
+/// is a threshold that can disagree with itself.
+use meridian_design::validate::{NON_TEXT_MIN as NON_TEXT, TEXT_MIN as TEXT};
 
 fn modes() -> [(&'static str, &'static Semantic); 2] {
     [("light", semantic(false)), ("dark", semantic(true))]

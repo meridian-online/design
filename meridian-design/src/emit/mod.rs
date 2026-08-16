@@ -1,12 +1,25 @@
 //! Emitters — every downstream artefact is generated from this crate and
-//! pinned by a conformance test (ADR 0008): `tokens.css` for the web. The
-//! desktop app consumes the tokens through the `meridian-egui` adapter
-//! (ADR 0011), so this module carries no desktop emitter of its own.
+//! pinned by a conformance test (ADR 0008): `tokens.css` for the web, and
+//! `reference/tokens.md`, the browsable sheet. The desktop app consumes the
+//! tokens through the `meridian-egui` adapter (ADR 0011), so this module
+//! carries no desktop emitter of its own.
+//!
+//! The two are not siblings. `tokens_css` is the source: it reads the token
+//! modules and is the artefact a consumer takes. `tokens_md` reads *it*, so
+//! the sheet restates no token name and no value, and the pair cannot drift.
+
+mod markdown;
+pub use markdown::tokens_md;
 
 use crate::chrome::{InkTokens, INK_DARK, INK_LIGHT};
 use crate::colour::Rgba;
 use crate::scales::*;
 use crate::viz::*;
+
+/// The interaction states, as the suffix each one takes in an emitted name.
+/// Order matches [`crate::colour::StateSet::all`], and the reference sheet
+/// derives its own column labels from these rather than keeping a second list.
+pub(super) const STATES: [&str; 6] = ["", "-hover", "-active", "-selected", "-focus", "-disabled"];
 
 fn scale(css: &mut String, name: &str, s: &[Rgba; 12]) {
     for (i, c) in s.iter().enumerate() {
@@ -178,7 +191,6 @@ fn semantic_block(css: &mut String, dark: bool) {
     decl(css, "text-link-hover", &s.text.link_hover.hex());
     decl(css, "text-link-active", &s.text.link_active.hex());
 
-    const STATES: [&str; 6] = ["", "-hover", "-active", "-selected", "-focus", "-disabled"];
     for role in Role::ALL {
         let rc = s.role(role);
         for (channel, set) in [
