@@ -6,6 +6,17 @@
 
 use crate::colour::Rgba;
 
+/// WCAG AA for text that carries meaning, and for ink on a solid.
+///
+/// A threshold is a design decision, not a detail of the test that enforces
+/// it: `tests/chrome_gate.rs` gates against this number and `emit::tokens_md`
+/// prints it beside every ratio it publishes, so the sheet cannot claim a
+/// floor the gate does not hold anything to.
+pub const TEXT_MIN: f64 = 4.5;
+
+/// WCAG 1.4.11 for non-text boundaries, and the floor for quiet ink.
+pub const NON_TEXT_MIN: f64 = 3.0;
+
 fn s2lin(c: f64) -> f64 {
     if c <= 0.04045 {
         c / 12.92

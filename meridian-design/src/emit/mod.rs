@@ -1,12 +1,27 @@
 //! Emitters — every downstream artefact is generated from this crate and
-//! pinned by a conformance test (ADR 0008): `tokens.css` for the web. The
-//! desktop app consumes the tokens through the `meridian-egui` adapter
-//! (ADR 0011), so this module carries no desktop emitter of its own.
+//! pinned by a conformance test (ADR 0008): `tokens.css` for the web, and
+//! `reference/tokens.md`, the browsable sheet. The desktop app consumes the
+//! tokens through the `meridian-egui` adapter (ADR 0011), so this module
+//! carries no desktop emitter of its own.
+//!
+//! The two are not siblings. `tokens_css` is the source: it reads the token
+//! modules and is the artefact a consumer takes. `tokens_md` reads *it*, so
+//! the sheet restates no token name and no value, and the pair cannot drift.
+
+mod markdown;
+mod swatches;
+pub use markdown::tokens_md;
+pub use swatches::palette_svg;
 
 use crate::chrome::{InkTokens, INK_DARK, INK_LIGHT};
 use crate::colour::Rgba;
 use crate::scales::*;
 use crate::viz::*;
+
+/// The interaction states, as the suffix each one takes in an emitted name.
+/// Order matches [`crate::colour::StateSet::all`], and the reference sheet
+/// derives its own column labels from these rather than keeping a second list.
+pub(super) const STATES: [&str; 6] = ["", "-hover", "-active", "-selected", "-focus", "-disabled"];
 
 fn scale(css: &mut String, name: &str, s: &[Rgba; 12]) {
     for (i, c) in s.iter().enumerate() {
@@ -28,21 +43,35 @@ fn ink(css: &mut String, t: &InkTokens) {
     css.push_str(&format!("  --m-focus: {};\n", t.focus.hex()));
 }
 
+/// The six ramps in emission order, each with the name every artefact gives
+/// it. Stated once: three emitters need this pairing and a seventh hue should
+/// be added in one place, not found by grepping for the other five.
+pub(super) fn ramps(dark: bool) -> [(&'static str, &'static [Rgba; 12]); 6] {
+    if dark {
+        [
+            ("gray", &GRAY_DARK),
+            ("maritime", &MARITIME_DARK),
+            ("red", &RED_DARK),
+            ("amber", &AMBER_DARK),
+            ("green", &GREEN_DARK),
+            ("blue", &BLUE_DARK),
+        ]
+    } else {
+        [
+            ("gray", &GRAY_LIGHT),
+            ("maritime", &MARITIME_LIGHT),
+            ("red", &RED_LIGHT),
+            ("amber", &AMBER_LIGHT),
+            ("green", &GREEN_LIGHT),
+            ("blue", &BLUE_LIGHT),
+        ]
+    }
+}
+
 fn mode_block(css: &mut String, dark: bool) {
-    scale(css, "gray", if dark { &GRAY_DARK } else { &GRAY_LIGHT });
-    scale(
-        css,
-        "maritime",
-        if dark {
-            &MARITIME_DARK
-        } else {
-            &MARITIME_LIGHT
-        },
-    );
-    scale(css, "red", if dark { &RED_DARK } else { &RED_LIGHT });
-    scale(css, "amber", if dark { &AMBER_DARK } else { &AMBER_LIGHT });
-    scale(css, "green", if dark { &GREEN_DARK } else { &GREEN_LIGHT });
-    scale(css, "blue", if dark { &BLUE_DARK } else { &BLUE_LIGHT });
+    for (name, ramp) in ramps(dark) {
+        scale(css, name, ramp);
+    }
     let cat = if dark {
         &CATEGORICAL_DARK
     } else {
@@ -178,7 +207,6 @@ fn semantic_block(css: &mut String, dark: bool) {
     decl(css, "text-link-hover", &s.text.link_hover.hex());
     decl(css, "text-link-active", &s.text.link_active.hex());
 
-    const STATES: [&str; 6] = ["", "-hover", "-active", "-selected", "-focus", "-disabled"];
     for role in Role::ALL {
         let rc = s.role(role);
         for (channel, set) in [

@@ -751,3 +751,108 @@ fn the_web_artefact_is_self_contained() {
         }
     }
 }
+
+/// Stopped, each artefact is the finished artwork rather than a blank canvas.
+///
+/// The test above proves the reduced-motion rule exists and is scoped. It does
+/// not prove the rule leaves anything on screen, and honouring the preference
+/// by drawing nothing is the failure mode that looks most like success: the
+/// animation dutifully stops, and a reader who asked for less motion gets an
+/// empty box where the brand should be. That is the state the README hero and
+/// the desktop front door would show them.
+///
+/// It holds today by construction rather than by luck. `animation:none` drops
+/// each element to its underlying value, so a sweep rests wherever its base
+/// style puts it — and the emitter gives the clip rectangles no base transform
+/// at all, only an `animation-delay`. Untransformed, each one has to cover the
+/// whole canvas, which is what makes "no animation" mean "nothing is clipped".
+/// Give a rectangle a resting offset, or trim it to the ink it sweeps, and the
+/// artefact still plays correctly while its stopped state goes dark.
+#[test]
+fn each_artefact_rests_on_its_finished_artwork() {
+    for (name, svg, _) in SVGS {
+        let (w, h) = viewbox(svg);
+        let body = svg.split_once("</style>").expect("a style block").1;
+
+        let mut rects = 0;
+        for rect in body.split("<rect").skip(1) {
+            let frag = rect.split_once('>').expect("a closed element").0;
+            let num = |attr: &str| -> f64 {
+                attrs(frag, attr)
+                    .first()
+                    .expect("a clip rectangle is placed and sized")
+                    .parse()
+                    .expect("a geometry attribute is numeric")
+            };
+            let (x, y) = (num("x"), num("y"));
+            let (rw, rh) = (num("width"), num("height"));
+            assert!(
+                !frag.contains("transform"),
+                "{name}: a clip rectangle carries a base transform, so stopping \
+                 its animation parks it there instead of leaving it open"
+            );
+            assert!(
+                x <= 0.0 && y <= 0.0 && x + rw >= w && y + rh >= h,
+                "{name}: an untransformed clip rectangle spans {x}..{} x {y}..{} \
+                 and does not cover the {w}x{h} canvas, so reduced motion would \
+                 show part of the artwork or none of it",
+                x + rw,
+                y + rh
+            );
+            rects += 1;
+        }
+        assert!(rects > 0, "{name}: no clip rectangles seen — parse error?");
+
+        // …and something is left to see. Every ghost is hidden outright by the
+        // reduced-motion rule, and the transient strokes rest at `opacity="0"`,
+        // so the ink has to come from elsewhere.
+        let ink = body
+            .split("<path")
+            .skip(1)
+            .filter(|p| {
+                let frag = p.split_once('>').expect("a closed element").0;
+                !frag.contains("class=\"w\"") && !frag.contains("opacity=\"0\"")
+            })
+            .count();
+        assert!(
+            ink > 0,
+            "{name} stops on an empty canvas: every path is either a wake the \
+             reduced-motion rule hides or a stroke resting at zero opacity"
+        );
+    }
+}
+
+/// The README shows the tracked artefact, by path.
+///
+/// ADR 0012 names the README as a brand surface, and `guidelines/identity.md`
+/// puts one condition on every consumer of a brand asset: reference the file,
+/// never rebuild the motion or inline the path. That rule binds this repo's own
+/// front page as much as the web repo's, and the README is the one consumer no
+/// downstream conformance check watches.
+///
+/// A rename is already caught upstream — `brand.rs` pulls these files in with
+/// `include_str!`, so moving one fails the build. What that leaves open is a
+/// README still pointing at where the file used to be, which renders as a
+/// broken image on a page whose whole job is the first impression.
+#[test]
+fn the_readme_hero_points_at_the_tracked_lockup() {
+    let readme = include_str!("../../README.md");
+    let refs = [
+        ("MOTION_LOCKUP_SVG", "lockup.svg"),
+        ("MOTION_LOCKUP_SVG_DARK", "lockup_dark.svg"),
+    ];
+    for (constant, file) in refs {
+        let path = format!("meridian-design/brand/motion/{file}");
+        assert!(
+            readme.contains(&path),
+            "the README no longer references {path}, which `brand::{constant}` \
+             embeds — a hero that has stopped resolving still renders, as a \
+             broken image"
+        );
+    }
+    assert!(
+        readme.contains("prefers-color-scheme: dark"),
+        "the README hero has lost its dark source, so the dark artefact is \
+         tracked, emitted and never shown"
+    );
+}

@@ -15,6 +15,7 @@ If you are about to hard-code a colour, a radius, a control height, a duration o
 | `guidelines/` | Six citable pages — identity, density, speed, colour, typography, icons — plus `README.md`, their index. The rules tokens cannot carry. |
 | `validation/` | Colour maths and its evidence: the reproducible `.mts` pipeline (with its own private `package.json`), the vendored Radix scale generator, the approved-palette record and the review gallery. |
 | `motion/` | The offline, dependency-free Python generator for brand motion, plus preview and measurement pages. It emits **into `meridian-design/brand/motion/`** — ADR 0012's home — in both formats, reading the mark from `brand/` and every colour from `tokens.css` rather than copying either. `motion/output/` is untracked scratch for schemes that lost. |
+| `reference/` | Generated reference material, never hand-written. `tokens.md` today — every token, both themes, and every contrast ratio a gate defends. The published file *is* the pin; `reference/README.md` carries the regeneration ritual and what each gate holds. |
 | `scripts/` | Repo gates that are not Rust tests — currently the public-hygiene check and its self-test. |
 | `README.md`, `ROADMAP.md`, `LICENSE` | The public face, the sequence of work, and the MIT grant. |
 
@@ -43,12 +44,14 @@ Every downstream artefact is generated from the crate and pinned byte-for-byte b
 | Artefact | Emitter | Pinned by | Regenerate with |
 |---|---|---|---|
 | Web `tokens.css` | `emit::tokens_css` | `tests/snapshots/tokens.css` | `cargo run --example dump_css > tests/snapshots/tokens.css` |
+| `reference/tokens.md` | `emit::tokens_md`, **from `tokens_css` rather than from the token modules** | `reference/tokens.md` itself — the published file is the pin | `cargo run --example dump_md > ../reference/tokens.md` |
+| `reference/palette{,_dark}.svg` | `emit::palette_svg`, from `tokens_css` likewise | the published files, plus a gate that every fill is a token value in that mode | `cargo run --example dump_palette light > ../reference/palette.svg` (and `dark`) |
 | `brand/motion/form{,_dark}.json` | `motion/build_form.py` | `scripts/check-motion.sh` + `tests/motion.rs` | `cd motion && python3 build_form.py` |
 | `brand/motion/form{,_dark}.svg` | `motion/svg_form.py`, from the Lottie above | the same two | the same command |
 | `brand/motion/lockup{,_dark}.json` | `motion/build_lockup.py` | the same two | `cd motion && python3 build_lockup.py` |
 | `brand/motion/lockup{,_dark}.svg` | `motion/svg_form.py`, from the Lottie above | the same two | the same command |
 
-The desktop app is themed through the `meridian-egui` adapter (ADR 0011), not a JSON theme artefact; the gpui-component `ThemeConfig` emitter was retired once that shell cut over to egui, so `tokens.css` is the only *token* artefact today.
+The desktop app is themed through the `meridian-egui` adapter (ADR 0011), not a JSON theme artefact; the gpui-component `ThemeConfig` emitter was retired once that shell cut over to egui, so `tokens.css` is the only token artefact a *consumer* takes. `reference/tokens.md` is the second emitter and has no consuming repository — its reader is a person. It is generated all the same, and from `tokens_css` rather than from the token modules, because a hand-written reference is right on the day it is written and silently wrong afterwards.
 
 **The brand-motion emitter is Python, so its byte pin is a script rather than a snapshot test.** `cargo test` must not need a Python interpreter, so `scripts/check-motion.sh` runs `build_form.py --check` as its own CI job and `tests/motion.rs` carries what a byte comparison cannot say — that the mark is the tracked mark, that every colour is a token value, and that the two formats describe one animation. Neither gate replaces the other. The SVG emitter reads the built Lottie rather than re-choreographing it, which is the same "read it, do not restate it" rule the crate's emitters keep, applied to the schedule.
 

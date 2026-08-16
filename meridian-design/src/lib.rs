@@ -28,7 +28,10 @@
 //!   with an instantiated [`StateSet`] per interaction role;
 //! - **contract** — [`a11y`]: role and keyboard intent, the half of a component
 //!   spec that colour tokens cannot carry;
-//! - **emitters** — [`emit`], one per consumer, each pinned by a snapshot.
+//! - **emitters** — [`emit`], each pinned byte-for-byte. Most have a consuming
+//!   repository; [`emit::tokens_md`] is the exception, a reference sheet whose
+//!   reader is a person, generated so that it cannot drift from the artefact
+//!   the web actually takes.
 //!
 //! Reach for the semantic layer first; drop to a raw scale only when the thing
 //! being coloured genuinely has no semantic name yet.
