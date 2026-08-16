@@ -83,7 +83,9 @@ instead of a generic spinner changes what it looks like, not whether it is
 allowed.
 
 **Cap: three assets.** The globe turn; the wordmark forming; the work indicator,
-which is the globe turn at reduced amplitude rather than a third animation. A
+which is the globe turn at reduced amplitude rather than a third animation.
+*(Now read as `form`; the lockup forming; the work indicator, which is `form`.
+See the updates at the end — the count and the relationship are unchanged.)* A
 fourth is earned by a named product requirement that provably cannot be composed
 from the three — the same two-door rule ADR 0011 put on primitives, for the same
 reason. A library of brand animations is the maintenance burden ADR 0002
@@ -183,7 +185,10 @@ These are authoring constraints, not blockers, and they are cheaper to know now:
 - **Boolean operations are not implemented.** Pre-flatten; do not ship live
   merges.
 - **There are no text layers.** The wordmark must be outlined curves. This is
-  also why the wordmark animation is web-only for now.
+  also why the wordmark animation is web-only for now. *(Second clause lapsed
+  2026-08-16 — the wordmark is outlined, so there is no text layer to want and
+  the lockup ships in both formats. The first clause stands and is now load
+  bearing. See the update at the end.)*
 - **Trim path *is* implemented**, in both the importer and the renderer, which
   the upstream README's summary of unsupported "advanced shapes" obscures. Draw-on
   works. Stroke dash — the other way to draw a line on — genuinely is missing.
@@ -375,3 +380,60 @@ instead of a list of approved hexes written beside the test.
   header, an empty state that is *nearly* marketing. The cap is what stops that
   ambiguity from mattering much: there are three assets, and adding a fourth is a
   decision someone has to argue for.
+
+### Update (2026-08-16 — the second asset is the lockup, and it is not web-only)
+
+Two amendments, both narrowing clauses that were reasoned correctly and have
+since been overtaken by the wordmark acquiring a vector source.
+
+**1. The second slot is *the lockup forming*, not *the wordmark forming*.**
+
+The cap now reads **`form`; the lockup forming; the work indicator, which is
+`form` rather than a third animation**. The count is unchanged, and so is the
+relationship between the three.
+
+The original wording predates the assets existing. Reading it back with the
+brand surfaces this decision itself lists — marketing, install, OG images, the
+desktop front door, the README — none of them shows a bare wordmark; they all
+show the lockup. An animation of the wordmark alone would have been an asset
+with no surface, which is a worse outcome than the cap was defending against.
+
+The relationship that settles it is the one already established for the work
+indicator: **build the larger thing and the smaller one is a cut of it.** The
+lockup's second beat, frames 33–73, is the wordmark forming on its own; a
+surface that wants only that takes the cut, exactly as an application wanting a
+shorter work cue takes `form`'s arc alone. The reverse does not hold — a
+wordmark animation cannot be grown into a lockup without choreographing the
+mark and the placement, which is the whole of the work.
+
+**2. "The wordmark animation is web-only for now" has lapsed.**
+
+That clause sits under *What the desktop renderer cannot do*, beside
+"there are no text layers", and it was a correct reading of velato at the time:
+with no outlined wordmark in the repository, an animated wordmark would have had
+to be live type, which velato cannot draw at all.
+
+`meridian_wordmark.svg` and `meridian_lockup.svg` are outlined curves, so there
+is no text layer to want. The constraint the clause depended on no longer
+applies, and **the lockup ships in both formats, like `form`.**
+
+One thing was verified rather than assumed before saying so, because the lockup
+exercises something `form` never did: the mark's six teeth have no counters, and
+R, D and A do. velato parses a fill rule into its schema and then **hardcodes
+`Fill::NonZero` in `runtime/vello.rs`**, never reading it back — so a counter is
+a hole there only if it winds against its outline. Measured on the artwork: every
+letter outline winds clockwise and every counter anticlockwise, so the holes are
+real in velato as well as in the browser. `brand.rs` asserts the winding, because
+it is a property both renderers depend on and neither declares — and note that a
+flipped winding would fail in both at once rather than in one, since the SVG
+declares `fill-rule:nonzero` too.
+
+What is *not* covered is unchanged from the 2026-08-16 note above: vello painting
+that compositing on the GPU, which the desktop shell exercises for every scene it
+draws.
+
+**What does not move.** Brand motion is still confined to brand surfaces, still
+capped at three, and the mark still does not move in application chrome or on a
+data surface. The lockup is emphatically a front-door asset — `guidelines/speed.md`
+admits the honest-work cue as the mark's one in-app appearance, and that cue is
+`form`, not this.

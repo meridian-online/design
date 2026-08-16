@@ -37,10 +37,14 @@ felt in restraint, not colour volume (ADR 0004).
   the desktop front door, the README — capped at three animations, and never in
   app chrome or on a data surface (ADR 0012, `speed.md`). The honest-work
   indicator is the one in-app use, and `speed.md` already required it.
-- **The animation is a tracked file too.** `brand/motion/form.*`, the mark
-  assembling — Lottie for the desktop, animated SVG for the web. It is the first
-  of the three, and it is the honest-work cue. The rule above applies to it
-  unchanged: reference the file, do not rebuild the motion from the path.
+- **The animations are tracked files too.** Two of ADR 0012's three: `form`, the
+  mark assembling, which is also the honest-work cue; and `lockup`, the mark and
+  the wordmark forming together, which is a front-door asset and never an in-app
+  one. Each ships as Lottie for the desktop and animated SVG for the web. The
+  rule above applies to both unchanged: **reference the file, do not rebuild the
+  motion from the path** — and do not compose a lockup out of the two component
+  files either, because `brand/meridian_lockup.svg` is the authority on how they
+  sit together.
 
 ## Evidence
 

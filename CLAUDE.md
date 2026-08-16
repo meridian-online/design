@@ -70,6 +70,8 @@ by a conformance test, so drift fails CI instead of shipping:
 | Web `tokens.css` | `emit::tokens_css` | `tests/snapshots/tokens.css` | `cargo run --example dump_css > tests/snapshots/tokens.css` |
 | `brand/motion/form{,_dark}.json` | `motion/build_form.py` | `scripts/check-motion.sh` + `tests/motion.rs` | `cd motion && python3 build_form.py` |
 | `brand/motion/form{,_dark}.svg` | `motion/svg_form.py`, from the Lottie above | the same two | the same command |
+| `brand/motion/lockup{,_dark}.json` | `motion/build_lockup.py` | the same two | `cd motion && python3 build_lockup.py` |
+| `brand/motion/lockup{,_dark}.svg` | `motion/svg_form.py`, from the Lottie above | the same two | the same command |
 
 The desktop app is themed through the `meridian-egui` adapter (ADR 0011), not a
 JSON theme artefact; the gpui-component `ThemeConfig` emitter was retired once

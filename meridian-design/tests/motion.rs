@@ -19,18 +19,109 @@
 
 use meridian_design::brand;
 
-/// The four artefacts, with the mode whose tokens they may draw from.
+/// Every artefact, with the mode whose tokens it may draw from.
+///
+/// Two assets now — `form`, the mark forming, and `lockup`, the mark and the
+/// wordmark forming together — in two formats and two themes each. Everything
+/// keyed off this table is a claim that holds for brand motion in general, so
+/// a third asset joins by being added here.
 const ARTEFACTS: &[(&str, &str, bool)] = &[
     ("form.svg", brand::MOTION_FORM_SVG, false),
     ("form_dark.svg", brand::MOTION_FORM_SVG_DARK, true),
     ("form.json", brand::MOTION_FORM_LOTTIE, false),
     ("form_dark.json", brand::MOTION_FORM_LOTTIE_DARK, true),
+    ("lockup.svg", brand::MOTION_LOCKUP_SVG, false),
+    ("lockup_dark.svg", brand::MOTION_LOCKUP_SVG_DARK, true),
+    ("lockup.json", brand::MOTION_LOCKUP_LOTTIE, false),
+    ("lockup_dark.json", brand::MOTION_LOCKUP_LOTTIE_DARK, true),
 ];
 
 const SVGS: &[(&str, &str, bool)] = &[
     ("form.svg", brand::MOTION_FORM_SVG, false),
     ("form_dark.svg", brand::MOTION_FORM_SVG_DARK, true),
+    ("lockup.svg", brand::MOTION_LOCKUP_SVG, false),
+    ("lockup_dark.svg", brand::MOTION_LOCKUP_SVG_DARK, true),
 ];
+
+/// Each asset-and-theme as its two formats, so a test that compares the pair
+/// cannot pair the wrong two files. Matching by theme alone was enough while
+/// there was one asset and silently picked `form` for both once there were two.
+const FORMATS: &[(&str, &str, &str)] = &[
+    (
+        "form light",
+        brand::MOTION_FORM_SVG,
+        brand::MOTION_FORM_LOTTIE,
+    ),
+    (
+        "form dark",
+        brand::MOTION_FORM_SVG_DARK,
+        brand::MOTION_FORM_LOTTIE_DARK,
+    ),
+    (
+        "lockup light",
+        brand::MOTION_LOCKUP_SVG,
+        brand::MOTION_LOCKUP_LOTTIE,
+    ),
+    (
+        "lockup dark",
+        brand::MOTION_LOCKUP_SVG_DARK,
+        brand::MOTION_LOCKUP_LOTTIE_DARK,
+    ),
+];
+
+/// Each asset's light and dark SVG, with the root id each carries.
+const THEMED: &[(&str, &str, &str, &str)] = &[
+    (
+        "form",
+        brand::MOTION_FORM_SVG,
+        brand::MOTION_FORM_SVG_DARK,
+        "meridian-form",
+    ),
+    (
+        "lockup",
+        brand::MOTION_LOCKUP_SVG,
+        brand::MOTION_LOCKUP_SVG_DARK,
+        "meridian-lockup",
+    ),
+];
+
+/// Each asset's two formats, and the static artwork whose canvas they share.
+const ASSETS: &[(&str, &str, &str, &str)] = &[
+    (
+        "form",
+        brand::MOTION_FORM_SVG,
+        brand::MOTION_FORM_LOTTIE,
+        brand::MARK_BLACK,
+    ),
+    (
+        "lockup",
+        brand::MOTION_LOCKUP_SVG,
+        brand::MOTION_LOCKUP_LOTTIE,
+        brand::LOCKUP,
+    ),
+];
+
+/// The `viewBox`'s width and height, as written.
+fn viewbox(svg: &str) -> (f64, f64) {
+    let box_ = svg
+        .split_once("viewBox=\"")
+        .expect("an SVG has a viewBox")
+        .1
+        .split_once('"')
+        .unwrap()
+        .0;
+    let n: Vec<f64> = box_
+        .split_whitespace()
+        .map(|v| v.parse().expect("a viewBox is numeric"))
+        .collect();
+    assert_eq!(n.len(), 4, "a viewBox has four numbers");
+    assert_eq!(
+        (n[0], n[1]),
+        (0.0, 0.0),
+        "a viewBox anchored somewhere other than the origin"
+    );
+    (n[2], n[3])
+}
 
 /// Every value of `attr` in a document, in order.
 fn attrs<'a>(doc: &'a str, attr: &str) -> Vec<&'a str> {
@@ -186,7 +277,15 @@ fn the_animated_svg_draws_the_tracked_mark() {
     assert_eq!(canonical.len(), 6, "the mark is six teeth");
     canonical.sort_unstable();
 
-    for (name, svg, _) in SVGS {
+    // `form` only. The lockup draws the mark too, but placed — at a tenth of
+    // this canvas — so its teeth cannot match this text, and it draws eight
+    // letters besides. `the_animated_lockup_draws_the_tracked_lockup` makes the
+    // equivalent claim against the artwork the lockup is actually made of.
+    const FORM_SVGS: &[(&str, &str, bool)] = &[
+        ("form.svg", brand::MOTION_FORM_SVG, false),
+        ("form_dark.svg", brand::MOTION_FORM_SVG_DARK, true),
+    ];
+    for (name, svg, _) in FORM_SVGS {
         // A row is the only filled thing in the file; the strokes carry no
         // fill. So every `d` on an element that also carries `fill=` is teeth.
         let rows: Vec<&str> = svg
@@ -258,6 +357,116 @@ fn the_animated_svg_draws_the_tracked_mark() {
                  sits in brand/meridian_black.svg — the right shape, moved"
             );
         }
+    }
+}
+
+/// The animated lockup draws the lockup that is in `brand/`, to the character.
+///
+/// The same claim the test above makes about `form`, against the artwork this
+/// asset is made of. `build_lockup.py` reads `meridian_lockup.svg` and emits
+/// each filled shape as that file's own `d` text rather than re-serialising
+/// vertices, so this compares strings.
+///
+/// Set equality, not containment. Everything the animation fills has to be *in*
+/// the lockup, and everything the lockup draws has to be filled — the second
+/// half being the one that matters, because an emitter that quietly dropped a
+/// letter would still produce a file that plays, and a subset check would pass
+/// it happily.
+///
+/// One thing is allowed to differ, and only one — the same seam as `form`. The
+/// lockup's subpaths are a chain, so a beat drawing two teeth on their own has
+/// to rewrite each opening move as absolute. Everything after it is untouched,
+/// which is why the comparison starts at the first drawing command.
+#[test]
+fn the_animated_lockup_draws_the_tracked_lockup() {
+    fn tail(sub: &str) -> &str {
+        sub.split_once(['l', 'c']).expect("a drawn subpath").1
+    }
+
+    let mut canonical: Vec<String> = brand::LOCKUP
+        .match_indices(" d=\"")
+        .flat_map(|(at, _)| {
+            brand::LOCKUP[at + 4..]
+                .split_once('"')
+                .unwrap()
+                .0
+                .split_terminator('Z')
+                .map(|sub| tail(sub).to_owned())
+        })
+        .collect();
+    assert!(!canonical.is_empty(), "the lockup has no path data");
+
+    // The two I's are `<rect>` in the tracked file and paths in the animation,
+    // because a Lottie shape layer has no rectangle-with-a-fill-rule to point
+    // at. That conversion is asserted rather than stepped around: a rectangle
+    // is four straight lines, so its path text is fully determined by its own
+    // width and height, and writing that expectation here is what stops the
+    // generator from rounding a letter or emitting the wrong one.
+    let rects: Vec<&str> = brand::LOCKUP
+        .match_indices("<rect")
+        .map(|(at, _)| {
+            &brand::LOCKUP[at..at + brand::LOCKUP[at..].find("/>").expect("a closed rect")]
+        })
+        .collect();
+    assert_eq!(
+        rects.len(),
+        2,
+        "the lockup's rectangular letters have changed"
+    );
+    for el in &rects {
+        let of = |k: &str| {
+            el.split_once(&format!("{k}=\""))
+                .expect("a rect has width and height")
+                .1
+                .split_once('"')
+                .unwrap()
+                .0
+        };
+        let (w, h) = (of("width"), of("height"));
+        canonical.push(format!("{w},0l0,{h}l-{w},0"));
+    }
+
+    canonical.sort_unstable();
+    canonical.dedup();
+
+    for (name, svg) in [
+        ("lockup.svg", brand::MOTION_LOCKUP_SVG),
+        ("lockup_dark.svg", brand::MOTION_LOCKUP_SVG_DARK),
+    ] {
+        let mut drawn: Vec<String> = svg
+            .match_indices("<path")
+            .map(|(at, _)| &svg[at..at + svg[at..].find("/>").expect("a closed element")])
+            .filter(|element| element.contains(" fill=\""))
+            .flat_map(|element| {
+                element
+                    .split_once(" d=\"")
+                    .expect("a path has data")
+                    .1
+                    .split_once('"')
+                    .unwrap()
+                    .0
+                    .split_terminator('Z')
+                    .map(|sub| {
+                        assert!(
+                            sub.starts_with('M'),
+                            "{name}: a subpath opens relative, so where it lands \
+                             depends on whichever shape was drawn before it"
+                        );
+                        tail(sub).to_owned()
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+        assert!(!drawn.is_empty(), "{name} fills nothing at all");
+        drawn.sort_unstable();
+        drawn.dedup();
+
+        assert_eq!(
+            drawn, canonical,
+            "{name} does not draw the artwork in brand/meridian_lockup.svg — \
+             either it fills something the lockup does not contain, or it has \
+             dropped something the lockup does"
+        );
     }
 }
 
@@ -342,11 +551,7 @@ fn the_two_formats_carry_the_same_number_of_inks() {
 /// the one a re-choreographing emitter would get wrong first.
 #[test]
 fn the_two_formats_agree_on_the_loop() {
-    for (svg_name, svg, dark) in SVGS {
-        let (_, json, _) = ARTEFACTS
-            .iter()
-            .find(|(n, _, d)| n.ends_with(".json") && d == dark)
-            .unwrap();
+    for (svg_name, svg, json) in FORMATS {
         let seconds = first_number(json, "op") / first_number(json, "fr");
         let expected = format!("{seconds}s");
 
@@ -435,16 +640,16 @@ fn the_animated_svg_stops_for_reduced_motion() {
     }
 }
 
-/// Light and dark are the same drawing in different ink.
+/// Light and dark are the same drawing in different ink, for every asset.
 ///
 /// Strip the hex and the two files are byte-identical. That is a stronger claim
 /// than "they look similar": it says the geometry, the schedule, every keyframe
 /// percentage and every delay came from one source, and that a theme cannot be
 /// quietly redrawn while wearing the same name.
 #[test]
-fn the_dark_form_is_the_light_form_recoloured() {
-    let strip = |svg: &str, slug: &str| {
-        let mut out = svg.replace(slug, "meridian-form");
+fn each_dark_artefact_is_its_light_twin_recoloured() {
+    let strip = |svg: &str, slug: &str, root: &str| {
+        let mut out = svg.replace(slug, root);
         while let Some(at) = out.find('#') {
             let hex = out[at..]
                 .chars()
@@ -463,26 +668,69 @@ fn the_dark_form_is_the_light_form_recoloured() {
         }
         out
     };
-    assert_eq!(
-        strip(brand::MOTION_FORM_SVG, "meridian-form"),
-        strip(brand::MOTION_FORM_SVG_DARK, "meridian-form-dark"),
-        "the dark form has been redrawn rather than recoloured"
-    );
-}
-
-/// Every artefact is on the mark's own canvas.
-#[test]
-fn the_artefacts_share_the_marks_canvas() {
-    let side = brand::MARK_VIEWBOX as u32;
-    for (name, doc, _) in ARTEFACTS {
-        let on_canvas = doc.contains(&format!("viewBox=\"0 0 {side} {side}\""))
-            || doc.contains(&format!("\"w\":{side},\"h\":{side}"));
-        assert!(
-            on_canvas,
-            "{name} is not on the mark's {side}x{side} canvas, so it cannot be \
-             swapped for a static mark at the same size"
+    for (asset, light, dark, root) in THEMED {
+        assert_eq!(
+            strip(light, root, root),
+            strip(dark, &format!("{root}-dark"), root),
+            "the dark {asset} has been redrawn rather than recoloured"
         );
     }
+}
+
+/// Every artefact is on the canvas of the artwork it animates.
+///
+/// The canvas is read off the static SVG rather than written here, because the
+/// claim is a relationship and not a number: an animation that does not share
+/// its artwork's canvas cannot be swapped for the still file at the same size,
+/// which is exactly what a surface does under reduced motion or when it wants a
+/// static fallback. `form` therefore has to be the mark's canvas and `lockup`
+/// the lockup's, and neither has to be stated twice.
+#[test]
+fn the_artefacts_share_their_artworks_canvas() {
+    for (asset, svg, lottie, artwork) in ASSETS {
+        let (w, h) = viewbox(artwork);
+        assert_eq!(
+            viewbox(svg),
+            (w, h),
+            "{asset}.svg is not on its artwork's canvas"
+        );
+        // The Lottie writes its canvas as numbers, which may be integers.
+        let as_written = |v: f64| {
+            if v.fract() == 0.0 {
+                format!("{}", v as i64)
+            } else {
+                format!("{v}")
+            }
+        };
+        let header = format!("\"w\":{},\"h\":{}", as_written(w), as_written(h));
+        assert!(
+            lottie.contains(&header),
+            "{asset}.json does not carry {header}, so the two formats are not \
+             the same size and the pair cannot be swapped for one another"
+        );
+    }
+}
+
+/// `form` is the mark's canvas and `lockup` is wider than it is tall.
+///
+/// The test above ties each artefact to its artwork but would pass if both
+/// artworks were quietly given the same canvas — which is precisely what a
+/// careless re-export of the lockup would do. These two are different shapes
+/// and are supposed to stay different shapes.
+#[test]
+fn the_two_assets_are_not_the_same_shape() {
+    let (mark_w, mark_h) = viewbox(brand::MARK_BLACK);
+    assert_eq!(
+        (mark_w, mark_h),
+        (brand::MARK_VIEWBOX as f64, brand::MARK_VIEWBOX as f64),
+        "the mark is no longer square on MARK_VIEWBOX"
+    );
+    let (lock_w, lock_h) = viewbox(brand::LOCKUP);
+    assert!(
+        lock_w > 3.0 * lock_h,
+        "the lockup is {lock_w}x{lock_h}, which is not the wide horizontal \
+         lockup the motion is choreographed across"
+    );
 }
 
 /// The web artefact needs no runtime, and fetches nothing.

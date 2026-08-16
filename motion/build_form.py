@@ -396,18 +396,23 @@ def seq(kfs):
     return out
 
 
-def turn(t0, dur, x_from, x_to, n=9):
+def turn(t0, dur, x_from, x_to, n=9, y=None):
     """Keyframes walking the wipe edge the way a meridian crosses a sphere.
 
     Half a cosine: still at one limb, quickest at the centre, still at the
     other. Linear between samples, because the sampling already carries the
     curve. The last keyframe of the pair is left for the caller to follow.
+
+    `y` defaults to this composition's centre. `build_lockup.py` borrows this
+    function on a canvas of its own and passes its own, which is why the
+    parameter exists — the curve is the shared instrument, the canvas is not.
     """
+    y = H / 2 if y is None else y
     out = []
     for k in range(n):
         u = k / (n - 1)
         x = x_from + (x_to - x_from) * (1 - math.cos(math.pi * u)) / 2
-        kf = {"t": t0 + dur * u, "s": [x, H / 2, 0]}
+        kf = {"t": t0 + dur * u, "s": [x, y, 0]}
         if k < n - 1:
             kf["i"], kf["o"] = LIN_I, LIN_O
         out.append(kf)

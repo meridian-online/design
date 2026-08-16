@@ -30,4 +30,9 @@ if ! command -v python3 >/dev/null 2>&1; then
 fi
 
 cd motion
-exec python3 build_form.py --check
+
+# One generator per asset, each pinning its own four files. They are separate
+# invocations rather than one because they are separate choreographies — a
+# failure here should name which animation drifted, not that "motion" did.
+python3 build_form.py --check
+exec python3 build_lockup.py --check
