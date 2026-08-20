@@ -540,7 +540,12 @@ fn write_the_montage_pngs() {
         let image = harness.render().expect("render the montage through wgpu");
         let path = out.join(format!("pill-geometry-{name}.png"));
         image.save(&path).expect("write the montage PNG");
-        println!("wrote {} ({}x{} px)", path.display(), image.width(), image.height());
+        println!(
+            "wrote {} ({}x{} px)",
+            path.display(),
+            image.width(),
+            image.height()
+        );
 
         let state = harness.state();
         for arm in arms() {
