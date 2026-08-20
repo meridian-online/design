@@ -68,7 +68,7 @@ use meridian_egui::{icons, key_chip, theme, widgets, Icon, MeridianUi, Mode, TOK
 const PIXELS_PER_POINT: f32 = 2.0;
 
 /// The montage frame, in points.
-const FRAME: (f32, f32) = (660.0, 300.0);
+const FRAME: (f32, f32) = (480.0, 280.0);
 
 // ---------------------------------------------------------------------------
 // The three geometries.
