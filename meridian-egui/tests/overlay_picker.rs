@@ -10,9 +10,9 @@
 use egui_kittest::kittest::Queryable;
 use egui_kittest::Harness;
 use meridian_egui::{
-    list_row, theme, ListRow, ModalChrome, ModalLayer, Mode, Notification, NotificationId,
-    NotificationLayer, Picker, PickerDelegate, PickerEvent, PickerHint, PickerOutcome, PickerRow,
-    RowHeight, Severity, Toast, ToastLayer,
+    key_chip, list_row, theme, ListRow, MeridianUi, ModalChrome, ModalLayer, Mode, Notification,
+    NotificationId, NotificationLayer, Picker, PickerDelegate, PickerEvent, PickerHint,
+    PickerOutcome, PickerRow, RowHeight, Severity, Toast, ToastLayer,
 };
 
 /// A flat list delegate with case-insensitive substring filtering — the
@@ -506,4 +506,312 @@ fn toast_layer_renders_queued_toasts() {
     );
     harness.run();
     harness.get_by_label("dataset saved");
+}
+
+// ─── the keycap chips in a modal footer ──────────────────────────────────────
+//
+// These read the *paint list*, not the accesskit tree, and that is the point.
+// A chip is an `egui::Frame` around a galley: the galley is what the tree
+// carries a size for, and the galley never stretched. What stretched was the
+// chip's own box, which exists only as a painted shape. `surfaces.sunken` at
+// `radius_chip` is drawn by `key_chip` and by nothing else in the crate, so
+// that pair addresses the chip boxes exactly.
+
+/// The hairline every box in this crate is stroked with. Named here so the
+/// content-derived chip height below is spelled out term by term rather than
+/// borrowed from the code under test.
+const HAIRLINE: f32 = 1.0;
+
+/// Every rounded rect a frame painted, flattened out of the shape tree — an
+/// `egui::Frame` nests its background under a `Shape::Vec` when it also draws
+/// a shadow, which the modal card does.
+fn painted_rects<S>(
+    harness: &Harness<'_, S>,
+) -> Vec<(egui::Rect, egui::Color32, egui::CornerRadius)> {
+    fn walk(shape: &egui::Shape, out: &mut Vec<(egui::Rect, egui::Color32, egui::CornerRadius)>) {
+        match shape {
+            egui::Shape::Rect(r) => out.push((r.rect, r.fill, r.corner_radius)),
+            egui::Shape::Vec(shapes) => shapes.iter().for_each(|s| walk(s, out)),
+            _ => {}
+        }
+    }
+    let mut out = Vec::new();
+    for clipped in &harness.output().shapes {
+        walk(&clipped.shape, &mut out);
+    }
+    out
+}
+
+/// The rects painted with `fill` at `radius`.
+fn boxes_of<S>(harness: &Harness<'_, S>, fill: egui::Color32, radius: f32) -> Vec<egui::Rect> {
+    let radius = egui::CornerRadius::from(radius);
+    painted_rects(harness)
+        .into_iter()
+        .filter(|(_, f, r)| *f == fill && *r == radius)
+        .map(|(rect, _, _)| rect)
+        .collect()
+}
+
+/// The height a keycap chip's *content* implies: the keystroke's galley in the
+/// chip's monospace ink, plus the two spacing-ladder padding steps and the
+/// hairline, top and bottom. Laid out here from the tokens rather than asked
+/// of the code under test.
+fn content_chip_height(ui: &egui::Ui, keystroke: &str) -> f32 {
+    let galley = ui.painter().layout_no_wrap(
+        keystroke.to_owned(),
+        egui::FontId::new(
+            meridian_design::typography::CHART_LABEL_SIZE,
+            egui::FontFamily::Monospace,
+        ),
+        egui::Color32::PLACEHOLDER,
+    );
+    galley.size().y + 2.0 * ui.tokens().space[1] + 2.0 * HAIRLINE
+}
+
+/// What one drawn modal measured.
+#[derive(Default)]
+struct Drawn {
+    /// The chip boxes the footer painted, tallest first.
+    chips: Vec<egui::Rect>,
+    /// The card box itself.
+    card: Option<egui::Rect>,
+    /// The chip height this modal's content implies.
+    content_height: f32,
+}
+
+/// Draw `chrome` around `body` on a window of `size` and measure what was
+/// painted.
+fn draw_modal(
+    size: (f32, f32),
+    mode: Mode,
+    chrome: ModalChrome,
+    body: impl Fn(&mut egui::Ui) + Copy,
+) -> Drawn {
+    let mut harness = Harness::builder()
+        .with_size(egui::vec2(size.0, size.1))
+        .build_ui_state(
+            |ui, m: &mut Drawn| {
+                theme::apply(ui.ctx(), mode);
+                m.content_height = content_chip_height(ui, "Esc");
+                ModalLayer::show(ui.ctx(), "measured", &chrome, |ui| body(ui));
+            },
+            Drawn::default(),
+        );
+    harness.run();
+
+    let sem = meridian_design::semantic(mode.is_dark());
+    let mut chips = boxes_of(
+        &harness,
+        theme::to_color32(sem.surfaces.sunken),
+        meridian_egui::TOKENS.radius_chip,
+    );
+    chips.sort_by(|a, b| b.height().total_cmp(&a.height()));
+    let card = boxes_of(
+        &harness,
+        theme::to_color32(sem.surfaces.overlay),
+        meridian_egui::TOKENS.radius_panel,
+    )
+    .into_iter()
+    .max_by(|a, b| a.height().total_cmp(&b.height()));
+
+    let content_height = harness.state().content_height;
+    Drawn {
+        chips,
+        card,
+        content_height,
+    }
+}
+
+/// A body of two plain lines — content-sized, so the card's own measurement is
+/// what is under test rather than the body's.
+fn plain_body(ui: &mut egui::Ui) {
+    ui.label("Body line one");
+    ui.label("Body line two");
+}
+
+#[test]
+fn a_footer_keycap_is_keycap_sized_however_much_height_the_card_has_left() {
+    let chrome = || ModalChrome::new().title("Commands").enter_hint("run");
+    let tall = draw_modal((1400.0, 900.0), Mode::Light, chrome(), plain_body);
+    let short = draw_modal((900.0, 260.0), Mode::Light, chrome(), plain_body);
+
+    for (window, drawn) in [("tall", &tall), ("short", &short)] {
+        assert_eq!(
+            drawn.chips.len(),
+            2,
+            "{window} window: the footer paints an Esc box and an Enter box"
+        );
+        for chip in &drawn.chips {
+            assert!(
+                (chip.height() - drawn.content_height).abs() < 0.5,
+                "{window} window: a keycap chip drew {:.1}pt tall; its content \
+                 is {:.1}pt. A chip is its galley plus its padding and \
+                 hairline, not the height the card had spare.",
+                chip.height(),
+                drawn.content_height,
+            );
+        }
+    }
+
+    // The observable failure the fix is for: the same chip on a taller window.
+    assert!(
+        (tall.chips[0].height() - short.chips[0].height()).abs() < 0.5,
+        "the tallest chip drew {:.1}pt on a 900pt-high window and {:.1}pt on a \
+         260pt-high one — a keycap cannot depend on the window",
+        tall.chips[0].height(),
+        short.chips[0].height(),
+    );
+}
+
+#[test]
+fn every_chrome_shape_keeps_its_keycaps_keycap_sized() {
+    // Every distinct `ModalChrome` shape a consumer builds. The chips live in
+    // the shared chrome, so one modal cannot be right while another stretches
+    // — but the footer's height is derived from the hints it draws, so each
+    // combination of them is drawn and measured.
+    let shapes: [(&str, ModalChrome, usize); 6] = [
+        (
+            "title, escape and enter",
+            ModalChrome::new().title("Commands").enter_hint("run"),
+            2,
+        ),
+        (
+            "title and escape only",
+            ModalChrome::new().title("Keyboard help"),
+            1,
+        ),
+        (
+            "narrow, title and escape",
+            ModalChrome::new().title("Specimen").narrow(),
+            1,
+        ),
+        ("no title", ModalChrome::new(), 1),
+        (
+            "renamed escape verb",
+            ModalChrome::new().esc_hint("cancel"),
+            1,
+        ),
+        (
+            "enter only, escape removed",
+            ModalChrome::new().without_esc_hint().enter_hint("jump"),
+            1,
+        ),
+    ];
+
+    for (name, chrome, expected_chips) in shapes {
+        for mode in [Mode::Light, Mode::Dark] {
+            let drawn = draw_modal((1400.0, 900.0), mode, chrome.clone(), plain_body);
+            assert_eq!(
+                drawn.chips.len(),
+                expected_chips,
+                "{name} ({mode:?}): chip boxes painted"
+            );
+            for chip in &drawn.chips {
+                assert!(
+                    (chip.height() - drawn.content_height).abs() < 0.5,
+                    "{name} ({mode:?}): a keycap chip drew {:.1}pt tall against \
+                     a content height of {:.1}pt",
+                    chip.height(),
+                    drawn.content_height,
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn the_card_stops_at_its_content_rather_than_at_its_height_cap() {
+    let chrome = || ModalChrome::new().title("Commands").enter_hint("run");
+    let tall = draw_modal((1400.0, 900.0), Mode::Light, chrome(), plain_body);
+    let short = draw_modal((900.0, 260.0), Mode::Light, chrome(), plain_body);
+
+    let tall_card = tall.card.expect("the card box is painted");
+    let short_card = short.card.expect("the card box is painted");
+
+    // Content-driven height, stated as the property: the same content draws
+    // the same card, whatever room the window had.
+    assert!(
+        (tall_card.height() - short_card.height()).abs() < 0.5,
+        "the same modal drew {:.1}pt tall on a 900pt-high window and {:.1}pt on \
+         a 260pt-high one — the module's height claim is content-driven",
+        tall_card.height(),
+        short_card.height(),
+    );
+
+    // And the cap the same claim promises: the largest ladder gap of breathing
+    // room, top and bottom.
+    let gap = meridian_egui::TOKENS.space[9];
+    assert!(
+        900.0 - tall_card.height() >= 2.0 * gap,
+        "a {:.1}pt card on a 900pt window leaves {:.1}pt, under the {:.1}pt the \
+         cap promises",
+        tall_card.height(),
+        900.0 - tall_card.height(),
+        2.0 * gap,
+    );
+}
+
+/// How one of the cases below puts a chip on a `Ui`.
+type ChipPlacement = fn(&mut egui::Ui);
+
+/// Draw one chip through `place` and report the height of the box it painted,
+/// beside the height its content implies.
+fn drawn_chip_box(place: ChipPlacement) -> (f32, f32) {
+    #[derive(Default)]
+    struct Content(f32);
+    let mut harness = Harness::builder()
+        .with_size(egui::vec2(600.0, 400.0))
+        .build_ui_state(
+            move |ui, c: &mut Content| {
+                theme::apply(ui.ctx(), Mode::Light);
+                c.0 = content_chip_height(ui, "Esc");
+                place(ui);
+            },
+            Content::default(),
+        );
+    harness.run();
+    let content = harness.state().0;
+    let boxes = boxes_of(
+        &harness,
+        theme::to_color32(meridian_design::semantic(false).surfaces.sunken),
+        meridian_egui::TOKENS.radius_chip,
+    );
+    assert_eq!(boxes.len(), 1, "one chip box painted");
+    (boxes[0].height(), content)
+}
+
+#[test]
+fn a_chip_is_keycap_sized_in_a_layout_that_offers_it_a_column() {
+    // The chip's own invariant, and it needs its own test: the modal footer no
+    // longer hands a chip a column, so the footer tests above cannot tell a
+    // self-measuring chip from one that fits the row it is given. These
+    // layouts still hand it one — `Ui::horizontal` is what
+    // `tooltip_for_action` and a host's own chip row use, and its rows are a
+    // control rung tall, which is not the chip's size either.
+    let cases: [(&str, ChipPlacement); 3] = [
+        ("a cross-centred column", |ui| {
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                key_chip(ui, "Esc");
+            });
+        }),
+        ("a control-rung row", |ui| {
+            ui.horizontal(|ui| {
+                key_chip(ui, "Esc");
+            });
+        }),
+        ("a plain stack", |ui| {
+            ui.vertical(|ui| {
+                key_chip(ui, "Esc");
+            });
+        }),
+    ];
+
+    for (layout, place) in cases {
+        let (drawn, content) = drawn_chip_box(place);
+        assert!(
+            (drawn - content).abs() < 0.5,
+            "in {layout} a chip drew {drawn:.1}pt tall against a content height \
+             of {content:.1}pt",
+        );
+    }
 }

@@ -11,7 +11,16 @@
 //! `ui.tokens()` — there is no pixel parameter, so a third width cannot be
 //! introduced from a call site. Height is content-driven, capped so the card
 //! always keeps the largest ladder gap of breathing room against the screen
-//! edge.
+//! edge: the title row, the body and the hint footer each measure themselves,
+//! and the footer is allocated as a row of its chips' own height rather than
+//! taking the column left below the body.
+//!
+//! **That claim reaches exactly as far as the body's own measurement.** The
+//! body is drawn before the footer, so a body that takes the height it is
+//! offered rather than the height it needs — an `egui::ScrollArea` with
+//! `auto_shrink[1] == false`, say — fills the card to the cap and leaves the
+//! hint row nothing. The chrome cannot correct that from here; a body inside
+//! this card asks for what it needs.
 //!
 //! The escape/enter affordances are part of the chrome, not the body: every
 //! modal states them the same way (keycap chip + muted verb, right-aligned in
@@ -22,7 +31,7 @@ use std::hash::Hash;
 use egui::{Align, Layout, RichText};
 use meridian_design::semantic;
 
-use crate::key_chip::key_chip;
+use crate::key_chip::{chip_height, key_chip};
 use crate::theme::to_color32;
 use crate::tokens::Tokens;
 use crate::MeridianUi;
@@ -174,17 +183,35 @@ fn chrome_contents<R>(
 
     let inner = body(ui);
 
-    if chrome.esc_hint.is_some() || chrome.enter_hint.is_some() {
+    // In the order the right-to-left row adds them: escape first, so it lands
+    // rightmost.
+    let hints = [
+        chrome.esc_hint.as_deref().map(|verb| ("Esc", verb)),
+        chrome.enter_hint.as_deref().map(|verb| ("Enter", verb)),
+    ];
+
+    if hints.iter().any(Option::is_some) {
         ui.add_space(t.section_gap);
-        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            if let Some(verb) = &chrome.esc_hint {
-                hint_pair(ui, "Esc", verb);
-            }
-            if let Some(verb) = &chrome.enter_hint {
-                if chrome.esc_hint.is_some() {
+        // A row of its chips' height, allocated before it is filled. Opening
+        // the footer with `with_layout` instead hands the child ui the card's
+        // whole remaining column, and a cross-centred horizontal layout claims
+        // what it is handed: egui grows each child's frame to
+        // `available_rect.height()` (`Layout::next_frame_ignore_wrap`) and
+        // folds that frame into the ui's `min_rect`
+        // (`Placer::advance_after_rects`). The hint row then reports the
+        // leftover height as its own, which takes the card to its cap.
+        let row_height = hints
+            .iter()
+            .flatten()
+            .map(|(key, _)| chip_height(ui, key))
+            .fold(0.0_f32, f32::max);
+        let row = egui::vec2(ui.available_size_before_wrap().x, row_height);
+        ui.allocate_ui_with_layout(row, Layout::right_to_left(Align::Center), |ui| {
+            for (i, (key, verb)) in hints.iter().flatten().enumerate() {
+                if i > 0 {
                     ui.add_space(t.control_gap);
                 }
-                hint_pair(ui, "Enter", verb);
+                hint_pair(ui, key, verb);
             }
         });
     }
