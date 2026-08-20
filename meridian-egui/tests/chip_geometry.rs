@@ -267,7 +267,10 @@ fn the_two_modes_draw_the_same_boxes() {
             dark.size()
         );
         assert!(
-            near(light_text.left() - light.left(), dark_text.left() - dark.left()),
+            near(
+                light_text.left() - light.left(),
+                dark_text.left() - dark.left()
+            ),
             "{label}: the label sits at a different inset in the two modes"
         );
     }
