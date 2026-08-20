@@ -112,6 +112,16 @@ pub const ICON_LABEL_GAP: f32 = SPACE_3;
 pub const CONTROL_GAP: f32 = SPACE_4;
 /// Padding inside a modal body.
 pub const MODAL_PADDING: f32 = SPACE_6;
+/// Horizontal padding between a chip's edge and its contents — the status
+/// pill's capsule inset and the keycap chip's inner margin.
+///
+/// Deliberately the same step as [`ICON_LABEL_GAP`], and the two are held
+/// together by `chip_inset_is_never_tighter_than_the_icon_label_gap` below. A
+/// chip inset smaller than the gap *inside* the chip reads as an inversion:
+/// the group looks looser in its middle than it is inset from its container.
+/// Equal is the floor, not the requirement — a wider inset is legal, a
+/// narrower one is the defect.
+pub const CHIP_PADDING_X: f32 = SPACE_3;
 
 /// Modal card width — the narrow rung (confirmations, single-field prompts).
 ///
@@ -151,9 +161,35 @@ mod tests {
             ICON_LABEL_GAP,
             CONTROL_GAP,
             MODAL_PADDING,
+            CHIP_PADDING_X,
         ] {
             assert!(SPACE.contains(&v), "{v} is not a ladder step");
         }
+    }
+
+    /// A chip is never tighter at its edge than it is in its middle.
+    ///
+    /// The defect this pins was measured on the gallery's status pills: 4.0 pt
+    /// of outer inset against a 6.0 pt icon-to-label gap, so the group sat
+    /// looser inside the capsule than the capsule sat around it. Stated as an
+    /// inequality rather than an equality because widening the inset further
+    /// is a legal design choice and narrowing it below the gap is not.
+    #[test]
+    fn chip_inset_is_never_tighter_than_the_icon_label_gap() {
+        // Stated as membership of the ladder's upper reach rather than as a
+        // bare `>=` between two constants: the comparison is the same claim,
+        // and this one also says the inset is a ladder step at all.
+        let at_least_the_gap: Vec<f32> = SPACE
+            .iter()
+            .copied()
+            .filter(|s| *s >= ICON_LABEL_GAP)
+            .collect();
+        assert!(
+            at_least_the_gap.contains(&CHIP_PADDING_X),
+            "CHIP_PADDING_X ({CHIP_PADDING_X}) is not a ladder step at or above \
+             ICON_LABEL_GAP ({ICON_LABEL_GAP}) — a chip inset tighter than the \
+             gap inside the chip is the inversion this alias exists to end"
+        );
     }
 
     #[test]

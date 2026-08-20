@@ -207,7 +207,7 @@ pub fn status_pill(ui: &mut egui::Ui, icon: &Icon, label: &str, role: Role) -> R
 
     let height = control::HEIGHT_XS;
     let icon_size = control::ICON_XS;
-    let pad_x = tokens.space[2];
+    let pad_x = tokens.chip_padding_x;
     let gap = tokens.icon_label_gap;
 
     let galley = ui.painter().layout_no_wrap(

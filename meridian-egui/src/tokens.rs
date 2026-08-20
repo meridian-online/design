@@ -33,6 +33,9 @@ pub struct Tokens {
     pub control_gap: f32,
     /// Padding inside a modal body.
     pub modal_padding: f32,
+    /// Horizontal padding between a chip's edge and its contents — the status
+    /// pill's capsule inset and the keycap chip's inner margin.
+    pub chip_padding_x: f32,
 
     /// The row-height ladder (dense → comfortable).
     pub rows: [f32; 4],
@@ -68,6 +71,7 @@ pub static TOKENS: Tokens = Tokens {
     icon_label_gap: spacing::ICON_LABEL_GAP,
     control_gap: spacing::CONTROL_GAP,
     modal_padding: spacing::MODAL_PADDING,
+    chip_padding_x: spacing::CHIP_PADDING_X,
 
     rows: spacing::ROWS,
     control_heights: control::HEIGHTS,
@@ -99,6 +103,8 @@ mod tests {
     fn tokens_mirror_the_design_constants() {
         assert_eq!(TOKENS.space, spacing::SPACE);
         assert_eq!(TOKENS.control_gap, spacing::CONTROL_GAP);
+        assert_eq!(TOKENS.icon_label_gap, spacing::ICON_LABEL_GAP);
+        assert_eq!(TOKENS.chip_padding_x, spacing::CHIP_PADDING_X);
         assert_eq!(TOKENS.rows, spacing::ROWS);
         assert_eq!(TOKENS.control_heights, control::HEIGHTS);
         assert_eq!(TOKENS.radius_control, radius::CONTROL);
