@@ -10,7 +10,7 @@
 use egui_kittest::kittest::Queryable;
 use egui_kittest::Harness;
 use meridian_egui::{
-    list_row, theme, ListRow, MeridianUi, ModalChrome, ModalLayer, Mode, Notification,
+    key_chip, list_row, theme, ListRow, MeridianUi, ModalChrome, ModalLayer, Mode, Notification,
     NotificationId, NotificationLayer, Picker, PickerDelegate, PickerEvent, PickerHint,
     PickerOutcome, PickerRow, RowHeight, Severity, Toast, ToastLayer,
 };
@@ -749,4 +749,66 @@ fn the_card_stops_at_its_content_rather_than_at_its_height_cap() {
         900.0 - tall_card.height(),
         2.0 * gap,
     );
+}
+
+/// Draw one chip through `place` and report the height of the box it painted,
+/// beside the height its content implies.
+fn drawn_chip_box(place: fn(&mut egui::Ui)) -> (f32, f32) {
+    #[derive(Default)]
+    struct Content(f32);
+    let mut harness = Harness::builder()
+        .with_size(egui::vec2(600.0, 400.0))
+        .build_ui_state(
+            move |ui, c: &mut Content| {
+                theme::apply(ui.ctx(), Mode::Light);
+                c.0 = content_chip_height(ui, "Esc");
+                place(ui);
+            },
+            Content::default(),
+        );
+    harness.run();
+    let content = harness.state().0;
+    let boxes = boxes_of(
+        &harness,
+        theme::to_color32(meridian_design::semantic(false).surfaces.sunken),
+        meridian_egui::TOKENS.radius_chip,
+    );
+    assert_eq!(boxes.len(), 1, "one chip box painted");
+    (boxes[0].height(), content)
+}
+
+#[test]
+fn a_chip_is_keycap_sized_in_a_layout_that_offers_it_a_column() {
+    // The chip's own invariant, and it needs its own test: the modal footer no
+    // longer hands a chip a column, so the footer tests above cannot tell a
+    // self-measuring chip from one that fits the row it is given. These
+    // layouts still hand it one — `Ui::horizontal` is what
+    // `tooltip_for_action` and a host's own chip row use, and its rows are a
+    // control rung tall, which is not the chip's size either.
+    let cases: [(&str, fn(&mut egui::Ui)); 3] = [
+        ("a cross-centred column", |ui| {
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                key_chip(ui, "Esc");
+            });
+        }),
+        ("a control-rung row", |ui| {
+            ui.horizontal(|ui| {
+                key_chip(ui, "Esc");
+            });
+        }),
+        ("a plain stack", |ui| {
+            ui.vertical(|ui| {
+                key_chip(ui, "Esc");
+            });
+        }),
+    ];
+
+    for (layout, place) in cases {
+        let (drawn, content) = drawn_chip_box(place);
+        assert!(
+            (drawn - content).abs() < 0.5,
+            "in {layout} a chip drew {drawn:.1}pt tall against a content height \
+             of {content:.1}pt",
+        );
+    }
 }
