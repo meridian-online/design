@@ -37,7 +37,7 @@ fn chip_frame(ui: &egui::Ui) -> egui::Frame {
         .fill(to_color32(sem.surfaces.sunken))
         .stroke(egui::Stroke::new(1.0, to_color32(sem.borders.default_)))
         .corner_radius(t.radius_chip)
-        .inner_margin(Margin::symmetric(t.space[2] as i8, t.space[1] as i8))
+        .inner_margin(Margin::symmetric(t.chip_padding_x as i8, t.space[1] as i8))
 }
 
 /// The keystroke laid out in the keycap's monospace ink: one section, no
