@@ -511,6 +511,79 @@ fn the_today_row_is_the_pill_that_ships_and_each_arm_moves_by_its_token_delta() 
     );
 }
 
+/// Draw every specimen once, either through the shipping primitives or
+/// through the parameterised copies at today's geometry, and return the
+/// frame's raw pixels.
+fn specimen_strip_pixels(shipping: bool) -> Vec<u8> {
+    let today = arms()[0];
+    let mut harness = Harness::builder()
+        .with_size(egui::vec2(200.0, 160.0))
+        .with_pixels_per_point(PIXELS_PER_POINT)
+        .wgpu()
+        .build_ui(move |ui| {
+            theme::apply(ui.ctx(), Mode::Light);
+            let backdrop = ui.visuals().panel_fill;
+            ui.ctx()
+                .layer_painter(egui::LayerId::background())
+                .rect_filled(ui.ctx().content_rect(), 0.0, backdrop);
+            for spec in &SPECIMENS {
+                if shipping {
+                    widgets::status_pill(ui, spec.icon, spec.label, spec.role);
+                } else {
+                    pill_at(ui, spec, today);
+                }
+            }
+            for k in KEYSTROKES {
+                if shipping {
+                    key_chip(ui, k);
+                } else {
+                    chip_at(ui, k, today.pad_x);
+                }
+            }
+        });
+    harness.run();
+    harness.run();
+    harness
+        .render()
+        .expect("render the specimen strip through wgpu")
+        .into_raw()
+}
+
+/// The copies do not merely allocate the boxes the shipping primitives
+/// allocate — they put the same ink in them.
+///
+/// This is the half a width comparison cannot see, and it is the half that
+/// matters most here: the pill's *other* open question is vertical, and a
+/// copy that centred its galley differently would be photographed as though
+/// it were the original while the width test stayed green. Byte-for-byte,
+/// because "close enough" is exactly the judgement the picture is being
+/// taken to inform.
+///
+/// `#[ignore]`d for the same reason the render is: it goes through wgpu.
+#[test]
+#[ignore = "needs a GPU adapter through wgpu — run by hand"]
+fn the_copies_paint_the_same_pixels_as_the_primitives_they_stand_in_for() {
+    let shipping = specimen_strip_pixels(true);
+    let copy = specimen_strip_pixels(false);
+    assert_eq!(
+        shipping.len(),
+        copy.len(),
+        "the two strips are not even the same size"
+    );
+    let differing = shipping
+        .iter()
+        .zip(copy.iter())
+        .filter(|(a, b)| a != b)
+        .count();
+    assert_eq!(
+        differing,
+        0,
+        "{differing} of {} subpixels differ between the shipping primitives and \
+         the copies the montage draws — the picture is not showing what ships",
+        shipping.len()
+    );
+}
+
 // ---------------------------------------------------------------------------
 // The render.
 // ---------------------------------------------------------------------------
