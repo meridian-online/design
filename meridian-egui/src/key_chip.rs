@@ -136,6 +136,10 @@ mod tests {
         });
         harness.run();
         harness.get_by_label("Esc");
+        // And under the role a consumer resolves a chip by. The chip publishes
+        // this node itself rather than getting one from an `egui::Label`, so
+        // the role is a decision here and not a consequence.
+        harness.get_by_role_and_label(egui::accesskit::Role::Label, "Esc");
     }
 
     #[test]
