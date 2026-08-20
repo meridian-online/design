@@ -751,9 +751,12 @@ fn the_card_stops_at_its_content_rather_than_at_its_height_cap() {
     );
 }
 
+/// How one of the cases below puts a chip on a `Ui`.
+type ChipPlacement = fn(&mut egui::Ui);
+
 /// Draw one chip through `place` and report the height of the box it painted,
 /// beside the height its content implies.
-fn drawn_chip_box(place: fn(&mut egui::Ui)) -> (f32, f32) {
+fn drawn_chip_box(place: ChipPlacement) -> (f32, f32) {
     #[derive(Default)]
     struct Content(f32);
     let mut harness = Harness::builder()
@@ -785,7 +788,7 @@ fn a_chip_is_keycap_sized_in_a_layout_that_offers_it_a_column() {
     // layouts still hand it one — `Ui::horizontal` is what
     // `tooltip_for_action` and a host's own chip row use, and its rows are a
     // control rung tall, which is not the chip's size either.
-    let cases: [(&str, fn(&mut egui::Ui)); 3] = [
+    let cases: [(&str, ChipPlacement); 3] = [
         ("a cross-centred column", |ui| {
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 key_chip(ui, "Esc");
