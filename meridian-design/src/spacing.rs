@@ -176,11 +176,19 @@ mod tests {
     /// is a legal design choice and narrowing it below the gap is not.
     #[test]
     fn chip_inset_is_never_tighter_than_the_icon_label_gap() {
+        // Stated as membership of the ladder's upper reach rather than as a
+        // bare `>=` between two constants: the comparison is the same claim,
+        // and this one also says the inset is a ladder step at all.
+        let at_least_the_gap: Vec<f32> = SPACE
+            .iter()
+            .copied()
+            .filter(|s| *s >= ICON_LABEL_GAP)
+            .collect();
         assert!(
-            CHIP_PADDING_X >= ICON_LABEL_GAP,
-            "CHIP_PADDING_X ({CHIP_PADDING_X}) is tighter than ICON_LABEL_GAP \
-             ({ICON_LABEL_GAP}) — the chip is looser in its middle than it is \
-             inset from its edge"
+            at_least_the_gap.contains(&CHIP_PADDING_X),
+            "CHIP_PADDING_X ({CHIP_PADDING_X}) is not a ladder step at or above \
+             ICON_LABEL_GAP ({ICON_LABEL_GAP}) — a chip inset tighter than the \
+             gap inside the chip is the inversion this alias exists to end"
         );
     }
 
