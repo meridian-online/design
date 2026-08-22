@@ -195,6 +195,50 @@ pub fn pane_header_with(
     response
 }
 
+/// The `y` to paint `galley` at so the glyphs it draws sit centred on
+/// `centre_y` — **optical** centring, as against centring the galley's box.
+///
+/// A galley's box is font metrics: the same ascent above the baseline and the
+/// same descent below it for every string set in the face, whatever the string
+/// is. Centring that box centres the metrics and leaves the glyphs wherever
+/// they happen to fall inside them — so a word that spends none of the descent
+/// lands centred, and a word with a descender hangs into the reserved room and
+/// reads low by half of it. That is the whole of the defect this exists for,
+/// and it is why the defect looks inconsistent rather than uniform: it is a
+/// function of the string.
+///
+/// Beside a glyph a chip draws an icon, and an icon is centred on the box it
+/// actually draws in. So the two halves of one chip answer to two different
+/// vertical references. This gives the label the icon's reference: the tight
+/// box around the triangles the text tessellates into
+/// ([`egui::Galley::mesh_bounds`]), which is the drawn extent rather than a
+/// constant of the face.
+///
+/// **In the proportional UI face, a string with no descender does not move.**
+/// That face leaves an empty band above its ascenders exactly as deep as the
+/// descent it reserves below the baseline, so for such a string the two boxes
+/// already share a centre and this returns what box-centring returns, to the
+/// bit — which is why correcting the pill left `ok` alone and moved only the
+/// labels that were wrong.
+///
+/// That coincidence is a property of one face at one size and not of this
+/// function. A face whose two bands differ moves every string, descender or
+/// not, and the mono face bundled here is such a face. Any caller adopting
+/// this should expect its text to move and should look at it.
+///
+/// Falls back to the box when there are no glyphs to measure — an empty or
+/// all-whitespace galley, whose mesh bounds are [`egui::Rect::NOTHING`] and
+/// whose centre is therefore not a number.
+#[must_use]
+pub fn optically_centred_galley_top(galley: &egui::Galley, centre_y: f32) -> f32 {
+    let glyphs = galley.mesh_bounds;
+    if glyphs.is_positive() {
+        centre_y - glyphs.center().y
+    } else {
+        centre_y - galley.size().y / 2.0
+    }
+}
+
 /// A status pill: icon + label on a role-coloured chip. Generic on purpose —
 /// the *vocabulary* (which states exist and which [`Role`] each wears) belongs
 /// to the application; this widget only guarantees the redundancy rule: icon
@@ -238,14 +282,11 @@ pub fn status_pill(ui: &mut egui::Ui, icon: &Icon, label: &str, role: Role) -> R
             egui::vec2(icon_size, icon_size),
         );
         icon.paint(painter, icon_rect, ink);
-        painter.galley(
-            egui::pos2(
-                icon_rect.right() + gap,
-                rect.center().y - galley.size().y / 2.0,
-            ),
-            galley,
-            ink,
-        );
+        // The icon above is centred on the box it draws in; the label is
+        // centred on the glyphs it draws. One reference for both halves —
+        // see [`optically_centred_galley_top`].
+        let label_top = optically_centred_galley_top(&galley, rect.center().y);
+        painter.galley(egui::pos2(icon_rect.right() + gap, label_top), galley, ink);
     }
     response
 }
