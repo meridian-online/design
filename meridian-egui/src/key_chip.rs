@@ -20,6 +20,7 @@ use meridian_design::semantic;
 use meridian_design::typography::CHART_LABEL_SIZE;
 
 use crate::theme::to_color32;
+use crate::widgets::optically_centred_galley_top;
 use crate::MeridianUi;
 
 /// The keycap ink: the same muted secondary the verb beside a chip uses.
@@ -80,6 +81,17 @@ pub(crate) fn chip_height(ui: &egui::Ui, keystroke: &str) -> f32 {
 /// `min_rect` (`Placer::advance_after_rects`), so the chip would take the
 /// whole height the caller had spare.
 ///
+/// The keystroke inside it is placed on the glyphs it inks, not on the font
+/// box those glyphs were laid out in — [`optically_centred_galley_top`]. A
+/// galley's box is metrics: one ascent above the baseline and one reserved
+/// descent below it, the same height for every string in the face whatever the
+/// string is, so centring it centres the metrics and leaves the ink wherever it
+/// falls inside them. The bundled mono face reserves more room below its
+/// baseline than it leaves above its ascenders, so its two boxes do not share a
+/// centre for *any* string and every keystroke moved when this was corrected —
+/// a keystroke with no descender down, one with a descender up. The size and
+/// the height ladder above are untouched by it: only the paint position moved.
+///
 /// Returns the chip's [`egui::Response`] so a caller can hang a tooltip or
 /// hover behaviour off it.
 pub fn key_chip(ui: &mut egui::Ui, keystroke: &str) -> egui::Response {
@@ -92,7 +104,9 @@ pub fn key_chip(ui: &mut egui::Ui, keystroke: &str) -> egui::Response {
 
     if ui.is_rect_visible(rect) {
         ui.painter().add(frame.paint(content_rect));
-        ui.painter().galley(content_rect.min, galley, chip_ink(ui));
+        let top = optically_centred_galley_top(&galley, content_rect.center().y);
+        ui.painter()
+            .galley(egui::pos2(content_rect.min.x, top), galley, chip_ink(ui));
     }
 
     let enabled = ui.is_enabled();
