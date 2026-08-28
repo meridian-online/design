@@ -418,18 +418,20 @@ fn no_description_glyph_is_drawn_under_the_keycap() {
 /// **AC3 — an overflowing description ends between words with a visible marker,
 /// and the marker is not itself under the keycap.**
 ///
-/// `egui::Label::truncate()` cannot produce this. It sets
-/// `wrap.break_anywhere = true` unconditionally, which cuts mid-glyph. Setting
-/// the flag false is necessary and is not sufficient either: epaint breaks the
-/// row at the last word boundary that fits and *then* pops glyphs off the end
-/// to make room for the marker, which can put the cut back inside a word — its
-/// own `TextWrapping` documentation says so, and the first row of this fixture
-/// is a string on which it does.
+/// The card proposed `break_anywhere = false` as the mechanism, and it is not
+/// one. epaint breaks the row at the last word boundary that fits and *then*
+/// pops glyphs back off it to make room for the marker, which puts the cut
+/// inside a word again — `TextWrapping::break_anywhere`'s own documentation
+/// warns about exactly that — and where it does not, it keeps the space it
+/// broke on and the row reads `producer \u{2026}` with the marker hanging off a
+/// gap. Both readings are asserted against below, so the setting the widget
+/// actually ships is pinned in both directions rather than assumed.
 ///
-/// The word-boundary claim is made against the source: whatever was kept has to
-/// be a prefix of the description that ends where the description has a space.
-/// A mid-word cut is a prefix too, which is why the boundary and not the prefix
-/// is the assertion.
+/// The claim is made against the source string: what was kept has to be a
+/// prefix of the description, it has to end on a non-space, and the description
+/// has to carry on with a space at exactly that point. A mid-word cut is a
+/// prefix too, and a cut with a trailing space ends between words too, which is
+/// why all three clauses are here and none of them is the prefix alone.
 #[test]
 fn an_overflowing_description_ends_between_words_with_a_visible_marker() {
     for mode in [Mode::Light, Mode::Dark] {
@@ -464,10 +466,14 @@ fn an_overflowing_description_ends_between_words_with_a_visible_marker() {
                     "{:?} in {mode:?}: {body:?} is not a prefix of the description",
                     expected.label
                 );
-                let at_a_boundary = body.ends_with(char::is_whitespace)
-                    || expected.detail[body.len()..].starts_with(char::is_whitespace);
                 assert!(
-                    at_a_boundary,
+                    !body.ends_with(char::is_whitespace),
+                    "{:?} in {mode:?}: the cut keeps the space it broke on, so \
+                     the marker hangs off a gap: {kept:?}",
+                    expected.label
+                );
+                assert!(
+                    expected.detail[body.len()..].starts_with(char::is_whitespace),
                     "{:?} in {mode:?}: the cut lands inside {:?}, not between words",
                     expected.label,
                     expected.detail[body.len()..]

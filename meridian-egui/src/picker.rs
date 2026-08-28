@@ -521,22 +521,28 @@ fn detail_label(ui: &mut egui::Ui, detail: &str, colour: Color32) -> egui::Respo
 /// named here because the word-boundary pass below appends it by hand.
 pub(crate) const ELISION: char = '\u{2026}';
 
-/// A description laid out for the column it was actually given: one row, cut
-/// between words, ending in a visible [`ELISION`] when it does not fit.
+/// A description laid out for the column it was actually given: one row of
+/// whole words, ending in a visible [`ELISION`] when it does not fit.
 ///
-/// `egui::Label::truncate()` cannot express this. It sets
-/// `wrap.break_anywhere = true` unconditionally (`egui::Label::layout_in_ui`),
-/// which cuts mid-glyph, and it takes `ui.available_width()` for its
-/// `max_width` — which is why the caller reserves the keycap's column before
-/// this is reached rather than after.
+/// `egui::Label::truncate()` cannot express this. It takes
+/// `ui.available_width()` for its `max_width` — which is why the caller
+/// reserves the keycap's column before this is reached rather than after — and
+/// it leaves the cut wherever the width ran out, which is mid-word for almost
+/// every string.
 ///
-/// Two passes, because `break_anywhere = false` alone does not get there.
-/// epaint breaks the row at the last word boundary that fits and *then* pops
-/// glyphs off the end to make room for the marker
-/// (`replace_last_glyph_with_overflow_character`), so the cut can still land
-/// mid-word — `TextWrapping::break_anywhere`'s own documentation says so. When
-/// it has, the second pass cuts the kept text back to its last space and
-/// appends the marker itself. That string is a prefix of one epaint already
+/// Two passes, and the division between them is the point. The first asks
+/// epaint *how much fits*, marker included, with `break_anywhere` set exactly
+/// as `truncate()` sets it: the answer is the most characters the column will
+/// take. The second asks *where a reader would cut it*, which is the last whole
+/// word inside that answer. Neither question can be put to the layouter alone —
+/// `break_anywhere = false` makes epaint break at the last word boundary and
+/// then pop glyphs back off it to make room for the marker
+/// (`replace_last_glyph_with_overflow_character`), so the cut still lands
+/// mid-word, which is what `TextWrapping::break_anywhere`'s own documentation
+/// warns about; and it keeps the space it broke on, so the row reads `producer
+/// \u{2026}` with the marker hanging off a gap.
+///
+/// The string the second pass lays out is a prefix of one epaint already
 /// fitted inside `max_width`, so it fits too.
 fn elided_detail(ui: &egui::Ui, detail: &str, colour: Color32, max_width: f32) -> Arc<Galley> {
     let format = TextFormat {
@@ -548,7 +554,7 @@ fn elided_detail(ui: &egui::Ui, detail: &str, colour: Color32, max_width: f32) -
     let wrap = TextWrapping {
         max_width,
         max_rows: 1,
-        break_anywhere: false,
+        break_anywhere: true,
         overflow_character: Some(ELISION),
     };
 
@@ -571,23 +577,27 @@ fn elided_detail(ui: &egui::Ui, detail: &str, colour: Color32, max_width: f32) -
 
     let kept = galley.rows[0].row.text();
     let body = kept.strip_suffix(ELISION).unwrap_or(kept.as_str());
-    // Already between words: the cut took the space with it, or the source
-    // carries on with one.
-    let at_a_boundary = body.ends_with(char::is_whitespace)
-        || detail
-            .get(body.len()..)
-            .is_some_and(|rest| rest.starts_with(char::is_whitespace));
-    if at_a_boundary {
-        return galley;
-    }
-    // No boundary to cut at — one word wider than the column. A mid-glyph cut
-    // carrying the marker is what is left, and it is what epaint already
-    // produced.
-    let Some(space) = body.rfind(char::is_whitespace) else {
+    let words = body.trim_end();
+    let cut = if detail
+        .get(words.len()..)
+        .is_some_and(|rest| rest.starts_with(char::is_whitespace))
+    {
+        // The first pass already stopped after a whole word; all that is left
+        // is whatever whitespace it stopped on.
+        words
+    } else if let Some(space) = words.rfind(char::is_whitespace) {
+        &words[..space]
+    } else {
+        // One word wider than the column, so there is no boundary to cut at.
+        // A mid-glyph cut carrying the marker is what is left, and it is what
+        // the first pass already produced.
         return galley;
     };
+    if cut == body {
+        return galley;
+    }
 
-    let mut retry = LayoutJob::single_section(format!("{}{ELISION}", &body[..space]), format);
+    let mut retry = LayoutJob::single_section(format!("{cut}{ELISION}"), format);
     retry.wrap = wrap;
     retry.round_output_to_gui = false;
     ui.painter().layout_job(retry)
