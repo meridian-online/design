@@ -29,10 +29,13 @@
 //!   group headers and [`PickerDelegate::confirmable`]` = false`, making
 //!   enter another way out.
 
-use egui::{Align, Key, Layout, Modifiers, RichText};
+use std::sync::Arc;
+
+use egui::text::{Galley, LayoutJob, TextFormat, TextWrapping};
+use egui::{Align, Color32, FontSelection, Key, Layout, Modifiers, RichText, UiBuilder};
 use meridian_design::semantic;
 
-use crate::key_chip::key_chip;
+use crate::key_chip::{chip_width, key_chip};
 use crate::list_row::{list_row, ListRow, RowHeight};
 use crate::query::query_line;
 use crate::theme::to_color32;
@@ -430,23 +433,50 @@ impl<D: PickerDelegate> Picker<D> {
                         ui,
                         ListRow::new(self.row_height).selected(selected),
                         |ui, _state| {
-                            ui.add(
-                                egui::Label::new(row.label.as_str())
-                                    .selectable(false)
-                                    .truncate(),
+                            // The keycap's column is claimed BEFORE anything is
+                            // laid out against it. Both labels below read
+                            // `ui.available_width()` at the moment they are
+                            // added, so a chip added afterwards is drawn over
+                            // text that was handed the whole row — and
+                            // `key_chip` paints an opaque fill, which means the
+                            // last characters and the elision marker were drawn
+                            // and then covered rather than never drawn.
+                            // `chip_width` is the horizontal twin of
+                            // `chip_height`, and it exists so this row can know
+                            // the column without drawing the chip first.
+                            let row_rect = ui.max_rect();
+                            let chip_column = row
+                                .keystroke
+                                .as_deref()
+                                .map_or(0.0, |k| chip_width(ui, k) + t.icon_label_gap);
+                            let text_rect = row_rect.with_max_x(row_rect.right() - chip_column);
+
+                            ui.scope_builder(
+                                UiBuilder::new()
+                                    .max_rect(text_rect)
+                                    .layout(Layout::left_to_right(Align::Center)),
+                                |ui| {
+                                    ui.add(
+                                        egui::Label::new(row.label.as_str())
+                                            .selectable(false)
+                                            .truncate(),
+                                    );
+                                    if let Some(detail) = &row.detail {
+                                        ui.add_space(t.icon_label_gap);
+                                        detail_label(ui, detail, muted);
+                                    }
+                                },
                             );
-                            if let Some(detail) = &row.detail {
-                                ui.add_space(t.icon_label_gap);
-                                ui.add(
-                                    egui::Label::new(RichText::new(detail).color(muted))
-                                        .selectable(false)
-                                        .truncate(),
-                                );
-                            }
+
                             if let Some(keystroke) = &row.keystroke {
-                                ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                                    key_chip(ui, keystroke);
-                                });
+                                ui.scope_builder(
+                                    UiBuilder::new()
+                                        .max_rect(row_rect)
+                                        .layout(Layout::right_to_left(Align::Center)),
+                                    |ui| {
+                                        key_chip(ui, keystroke);
+                                    },
+                                );
                             }
                         },
                     );
@@ -460,6 +490,124 @@ impl<D: PickerDelegate> Picker<D> {
             });
         clicked
     }
+}
+
+/// The row's supporting annotation, drawn for the column it was actually
+/// given.
+///
+/// Deliberately not an `egui::Label`. That widget publishes its *galley's*
+/// text to the accessibility tree, and [`elided_detail`]'s word-boundary pass
+/// hands back a galley whose text is the cut string — so a reader, and every
+/// test that resolves a row by its description, would get the abbreviation
+/// instead of the description. The node below is published from the source
+/// string, and the tooltip egui gives an elided label is reproduced here
+/// rather than lost.
+fn detail_label(ui: &mut egui::Ui, detail: &str, colour: Color32) -> egui::Response {
+    let galley = elided_detail(ui, detail, colour, ui.available_width());
+    let cut = galley.elided || galley.text() != detail;
+    let (rect, mut response) = ui.allocate_exact_size(galley.size(), egui::Sense::hover());
+    if ui.is_rect_visible(rect) {
+        ui.painter().galley(rect.left_top(), galley, colour);
+    }
+    let enabled = ui.is_enabled();
+    response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, enabled, detail));
+    if cut {
+        response = response.on_hover_text(detail);
+    }
+    response
+}
+
+/// The elision marker a description is cut with — `epaint`'s own default,
+/// named here because the word-boundary pass below appends it by hand.
+pub(crate) const ELISION: char = '\u{2026}';
+
+/// A description laid out for the column it was actually given: one row of
+/// whole words, ending in a visible [`ELISION`] when it does not fit.
+///
+/// `egui::Label::truncate()` cannot express this. It takes
+/// `ui.available_width()` for its `max_width` — which is why the caller
+/// reserves the keycap's column before this is reached rather than after — and
+/// it leaves the cut wherever the width ran out, which is mid-word for almost
+/// every string.
+///
+/// Two passes, and the division between them is the point. The first asks
+/// epaint *how much fits*, marker included, with `break_anywhere` set exactly
+/// as `truncate()` sets it: the answer is the most characters the column will
+/// take. The second asks *where a reader would cut it*, which is the last whole
+/// word inside that answer. Neither question can be put to the layouter alone —
+/// `break_anywhere = false` makes epaint break at the last word boundary and
+/// then pop glyphs back off it to make room for the marker
+/// (`replace_last_glyph_with_overflow_character`), so the cut still lands
+/// mid-word, which is what `TextWrapping::break_anywhere`'s own documentation
+/// warns about; and it keeps the space it broke on, so the row reads `producer
+/// \u{2026}` with the marker hanging off a gap.
+///
+/// The string the second pass lays out is a prefix of one epaint already
+/// fitted inside `max_width`, so it fits too.
+fn elided_detail(ui: &egui::Ui, detail: &str, colour: Color32, max_width: f32) -> Arc<Galley> {
+    let format = TextFormat {
+        font_id: FontSelection::Default.resolve(ui.style()),
+        color: colour,
+        valign: ui.text_valign(),
+        ..Default::default()
+    };
+    let wrap = TextWrapping {
+        max_width,
+        max_rows: 1,
+        // Not what makes the cut land between words — the second pass is, and
+        // flipping this reddens nothing. epaint recommends `true` whenever
+        // `max_rows` is 1, and it is what `Label::truncate()` sets, so the
+        // first pass hands the second the most characters the column will
+        // take. Measured over six descriptions, both settings reach the same
+        // cut: `false` breaks a word earlier and keeps the space it broke on,
+        // and the second pass takes that space off again.
+        break_anywhere: true,
+        overflow_character: Some(ELISION),
+    };
+
+    let mut job = LayoutJob::single_section(detail.to_owned(), format.clone());
+    job.wrap = wrap.clone();
+    // The reservation the caller made is exact, so the galley's width has to be
+    // too. `round_output_to_gui` exists for the feedback loop where egui reports
+    // a rounded galley width and hands it back as the next frame's `max_width`;
+    // it pays for that by rounding the row up by as much as half a point and by
+    // wrapping half a point late (`LayoutJob::effective_wrap_width`), which is
+    // one whole point of licence to cross the column boundary. Nothing here
+    // feeds a reported width back — `max_width` comes from the row's own
+    // geometry — so the loop it guards against does not exist and the licence is
+    // pure loss.
+    job.round_output_to_gui = false;
+    let galley = ui.painter().layout_job(job);
+    if !galley.elided {
+        return galley;
+    }
+
+    let kept = galley.rows[0].row.text();
+    let body = kept.strip_suffix(ELISION).unwrap_or(kept.as_str());
+    let words = body.trim_end();
+    let cut = if detail
+        .get(words.len()..)
+        .is_some_and(|rest| rest.starts_with(char::is_whitespace))
+    {
+        // The first pass already stopped after a whole word; all that is left
+        // is whatever whitespace it stopped on.
+        words
+    } else if let Some(space) = words.rfind(char::is_whitespace) {
+        &words[..space]
+    } else {
+        // One word wider than the column, so there is no boundary to cut at.
+        // A mid-glyph cut carrying the marker is what is left, and it is what
+        // the first pass already produced.
+        return galley;
+    };
+    if cut == body {
+        return galley;
+    }
+
+    let mut retry = LayoutJob::single_section(format!("{cut}{ELISION}"), format);
+    retry.wrap = wrap;
+    retry.round_output_to_gui = false;
+    ui.painter().layout_job(retry)
 }
 
 #[cfg(test)]

@@ -66,6 +66,20 @@ pub(crate) fn chip_height(ui: &egui::Ui, keystroke: &str) -> f32 {
     chip_galley(ui, keystroke).size().y + chip_frame(ui).total_margin().sum().y
 }
 
+/// How wide a [`key_chip`] draws for `keystroke`: its galley plus the chip's
+/// own padding and hairline — the horizontal twin of [`chip_height`], and the
+/// same claim on the other axis.
+///
+/// A caller laying text out beside a chip needs this **before** it draws
+/// either. A row that instead adds the text first hands it the whole row's
+/// width, because `egui::Label` reads `ui.available_width()` at the moment it
+/// is added and a chip that has not been added yet has claimed nothing; the
+/// chip then paints an opaque fill over the glyphs already on the canvas —
+/// see [`crate::picker::Picker`]'s match list, which is why this exists.
+pub(crate) fn chip_width(ui: &egui::Ui, keystroke: &str) -> f32 {
+    chip_galley(ui, keystroke).size().x + chip_frame(ui).total_margin().sum().x
+}
+
 /// A keystroke rendered as a keycap chip: monospace label on the sunken
 /// surface with a hairline border, chip radius, and spacing-ladder padding.
 /// Every geometry and colour comes from a token — there is nothing to tune at
@@ -154,6 +168,38 @@ mod tests {
         // this node itself rather than getting one from an `egui::Label`, so
         // the role is a decision here and not a consequence.
         harness.get_by_role_and_label(egui::accesskit::Role::Label, "Esc");
+    }
+
+    /// The reservation a caller makes is the space the chip then takes.
+    ///
+    /// `chip_width` is not a second estimate of the chip's width — it is the
+    /// same two terms `key_chip` allocates from, so a row that reserves it and
+    /// a chip that fills it cannot disagree. Pinned across keystrokes of
+    /// different lengths so a fix that happened to hold for one string is not
+    /// mistaken for the relation.
+    #[test]
+    fn the_reserved_width_is_the_width_the_chip_allocates() {
+        for keystroke in ["k", "Esc", "Enter", "\u{2318}\u{21e7}P"] {
+            let mut measured = None;
+            let mut drawn = None;
+            {
+                // The harness holds the closure, and the closure holds these
+                // two; it has to go out of scope before they can be read.
+                let mut harness = Harness::new_ui(|ui| {
+                    crate::theme::apply(ui.ctx(), crate::Mode::Light);
+                    measured = Some(chip_width(ui, keystroke));
+                    drawn = Some(key_chip(ui, keystroke).rect.width());
+                });
+                harness.run();
+            }
+            let measured = measured.expect("the closure runs");
+            let drawn = drawn.expect("the closure runs");
+            assert!(
+                (measured - drawn).abs() < 0.01,
+                "{keystroke:?}: reserved {measured} pt, the chip took {drawn} pt"
+            );
+            assert!(drawn > 0.0, "{keystroke:?}: the chip took no width at all");
+        }
     }
 
     #[test]
