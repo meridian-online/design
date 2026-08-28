@@ -463,9 +463,7 @@ impl<D: PickerDelegate> Picker<D> {
                                     );
                                     if let Some(detail) = &row.detail {
                                         ui.add_space(t.icon_label_gap);
-                                        let galley =
-                                            elided_detail(ui, detail, muted, ui.available_width());
-                                        ui.add(egui::Label::new(galley).selectable(false));
+                                        detail_label(ui, detail, muted);
                                     }
                                 },
                             );
@@ -492,6 +490,31 @@ impl<D: PickerDelegate> Picker<D> {
             });
         clicked
     }
+}
+
+/// The row's supporting annotation, drawn for the column it was actually
+/// given.
+///
+/// Deliberately not an `egui::Label`. That widget publishes its *galley's*
+/// text to the accessibility tree, and [`elided_detail`]'s word-boundary pass
+/// hands back a galley whose text is the cut string — so a reader, and every
+/// test that resolves a row by its description, would get the abbreviation
+/// instead of the description. The node below is published from the source
+/// string, and the tooltip egui gives an elided label is reproduced here
+/// rather than lost.
+fn detail_label(ui: &mut egui::Ui, detail: &str, colour: Color32) -> egui::Response {
+    let galley = elided_detail(ui, detail, colour, ui.available_width());
+    let cut = galley.elided || galley.text() != detail;
+    let (rect, mut response) = ui.allocate_exact_size(galley.size(), egui::Sense::hover());
+    if ui.is_rect_visible(rect) {
+        ui.painter().galley(rect.left_top(), galley, colour);
+    }
+    let enabled = ui.is_enabled();
+    response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, enabled, detail));
+    if cut {
+        response = response.on_hover_text(detail);
+    }
+    response
 }
 
 /// The elision marker a description is cut with — `epaint`'s own default,
@@ -531,6 +554,16 @@ fn elided_detail(ui: &egui::Ui, detail: &str, colour: Color32, max_width: f32) -
 
     let mut job = LayoutJob::single_section(detail.to_owned(), format.clone());
     job.wrap = wrap.clone();
+    // The reservation the caller made is exact, so the galley's width has to be
+    // too. `round_output_to_gui` exists for the feedback loop where egui reports
+    // a rounded galley width and hands it back as the next frame's `max_width`;
+    // it pays for that by rounding the row up by as much as half a point and by
+    // wrapping half a point late (`LayoutJob::effective_wrap_width`), which is
+    // one whole point of licence to cross the column boundary. Nothing here
+    // feeds a reported width back — `max_width` comes from the row's own
+    // geometry — so the loop it guards against does not exist and the licence is
+    // pure loss.
+    job.round_output_to_gui = false;
     let galley = ui.painter().layout_job(job);
     if !galley.elided {
         return galley;
@@ -556,6 +589,7 @@ fn elided_detail(ui: &egui::Ui, detail: &str, colour: Color32, max_width: f32) -
 
     let mut retry = LayoutJob::single_section(format!("{}{ELISION}", &body[..space]), format);
     retry.wrap = wrap;
+    retry.round_output_to_gui = false;
     ui.painter().layout_job(retry)
 }
 

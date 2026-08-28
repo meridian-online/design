@@ -182,12 +182,16 @@ mod tests {
         for keystroke in ["k", "Esc", "Enter", "\u{2318}\u{21e7}P"] {
             let mut measured = None;
             let mut drawn = None;
-            let mut harness = Harness::new_ui(|ui| {
-                crate::theme::apply(ui.ctx(), crate::Mode::Light);
-                measured = Some(chip_width(ui, keystroke));
-                drawn = Some(key_chip(ui, keystroke).rect.width());
-            });
-            harness.run();
+            {
+                // The harness holds the closure, and the closure holds these
+                // two; it has to go out of scope before they can be read.
+                let mut harness = Harness::new_ui(|ui| {
+                    crate::theme::apply(ui.ctx(), crate::Mode::Light);
+                    measured = Some(chip_width(ui, keystroke));
+                    drawn = Some(key_chip(ui, keystroke).rect.width());
+                });
+                harness.run();
+            }
             let measured = measured.expect("the closure runs");
             let drawn = drawn.expect("the closure runs");
             assert!(
