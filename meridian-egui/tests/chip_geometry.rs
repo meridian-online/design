@@ -66,6 +66,12 @@ fn near(a: f32, b: f32) -> bool {
     (a - b).abs() < EPS
 }
 
+/// Is `v` (in points) on a whole physical pixel at `pixels_per_point`?
+fn on_a_physical_pixel(v: f32, pixels_per_point: f32) -> bool {
+    let pixels = v * pixels_per_point;
+    (pixels - pixels.round()).abs() < EPS
+}
+
 /// Every rect, text run and stroked path the frame painted, flattened out of
 /// the shape tree. A deliberately separate walk from the one in
 /// `overlay_picker.rs`: if the two shared a reader, a bug in the reader would
@@ -773,6 +779,26 @@ fn the_drawn_keystroke_sits_at_one_offset_whatever_the_keystroke_is() {
                     (*k, keycap.drawn_glyphs.center().y - keycap.chip.center().y)
                 })
                 .collect();
+
+            // Every figure below has to have come through the tessellator, and
+            // this is what says so. epaint snaps a galley's origin to a whole
+            // physical pixel and the glyph quads sit at whole-pixel offsets from
+            // it, so a drawn glyph box lands on the grid by construction — while
+            // the laid-out one this widget asks for does not, and cannot, for
+            // the same odd-capsule reason the residual exists. A measurement
+            // that quietly read layout instead of tessellation would agree with
+            // everything else here and disagree with this.
+            for keystroke in KEYSTROKES {
+                let drawn = drawn_key_chip_at(mode, keystroke, density).drawn_glyphs;
+                assert!(
+                    on_a_physical_pixel(drawn.min.y, density)
+                        && on_a_physical_pixel(drawn.max.y, density),
+                    "{mode:?} {density}x `{keystroke}`: the drawn glyphs run {:?}, \
+                     which is not on the physical pixel grid — this is a laid-out \
+                     box, not a tessellated one",
+                    drawn.y_range()
+                );
+            }
 
             let (first_keystroke, first) = offsets[0];
             for (keystroke, off) in &offsets {
