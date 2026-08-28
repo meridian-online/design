@@ -226,6 +226,21 @@ pub fn pane_header_with(
 /// not, and the mono face bundled here is such a face. Any caller adopting
 /// this should expect its text to move and should look at it.
 ///
+/// **What this settles is the layout position, not the drawn one**, and the
+/// difference is a whole rung of the pipeline. epaint snaps a galley's origin
+/// to a whole physical pixel before it tessellates it
+/// (`epaint::TessellationOptions::round_text_to_pixels`, on by default), so the
+/// `y` returned here is rounded before a triangle exists. Where the chip is an
+/// even number of physical pixels tall and its glyph box an even number too,
+/// the snap is a no-op and the drawn glyphs land on the centreline — that is
+/// the pill, at both densities. Where the chip is an *odd* number of physical
+/// pixels tall against an even glyph box, no paint position centres the drawn
+/// glyphs and the snap leaves half a physical pixel over whatever this returns
+/// — that is the keycap, at both densities. What the caller buys in that case
+/// is a *constant* residual in place of one that varies with the string, which
+/// is the defect this exists for; a caller wanting zero has to move its own
+/// height ladder, not this function.
+///
 /// Falls back to the box when there are no glyphs to measure — an empty or
 /// all-whitespace galley, whose mesh bounds are [`egui::Rect::NOTHING`] and
 /// whose centre is therefore not a number.
