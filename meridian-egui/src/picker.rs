@@ -29,10 +29,13 @@
 //!   group headers and [`PickerDelegate::confirmable`]` = false`, making
 //!   enter another way out.
 
-use egui::{Align, Key, Layout, Modifiers, RichText};
+use std::sync::Arc;
+
+use egui::text::{Galley, LayoutJob, TextFormat, TextWrapping};
+use egui::{Align, Color32, FontSelection, Key, Layout, Modifiers, RichText, UiBuilder};
 use meridian_design::semantic;
 
-use crate::key_chip::key_chip;
+use crate::key_chip::{chip_width, key_chip};
 use crate::list_row::{list_row, ListRow, RowHeight};
 use crate::query::query_line;
 use crate::theme::to_color32;
@@ -430,23 +433,52 @@ impl<D: PickerDelegate> Picker<D> {
                         ui,
                         ListRow::new(self.row_height).selected(selected),
                         |ui, _state| {
-                            ui.add(
-                                egui::Label::new(row.label.as_str())
-                                    .selectable(false)
-                                    .truncate(),
+                            // The keycap's column is claimed BEFORE anything is
+                            // laid out against it. Both labels below read
+                            // `ui.available_width()` at the moment they are
+                            // added, so a chip added afterwards is drawn over
+                            // text that was handed the whole row — and
+                            // `key_chip` paints an opaque fill, which means the
+                            // last characters and the elision marker were drawn
+                            // and then covered rather than never drawn.
+                            // `chip_width` is the horizontal twin of
+                            // `chip_height`, and it exists so this row can know
+                            // the column without drawing the chip first.
+                            let row_rect = ui.max_rect();
+                            let chip_column = row
+                                .keystroke
+                                .as_deref()
+                                .map_or(0.0, |k| chip_width(ui, k) + t.icon_label_gap);
+                            let text_rect = row_rect.with_max_x(row_rect.right() - chip_column);
+
+                            ui.scope_builder(
+                                UiBuilder::new()
+                                    .max_rect(text_rect)
+                                    .layout(Layout::left_to_right(Align::Center)),
+                                |ui| {
+                                    ui.add(
+                                        egui::Label::new(row.label.as_str())
+                                            .selectable(false)
+                                            .truncate(),
+                                    );
+                                    if let Some(detail) = &row.detail {
+                                        ui.add_space(t.icon_label_gap);
+                                        let galley =
+                                            elided_detail(ui, detail, muted, ui.available_width());
+                                        ui.add(egui::Label::new(galley).selectable(false));
+                                    }
+                                },
                             );
-                            if let Some(detail) = &row.detail {
-                                ui.add_space(t.icon_label_gap);
-                                ui.add(
-                                    egui::Label::new(RichText::new(detail).color(muted))
-                                        .selectable(false)
-                                        .truncate(),
-                                );
-                            }
+
                             if let Some(keystroke) = &row.keystroke {
-                                ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                                    key_chip(ui, keystroke);
-                                });
+                                ui.scope_builder(
+                                    UiBuilder::new()
+                                        .max_rect(row_rect)
+                                        .layout(Layout::right_to_left(Align::Center)),
+                                    |ui| {
+                                        key_chip(ui, keystroke);
+                                    },
+                                );
                             }
                         },
                     );
@@ -460,6 +492,71 @@ impl<D: PickerDelegate> Picker<D> {
             });
         clicked
     }
+}
+
+/// The elision marker a description is cut with — `epaint`'s own default,
+/// named here because the word-boundary pass below appends it by hand.
+pub(crate) const ELISION: char = '\u{2026}';
+
+/// A description laid out for the column it was actually given: one row, cut
+/// between words, ending in a visible [`ELISION`] when it does not fit.
+///
+/// `egui::Label::truncate()` cannot express this. It sets
+/// `wrap.break_anywhere = true` unconditionally (`egui::Label::layout_in_ui`),
+/// which cuts mid-glyph, and it takes `ui.available_width()` for its
+/// `max_width` — which is why the caller reserves the keycap's column before
+/// this is reached rather than after.
+///
+/// Two passes, because `break_anywhere = false` alone does not get there.
+/// epaint breaks the row at the last word boundary that fits and *then* pops
+/// glyphs off the end to make room for the marker
+/// (`replace_last_glyph_with_overflow_character`), so the cut can still land
+/// mid-word — `TextWrapping::break_anywhere`'s own documentation says so. When
+/// it has, the second pass cuts the kept text back to its last space and
+/// appends the marker itself. That string is a prefix of one epaint already
+/// fitted inside `max_width`, so it fits too.
+fn elided_detail(ui: &egui::Ui, detail: &str, colour: Color32, max_width: f32) -> Arc<Galley> {
+    let format = TextFormat {
+        font_id: FontSelection::Default.resolve(ui.style()),
+        color: colour,
+        valign: ui.text_valign(),
+        ..Default::default()
+    };
+    let wrap = TextWrapping {
+        max_width,
+        max_rows: 1,
+        break_anywhere: false,
+        overflow_character: Some(ELISION),
+    };
+
+    let mut job = LayoutJob::single_section(detail.to_owned(), format.clone());
+    job.wrap = wrap.clone();
+    let galley = ui.painter().layout_job(job);
+    if !galley.elided {
+        return galley;
+    }
+
+    let kept = galley.rows[0].row.text();
+    let body = kept.strip_suffix(ELISION).unwrap_or(kept.as_str());
+    // Already between words: the cut took the space with it, or the source
+    // carries on with one.
+    let at_a_boundary = body.ends_with(char::is_whitespace)
+        || detail
+            .get(body.len()..)
+            .is_some_and(|rest| rest.starts_with(char::is_whitespace));
+    if at_a_boundary {
+        return galley;
+    }
+    // No boundary to cut at — one word wider than the column. A mid-glyph cut
+    // carrying the marker is what is left, and it is what epaint already
+    // produced.
+    let Some(space) = body.rfind(char::is_whitespace) else {
+        return galley;
+    };
+
+    let mut retry = LayoutJob::single_section(format!("{}{ELISION}", &body[..space]), format);
+    retry.wrap = wrap;
+    ui.painter().layout_job(retry)
 }
 
 #[cfg(test)]
