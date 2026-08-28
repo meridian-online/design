@@ -554,6 +554,13 @@ fn elided_detail(ui: &egui::Ui, detail: &str, colour: Color32, max_width: f32) -
     let wrap = TextWrapping {
         max_width,
         max_rows: 1,
+        // Not what makes the cut land between words — the second pass is, and
+        // flipping this reddens nothing. epaint recommends `true` whenever
+        // `max_rows` is 1, and it is what `Label::truncate()` sets, so the
+        // first pass hands the second the most characters the column will
+        // take. Measured over six descriptions, both settings reach the same
+        // cut: `false` breaks a word earlier and keeps the space it broke on,
+        // and the second pass takes that space off again.
         break_anywhere: true,
         overflow_character: Some(ELISION),
     };
