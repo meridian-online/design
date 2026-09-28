@@ -82,6 +82,22 @@ pub const ICON_XL: f32 = 24.0;
 /// The icon ladder in ascending order.
 pub const ICONS: [f32; 5] = [ICON_XS, ICON_SM, ICON_MD, ICON_LG, ICON_XL];
 
+/// `3` — the bar on the leading edge of a row under the cursor
+/// (`guidelines/chrome.md`). Its ink is `semantic::Rows::cursor_bar`. A
+/// square row has no corner to say which row the keys act on, so the bar
+/// says it.
+pub const ROW_BAR_WIDTH: f32 = 3.0;
+
+/// `2` — the bar under the open tab of a line-tab strip, over the strip's
+/// one-pixel rule. Its ink is `semantic::Tabs::active_bar`.
+pub const TAB_BAR_WIDTH: f32 = 2.0;
+
+/// `2` — the foot of a keycap: a key hint's bottom edge, a step darker than
+/// the hairline on its top and sides, so it reads as a key by its foot rather
+/// than by a corner. Its ink is `semantic::Borders::default_`, its sides
+/// `semantic::Borders::subtle`.
+pub const KEYCAP_FOOT_WIDTH: f32 = 2.0;
+
 /// Every dimension a row and its contents must agree on.
 ///
 /// Invariant, asserted in tests: `control + 2 * pad_y == row`. A control
@@ -225,6 +241,30 @@ mod tests {
         assert_eq!(binding(ROW_PREVIEW), PREVIEW);
         assert_eq!(binding(ROW_COMFORTABLE), COMFORTABLE);
         assert_eq!(binding(999.0), GRID);
+    }
+
+    /// The ruling's widths, pinned: a row's bar is 3, a tab's bar and a
+    /// keycap's foot are 2.
+    #[test]
+    fn the_bars_are_the_widths_the_look_states() {
+        assert_eq!(
+            [ROW_BAR_WIDTH, TAB_BAR_WIDTH, KEYCAP_FOOT_WIDTH],
+            [3.0, 2.0, 2.0]
+        );
+    }
+
+    /// The row's bar sits inside the row's leading padding on every rung, so
+    /// it never covers the row's first glyph or icon.
+    #[test]
+    fn the_row_bar_fits_inside_every_rungs_leading_padding() {
+        for b in BINDINGS {
+            assert!(
+                ROW_BAR_WIDTH < b.pad_x,
+                "a {ROW_BAR_WIDTH}px bar covers the content of a row {} whose padding is {}",
+                b.row,
+                b.pad_x
+            );
+        }
     }
 
     #[test]

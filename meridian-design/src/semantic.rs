@@ -284,9 +284,23 @@ pub struct Rows {
     pub footer_foreground: Rgba,
     /// Zebra striping (the even row).
     pub stripe_background: Rgba,
+    /// Under the pointer. No bar: the pointer is a passing glance, the
+    /// cursor is where the keys act.
     pub hover_background: Rgba,
+    /// A selection wash — a toggle that is on, a brushed range. Not the
+    /// cursor: a row under the cursor takes [`Self::cursor_background`] and
+    /// [`Self::cursor_bar`].
     pub selected_background: Rgba,
     pub selected_border: Rgba,
+    /// The row under the cursor: one step darker than
+    /// [`Self::hover_background`], so the two read as two states when the
+    /// pointer rests beside the cursor.
+    pub cursor_background: Rgba,
+    /// The bar on the leading edge of the row under the cursor,
+    /// [`crate::control::ROW_BAR_WIDTH`] wide. [`Borders::focus`]: the
+    /// cursor is where the keys act, which is focus. A caller that marks a
+    /// kind of data may pass its own ink.
+    pub cursor_bar: Rgba,
     /// The repeated rule between rows — [`Borders::divider`].
     pub row_border: Rgba,
 }
@@ -300,6 +314,11 @@ pub struct Tabs {
     pub foreground: Rgba,
     pub active_background: Rgba,
     pub active_foreground: Rgba,
+    /// The bar under the open tab of a line-tab strip,
+    /// [`crate::control::TAB_BAR_WIDTH`] tall, over the strip's one rule.
+    /// [`Borders::focus`]; a caller that marks a kind of data may pass its
+    /// own ink.
+    pub active_bar: Rgba,
 }
 
 /// Scrollbars.
@@ -560,6 +579,8 @@ pub const LIGHT: Semantic = {
             hover_background: g[2],
             selected_background: m[2],
             selected_border: m[5],
+            cursor_background: g[3],
+            cursor_bar: borders.focus,
             row_border: borders.divider,
         },
         tabs: Tabs {
@@ -569,6 +590,7 @@ pub const LIGHT: Semantic = {
             foreground: g[10],
             active_background: surfaces.raised,
             active_foreground: g[11],
+            active_bar: borders.focus,
         },
         scrollbar: Scrollbar {
             track: g[1],
@@ -762,6 +784,8 @@ pub const DARK: Semantic = {
             hover_background: g[2],
             selected_background: m[2],
             selected_border: m[5],
+            cursor_background: g[3],
+            cursor_bar: borders.focus,
             row_border: borders.divider,
         },
         tabs: Tabs {
@@ -771,6 +795,7 @@ pub const DARK: Semantic = {
             foreground: g[10],
             active_background: surfaces.raised,
             active_foreground: g[11],
+            active_bar: borders.focus,
         },
         scrollbar: Scrollbar {
             track: g[1],
