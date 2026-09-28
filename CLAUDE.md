@@ -11,8 +11,8 @@ If you are about to hard-code a colour, a radius, a control height, a duration o
 | `meridian-design/` | The token crate. MIT, **dependency-free by contract** (ADR 0003). The only place token values are defined, plus the emitters (`src/emit/`), the bundled `fonts/`, and `brand/`. |
 | `meridian-design/brand/` | The mark, the wordmark, their Affinity sources, and the motion generated from them (ADR 0012). **Reserved, not MIT** — `brand/LICENSE-BRAND.md`, echoed in the root `LICENSE`. Inside the crate because the desktop takes it as a cargo dependency and needs the bytes at compile time. |
 | `meridian-egui/` | The egui adapter and the capped desktop primitives (ADR 0011). Takes dependencies of its own. |
-| `decisions/` | ADRs 0001–0012 — the scoping decisions and every amendment to them. `_template.md` is the shape. |
-| `guidelines/` | Six citable pages — identity, density, speed, colour, typography, icons — plus `README.md`, their index. The rules tokens cannot carry. |
+| `decisions/` | ADRs 0001–0013 — the scoping decisions and every amendment to them. `_template.md` is the shape. |
+| `guidelines/` | Seven citable pages — identity, density, speed, colour, typography, icons, chrome — plus `README.md`, their index. The rules tokens cannot carry. |
 | `validation/` | Colour maths and its evidence: the reproducible `.mts` pipeline (with its own private `package.json`), the vendored Radix scale generator, the approved-palette record and the review gallery. |
 | `motion/` | The offline, dependency-free Python generator for brand motion, plus preview and measurement pages. It emits **into `meridian-design/brand/motion/`** — ADR 0012's home — in both formats, reading the mark from `brand/` and every colour from `tokens.css` rather than copying either. `motion/output/` is untracked scratch for schemes that lost. |
 | `reference/` | Generated reference material, never hand-written. `tokens.md` today — every token, both themes, and every contrast ratio a gate defends. The published file *is* the pin; `reference/README.md` carries the regeneration ritual and what each gate holds. |

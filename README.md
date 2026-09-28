@@ -16,8 +16,8 @@ The single source of truth for how Meridian looks, reads, and feels — across t
 | `meridian-design/` | The token crate — MIT, dependency-free, framework-neutral Rust. Colours, type ramp, spacing, chart palettes, and the emitters. The **only** place token values are defined. |
 | `meridian-design/brand/` | The mark, the wordmark, and their Affinity sources. **Not MIT** — see below. |
 | `meridian-egui/` | The egui adapter and a capped set of desktop primitives (ADR 0011). Takes dependencies of its own; the token crate's contract is unaffected. |
-| `decisions/` | Architecture decision records, ADRs 0001–0012 — the scoping decisions that shaped the system, and the record of every amendment to them. |
-| `guidelines/` | Six citable pages: identity, density, speed budgets, colour method, typography, icons. |
+| `decisions/` | Architecture decision records, ADRs 0001–0013 — the scoping decisions that shaped the system, and the record of every amendment to them. |
+| `guidelines/` | Seven citable pages: identity, density, speed budgets, colour method, typography, icons, chrome. |
 | `reference/` | [`tokens.md`](reference/tokens.md) — every token, both themes, generated. Not written by hand and not to be edited by hand. |
 | `validation/` | Palette gates and evidence — colour maths runs in CI, never by eye. |
 | `motion/` | The offline generator for brand motion. What it emits lives in `meridian-design/brand/motion/` — two formats from one source, pinned by CI. |
@@ -49,11 +49,11 @@ These pages are published at **<https://meridian-online.github.io/design/>** —
 
 It is generated, and generated from `tokens.css` rather than from the token modules — so the page and the artefact the web ships cannot disagree, and a token added to the system reaches the reference without anyone remembering to put it there. Its contrast section publishes measured WCAG ratios, and only for pairs a CI gate already holds to a floor: a number with no assertion behind it is a claim that can stop being true without anything going red. The floors it prints and the floors `tests/chrome_gate.rs` enforces are the same two constants.
 
-For the reasoning rather than the values, `guidelines/` has six short citable pages, and `decisions/` has the records they distil.
+For the reasoning rather than the values, `guidelines/` has seven short citable pages, and `decisions/` has the records they distil.
 
 ## Status
 
-Phases 0–5 are shipped and the system is live on both web and desktop — see [ROADMAP.md](ROADMAP.md) for what each phase delivered. In short: the full palette (neutral, accent, semantic, the categorical chart set, sequential and diverging ramps) generated and CI-gated; Inter + JetBrains Mono adopted after a failed font gate for Geist; Tabler adopted as the one icon language and shipped on web; tokens live in production web CSS and in the desktop chrome and chart ink; six guideline pages written.
+Phases 0–5 are shipped and the system is live on both web and desktop — see [ROADMAP.md](ROADMAP.md) for what each phase delivered. In short: the full palette (neutral, accent, semantic, the categorical chart set, sequential and diverging ramps) generated and CI-gated; Inter + JetBrains Mono adopted after a failed font gate for Geist; Tabler adopted as the one icon language and shipped on web; tokens live in production web CSS and in the desktop chrome and chart ink; the guideline pages written.
 
 The **desktop component layer** lives here as `meridian-egui`: the egui adapter and a capped set of primitives, alongside the geometry and state tokens they consume (ADR 0011). Brightfield's move off GPUI onto egui left no host widget library to defer to, so those primitives live in the design system. With the desktop app on egui, the earlier gpui-component theme emitter has been retired — the crate now emits `tokens.css` for the web, and `meridian-egui` themes the desktop. The token crate's contract is unchanged by any of it.
 
