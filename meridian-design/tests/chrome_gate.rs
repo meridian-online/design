@@ -398,3 +398,53 @@ fn the_scrim_is_translucent_and_the_planes_are_not() {
         }
     }
 }
+
+/// A categorical hue over a surface, in the gamma space the painter blends in
+/// (straight alpha, as `Rgba` carries it).
+fn over(top: Rgba, under: Rgba) -> Rgba {
+    let mix = |t: f32, u: f32| t.mul_add(top.a, u * (1.0 - top.a));
+    Rgba::new(
+        mix(top.r, under.r),
+        mix(top.g, under.g),
+        mix(top.b, under.b),
+        1.0,
+    )
+}
+
+/// A categorical hue marks a kind of data in chrome as a tint under its name
+/// (`guidelines/colour.md`, "A hue in chrome"), so the ink that names it sits
+/// on the tint and not on the bare surface. The tint is gated as what it does
+/// to that ink: primary and secondary keep the text floor, muted keeps the
+/// non-text floor it is held to on a bare surface, for all eight hues in both
+/// modes over every background chrome can sit on.
+#[test]
+fn a_chrome_tint_leaves_the_ink_over_it_legible() {
+    use meridian_design::viz::{chrome_tint, CATEGORICAL_DARK, CATEGORICAL_LIGHT};
+    for (dark, mode, s) in [
+        (false, "light", semantic(false)),
+        (true, "dark", semantic(true)),
+    ] {
+        let palette = if dark {
+            CATEGORICAL_DARK
+        } else {
+            CATEGORICAL_LIGHT
+        };
+        for (name, bg) in chrome_backgrounds(s) {
+            for (slot, hue) in palette.iter().enumerate() {
+                let tinted = over(chrome_tint(*hue, dark), bg);
+                for (ink_name, ink, floor) in [
+                    ("primary", s.text.primary, TEXT),
+                    ("secondary", s.text.secondary, TEXT),
+                    ("muted", s.text.muted, NON_TEXT),
+                ] {
+                    let c = contrast(ink, tinted);
+                    assert!(
+                        c >= floor,
+                        "{mode}: text.{ink_name} on {name} under hue slot {slot} is \
+                         {c:.2}:1, below {floor}"
+                    );
+                }
+            }
+        }
+    }
+}
