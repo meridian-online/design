@@ -185,12 +185,18 @@ fn the_control_boundary_is_findable_everywhere() {
 #[test]
 fn the_focus_ring_is_visible_against_everything_it_can_land_on() {
     for (mode, s) in modes() {
-        // The ring and the two bars share one ink, and the bars' own tokens
-        // must be that ink: a bar in a quieter ink would pass none of the
-        // measurements below and still be read here as the ring's.
+        // The ring and the two bars share one ink, and the measurements below
+        // are taken on that ink, so a bar token that left it would go
+        // unmeasured. Hold the bars to it first.
         let ring = s.borders.focus;
-        assert_eq!(s.rows.cursor_bar, ring, "{mode}: the row's bar left the focus ink");
-        assert_eq!(s.tabs.active_bar, ring, "{mode}: the tab's bar left the focus ink");
+        assert_eq!(
+            s.rows.cursor_bar, ring,
+            "{mode}: the row's bar left the focus ink"
+        );
+        assert_eq!(
+            s.tabs.active_bar, ring,
+            "{mode}: the tab's bar left the focus ink"
+        );
 
         for (name, bg) in ring_fills(s) {
             let c = contrast(ring, bg);

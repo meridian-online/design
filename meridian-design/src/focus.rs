@@ -103,9 +103,6 @@ mod tests {
             assert_eq!(inset_ring_radius(r), 0.0);
         }
         assert_eq!(ring_radius(radius::FULL), radius::FULL + RING_OFFSET);
-        assert_eq!(
-            inset_ring_radius(radius::FULL),
-            radius::FULL - RING_INSET
-        );
+        assert_eq!(inset_ring_radius(radius::FULL), radius::FULL - RING_INSET);
     }
 }
