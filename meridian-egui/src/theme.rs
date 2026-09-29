@@ -19,7 +19,7 @@
 //!
 //! - **Corner radii** come from [`meridian_design::radius`] — controls at
 //!   [`radius::CONTROL`], containers at [`radius::PANEL`] — not egui's stock
-//!   rounding.
+//!   rounding. Both rungs are `0`: the chrome is square.
 //! - **Elevation shadows** come from [`meridian_design::Elevation`]: the modal
 //!   shadow drives [`egui::Visuals::window_shadow`], the overlay shadow drives
 //!   [`egui::Visuals::popup_shadow`]. The two flat elevations cast nothing, so
@@ -193,6 +193,10 @@ pub fn meridian_visuals(mode: Mode) -> egui::Visuals {
     let panel_radius = egui::CornerRadius::same(radius::PANEL.round() as u8);
     v.window_corner_radius = panel_radius;
     v.menu_corner_radius = panel_radius;
+    // A slider's thumb is one of the marks that stays round (`radius::FULL`);
+    // egui's stock handle is a rounded rectangle drawn with the widget corner
+    // above, which the square look would turn into a square thumb.
+    v.handle_shape = egui::style::HandleShape::Circle;
 
     // Elevation: the two floating surfaces cast the Meridian shadows; the plane
     // and raised regions cast nothing (they map to `Shadow::NONE`).
@@ -370,6 +374,36 @@ mod tests {
         assert_eq!(v.widgets.active.corner_radius, control);
         assert_eq!(v.window_corner_radius, panel);
         assert_eq!(v.menu_corner_radius, panel);
+    }
+
+    /// The look is square in the visuals themselves — every widget state, the
+    /// window and the menu have no corner and both floating shadows have no
+    /// blur — and a slider's thumb is the one round mark, a circle rather than
+    /// a rounded rectangle.
+    #[test]
+    fn the_visuals_are_square_but_for_a_round_thumb() {
+        for mode in [Mode::Light, Mode::Dark] {
+            let v = meridian_visuals(mode);
+            let w = &v.widgets;
+            for (name, state) in [
+                ("noninteractive", &w.noninteractive),
+                ("inactive", &w.inactive),
+                ("hovered", &w.hovered),
+                ("active", &w.active),
+                ("open", &w.open),
+            ] {
+                assert_eq!(
+                    state.corner_radius,
+                    egui::CornerRadius::ZERO,
+                    "{mode:?} {name}"
+                );
+            }
+            assert_eq!(v.window_corner_radius, egui::CornerRadius::ZERO);
+            assert_eq!(v.menu_corner_radius, egui::CornerRadius::ZERO);
+            assert_eq!(v.window_shadow.blur, 0, "{mode:?}: the modal's shadow");
+            assert_eq!(v.popup_shadow.blur, 0, "{mode:?}: the overlay's shadow");
+            assert_eq!(v.handle_shape, egui::style::HandleShape::Circle);
+        }
     }
 
     /// Elevation drives the two floating shadows; the plane casts nothing. The

@@ -12,9 +12,9 @@
 //! - [`ToastLayer`] holds **transient, self-expiring toasts**. No identity,
 //!   no dedup — a toast is a moment, and stacking moments is correct.
 //!
-//! Both draw from the semantic tokens only: overlay surface, subtle
-//! hairline, panel radius, a severity dot from the matching interaction
-//! role. Severity maps to a token [`Role`] ([`Severity::role`]) rather than
+//! Both draw from the semantic tokens only: overlay surface, a 1px rule in the
+//! default border ink, panel radius, a hard overlay shadow, a severity dot from
+//! the matching interaction role. Severity maps to a token [`Role`] ([`Severity::role`]) rather than
 //! to any colour named here.
 
 use egui::{Align, Align2, Layout, Margin, RichText};
@@ -318,12 +318,8 @@ impl ToastLayer {
             .order(egui::Order::Foreground)
             .show(ctx, |ui| {
                 for entry in &self.items {
-                    egui::Frame::new()
-                        .fill(to_color32(sem.surfaces.overlay))
-                        .stroke(egui::Stroke::new(1.0, to_color32(sem.borders.subtle)))
-                        .corner_radius(t.radius_panel)
+                    card_frame(&style, t)
                         .inner_margin(Margin::symmetric(t.space[4] as i8, t.space[2] as i8))
-                        .shadow(style.visuals.popup_shadow)
                         .show(ui, |ui| {
                             ui.horizontal(|ui| {
                                 severity_dot(ui, sem, entry.toast.severity);
@@ -347,13 +343,14 @@ impl ToastLayer {
     }
 }
 
-/// The banner/toast card: overlay surface, subtle hairline, panel radius,
-/// overlay elevation shadow.
+/// The banner/toast card: overlay surface, a 1px rule in the default border
+/// ink, panel radius, overlay elevation shadow — a hard shadow with no blur.
+/// The toast keeps this card and takes its own margin.
 fn card_frame(style: &egui::Style, t: &crate::tokens::Tokens) -> egui::Frame {
     let sem = semantic(style.visuals.dark_mode);
     egui::Frame::new()
         .fill(to_color32(sem.surfaces.overlay))
-        .stroke(egui::Stroke::new(1.0, to_color32(sem.borders.subtle)))
+        .stroke(egui::Stroke::new(1.0, to_color32(sem.borders.default_)))
         .corner_radius(t.radius_panel)
         .inner_margin(Margin::same(t.panel_padding as i8))
         .shadow(style.visuals.popup_shadow)

@@ -14,8 +14,10 @@
 use std::sync::Arc;
 
 use egui::{
-    Align, Color32, FontFamily, FontId, FontSelection, Galley, Margin, RichText, Sense, WidgetText,
+    Align, Color32, CornerRadius, FontFamily, FontId, FontSelection, Galley, Rect, RichText, Sense,
+    Vec2, WidgetText,
 };
+use meridian_design::control::KEYCAP_FOOT_WIDTH;
 use meridian_design::semantic;
 use meridian_design::typography::CHART_LABEL_SIZE;
 
@@ -28,17 +30,84 @@ fn chip_ink(ui: &egui::Ui) -> Color32 {
     to_color32(semantic(ui.visuals().dark_mode).text.secondary)
 }
 
-/// The chip's box: sunken fill, hairline border, chip radius, spacing-ladder
-/// padding. Every geometry and colour comes from a token — there is nothing to
-/// tune at the call site, which is the point.
-fn chip_frame(ui: &egui::Ui) -> egui::Frame {
+/// The rule on a keycap's top and sides. The foot under the face is
+/// [`KEYCAP_FOOT_WIDTH`] and is the bottom edge, so it is not one of the sides.
+const KEYCAP_SIDE_RULE: f32 = 1.0;
+
+/// What the chip adds around its keystroke's galley: the spacing-ladder padding
+/// and the rule on each edge — a hairline on the top and both sides, the foot
+/// under the face. Every geometry comes from a token — there is nothing to tune
+/// at the call site, which is the point.
+///
+/// The chip's box is the galley plus this, and it is the same box the chip drew
+/// when it was one frame with one hairline all round: the foot takes one more
+/// pixel out of the bottom than that hairline did, from the padding rather than
+/// from the box, so a row that reserves [`chip_width`] and [`chip_height`] does
+/// not move.
+fn chip_extra(ui: &egui::Ui) -> Vec2 {
     let t = ui.tokens();
+    Vec2::new(
+        2.0 * (t.chip_padding_x + KEYCAP_SIDE_RULE),
+        2.0 * (t.space[1] + KEYCAP_SIDE_RULE),
+    )
+}
+
+/// The face of a keycap drawn in `rect`: the fill inside its top and side
+/// hairlines and above its foot. The keystroke is centred on it.
+fn keycap_face(rect: Rect) -> Rect {
+    Rect::from_min_max(
+        rect.min + Vec2::splat(KEYCAP_SIDE_RULE),
+        rect.max - Vec2::new(KEYCAP_SIDE_RULE, KEYCAP_FOOT_WIDTH),
+    )
+}
+
+/// Paint the keycap's box in `rect`: the sunken fill, a 1px hairline in the
+/// subtle border ink on the top and both sides, and a [`KEYCAP_FOOT_WIDTH`] foot
+/// in the default border ink across the bottom — so it reads as a key by its
+/// heavier foot rather than by a corner. One frame stroke cannot draw the two
+/// widths, so the box is five square rects that do not overlap: the fill's
+/// face and the four rules around it.
+fn paint_keycap(ui: &egui::Ui, rect: Rect) {
     let sem = semantic(ui.visuals().dark_mode);
-    egui::Frame::new()
-        .fill(to_color32(sem.surfaces.sunken))
-        .stroke(egui::Stroke::new(1.0, to_color32(sem.borders.default_)))
-        .corner_radius(t.radius_chip)
-        .inner_margin(Margin::symmetric(t.chip_padding_x as i8, t.space[1] as i8))
+    let painter = ui.painter();
+    let square = CornerRadius::ZERO;
+    let side = to_color32(sem.borders.subtle);
+    let foot = to_color32(sem.borders.default_);
+
+    painter.rect_filled(rect, square, to_color32(sem.surfaces.sunken));
+
+    let (left, right, top, bottom) = (rect.left(), rect.right(), rect.top(), rect.bottom());
+    let foot_top = bottom - KEYCAP_FOOT_WIDTH;
+    let rules = [
+        // The top hairline, across the whole width.
+        (
+            Rect::from_min_max(rect.min, egui::pos2(right, top + KEYCAP_SIDE_RULE)),
+            side,
+        ),
+        // The two sides, between the top hairline and the foot.
+        (
+            Rect::from_min_max(
+                egui::pos2(left, top + KEYCAP_SIDE_RULE),
+                egui::pos2(left + KEYCAP_SIDE_RULE, foot_top),
+            ),
+            side,
+        ),
+        (
+            Rect::from_min_max(
+                egui::pos2(right - KEYCAP_SIDE_RULE, top + KEYCAP_SIDE_RULE),
+                egui::pos2(right, foot_top),
+            ),
+            side,
+        ),
+        // The foot, across the whole width.
+        (
+            Rect::from_min_max(egui::pos2(left, foot_top), rect.max),
+            foot,
+        ),
+    ];
+    for (rule, ink) in rules {
+        painter.rect_filled(rule, square, ink);
+    }
 }
 
 /// The keystroke laid out in the keycap's monospace ink: one section, no
@@ -56,14 +125,14 @@ fn chip_galley(ui: &egui::Ui, keystroke: &str) -> Arc<Galley> {
 }
 
 /// How tall a [`key_chip`] draws for `keystroke`: its galley plus the chip's
-/// own padding and hairline.
+/// own padding, hairline and foot.
 ///
 /// A caller laying out a row of chips needs this **before** it draws them. A
 /// row that instead takes the space left over hands each chip a column, and
 /// egui's cross-centred horizontal layout grows a child to fill what it is
 /// handed — see [`key_chip`].
 pub(crate) fn chip_height(ui: &egui::Ui, keystroke: &str) -> f32 {
-    chip_galley(ui, keystroke).size().y + chip_frame(ui).total_margin().sum().y
+    chip_galley(ui, keystroke).size().y + chip_extra(ui).y
 }
 
 /// How wide a [`key_chip`] draws for `keystroke`: its galley plus the chip's
@@ -77,25 +146,27 @@ pub(crate) fn chip_height(ui: &egui::Ui, keystroke: &str) -> f32 {
 /// chip then paints an opaque fill over the glyphs already on the canvas —
 /// see [`crate::picker::Picker`]'s match list, which is why this exists.
 pub(crate) fn chip_width(ui: &egui::Ui, keystroke: &str) -> f32 {
-    chip_galley(ui, keystroke).size().x + chip_frame(ui).total_margin().sum().x
+    chip_galley(ui, keystroke).size().x + chip_extra(ui).x
 }
 
 /// A keystroke rendered as a keycap chip: monospace label on the sunken
-/// surface with a hairline border, chip radius, and spacing-ladder padding.
-/// Every geometry and colour comes from a token — there is nothing to tune at
-/// the call site, which is the point.
+/// surface, a 1px hairline on its top and sides and a heavier foot under it —
+/// see [`paint_keycap`] — with spacing-ladder padding and no corner. Every
+/// geometry and colour comes from a token — there is nothing to tune at the
+/// call site, which is the point.
 ///
-/// The chip's size is settled from its galley and the frame's own margins
-/// before any space is claimed, which is what keeps a keycap keycap-sized in
-/// every layout. Measuring it the other way round — letting
-/// [`egui::Frame::show`] report whatever its content ui used — is not
+/// The chip's size is settled from its galley and its own insets before any
+/// space is claimed, which is what keeps a keycap keycap-sized in every layout.
+/// Measuring it the other way round — laying the content out in a frame and
+/// letting [`egui::Frame::show`] report whatever its content ui used — is not
 /// content-driven inside a cross-centred horizontal layout: egui grows a
 /// child's frame to `available_rect.height()` there
 /// (`Layout::next_frame_ignore_wrap`) and folds that frame into the ui's
 /// `min_rect` (`Placer::advance_after_rects`), so the chip would take the
 /// whole height the caller had spare.
 ///
-/// The keystroke inside it is placed on the glyphs it inks, not on the font
+/// The keystroke is centred on the keycap's face — the fill above the foot and
+/// inside the hairlines — and placed on the glyphs it inks, not on the font
 /// box those glyphs were laid out in — [`optically_centred_galley_top`]. A
 /// galley's box is metrics: one ascent above the baseline and one reserved
 /// descent below it, the same height for every string in the face whatever the
@@ -103,24 +174,24 @@ pub(crate) fn chip_width(ui: &egui::Ui, keystroke: &str) -> f32 {
 /// falls inside them. The bundled mono face reserves more room below its
 /// baseline than it leaves above its ascenders, so its two boxes do not share a
 /// centre for *any* string and every keystroke moved when this was corrected —
-/// a keystroke with no descender down, one with a descender up. The size and
-/// the height ladder above are untouched by it: only the paint position moved.
+/// a keystroke with no descender down, one with a descender up.
 ///
 /// Returns the chip's [`egui::Response`] so a caller can hang a tooltip or
 /// hover behaviour off it.
 pub fn key_chip(ui: &mut egui::Ui, keystroke: &str) -> egui::Response {
-    let frame = chip_frame(ui);
     let galley = chip_galley(ui, keystroke);
-    let margin = frame.total_margin();
 
-    let (rect, response) = ui.allocate_exact_size(galley.size() + margin.sum(), Sense::hover());
-    let content_rect = rect - margin;
+    let (rect, response) = ui.allocate_exact_size(galley.size() + chip_extra(ui), Sense::hover());
 
     if ui.is_rect_visible(rect) {
-        ui.painter().add(frame.paint(content_rect));
-        let top = optically_centred_galley_top(&galley, content_rect.center().y);
-        ui.painter()
-            .galley(egui::pos2(content_rect.min.x, top), galley, chip_ink(ui));
+        paint_keycap(ui, rect);
+        let face = keycap_face(rect);
+        let top = optically_centred_galley_top(&galley, face.center().y);
+        ui.painter().galley(
+            egui::pos2(face.min.x + ui.tokens().chip_padding_x, top),
+            galley,
+            chip_ink(ui),
+        );
     }
 
     let enabled = ui.is_enabled();

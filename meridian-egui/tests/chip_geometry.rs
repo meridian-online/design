@@ -38,7 +38,7 @@
 //! they could be quietly copying from the widget.
 
 use egui_kittest::Harness;
-use meridian_design::control::{HEIGHT_XS, ICON_XS};
+use meridian_design::control::{HEIGHT_XS, ICON_XS, KEYCAP_FOOT_WIDTH};
 use meridian_design::semantic::{semantic, Role};
 use meridian_design::spacing::{CHIP_PADDING_X, ICON_LABEL_GAP, SPACE_1};
 use meridian_egui::{icons, key_chip, theme, widgets, Mode};
@@ -186,9 +186,10 @@ fn tessellated_glyph_box(
 }
 
 impl Painted {
-    /// The one box painted with `fill` at the chip radius. Filtering on the
-    /// pair is what addresses a chip exactly: the surface behind it carries the
-    /// same rect in a one-widget frame, and is drawn square.
+    /// The one box painted with `fill` at the chip radius. Each harness below
+    /// draws a single chip, so one box with that fill is the chip; a frame that
+    /// also draws another sunken box, or a keycap among them, tells a keycap
+    /// apart by its foot instead — see `keycap_boxes` in `square_look.rs`.
     fn chip_box(&self, fill: egui::Color32) -> egui::Rect {
         let radius = egui::CornerRadius::from(meridian_design::radius::CHIP);
         let found: Vec<egui::Rect> = self
@@ -248,6 +249,19 @@ struct Drawn {
     glyphs: egui::Rect,
     drawn_glyphs: egui::Rect,
     icon: egui::Rect,
+}
+
+impl Drawn {
+    /// The keycap's face: its box inside the hairline on the top and sides and
+    /// above the foot. Laid out here from the named constants, never asked of
+    /// the widget — the keystroke is centred on this and not on the whole box,
+    /// because the foot is not part of the surface the key sits on.
+    fn face(&self) -> egui::Rect {
+        egui::Rect::from_min_max(
+            self.chip.min + egui::vec2(HAIRLINE, HAIRLINE),
+            self.chip.max - egui::vec2(HAIRLINE, KEYCAP_FOOT_WIDTH),
+        )
+    }
 }
 
 /// Draw one status pill on its own and measure it.
@@ -712,10 +726,15 @@ fn the_keystrokes_under_test_ink_boxes_that_start_and_end_differently() {
 /// descender sat 0.5 above the capsule's centreline and one with a descender
 /// 0.5 below it, and the correction moves both.
 ///
+/// The reference is the keycap's **face** — the fill inside the hairlines and
+/// above the foot — and not the whole box: the foot is a heavier edge under the
+/// key and not the surface it sits on, so centring on the box would leave the
+/// keystroke half the difference between the foot and the hairline too low.
+///
 /// Both terms are measured off the painted frame and neither is stated from a
-/// constant: the capsule is the rect the widget filled, and the glyph box is
-/// walked out of the mesh the text tessellated into. The claim is that the two
-/// centres coincide, which is a relation between two drawn things rather than a
+/// constant: the box is the rect the widget filled (the face is that box less
+/// the named rules), and the glyph box is walked out of the mesh the text
+/// tessellated into. The claim is that the two centres coincide, which is a relation between two drawn things rather than a
 /// restatement of any expression in the widget — `key_chip` reads
 /// `Galley::mesh_bounds`, and this reads the vertices.
 ///
@@ -729,14 +748,14 @@ fn the_keycap_centres_its_keystroke_on_the_glyphs_not_on_the_font_box() {
         for mode in [Mode::Light, Mode::Dark] {
             for keystroke in KEYSTROKES {
                 let keycap = drawn_key_chip_at(mode, keystroke, density);
-                let off = keycap.glyphs.center().y - keycap.chip.center().y;
+                let off = keycap.glyphs.center().y - keycap.face().center().y;
                 assert!(
                     off.abs() < EPS,
                     "{mode:?} {density}x {keystroke}: the keystroke's glyphs are \
-                     centred {off} off the keycap's centreline — the glyphs run \
-                     {:?} and the keycap {:?}",
+                     centred {off} off the keycap face's centreline — the glyphs run \
+                     {:?} and the face {:?}",
                     keycap.glyphs.y_range(),
-                    keycap.chip.y_range()
+                    keycap.face().y_range()
                 );
             }
         }
@@ -744,23 +763,23 @@ fn the_keycap_centres_its_keystroke_on_the_glyphs_not_on_the_font_box() {
 }
 
 /// Where the keystroke is **drawn** does not depend on which keystroke it is,
-/// and it is seated as close to the centreline as the pixel grid allows.
+/// and it is seated as close to the face's centreline as the pixel grid allows.
 ///
 /// This is the claim above one stage further down the pipeline, and the stage
 /// is not free. epaint snaps a galley's origin to a whole physical pixel before
 /// it tessellates (`epaint::TessellationOptions::round_text_to_pixels`), so the
-/// position `key_chip` computes is rounded before a triangle exists. The
-/// keycap's capsule is an *odd* number of physical pixels tall at both
-/// densities — its height is a galley plus two spacing rungs plus two hairlines
-/// and that is what it comes to — while its glyph box is an even number, so no
-/// paint position centres the drawn glyphs. Half a physical pixel is left over
-/// whatever the widget asks for.
+/// position `key_chip` computes is rounded before a triangle exists. Where the
+/// face and the glyph box differ in parity, in whole physical pixels, no paint
+/// position centres the drawn glyphs and half a physical pixel is left over
+/// whatever the widget asks for. Measured with the foot drawn: the face is a
+/// whole even number of pixels at 1x and the drawn glyphs sit on its centreline
+/// to the bit; at 2x half a physical pixel is left.
 ///
 /// So the bound asserted here is half a physical pixel and not zero. Zero is
-/// not reachable, and a test claiming it would be claiming something the code
-/// cannot do; moving the residual to zero means moving the height ladder, which
-/// [`neither_chip_moves_on_the_vertical_ladder`] exists to stop happening by
-/// accident.
+/// not reachable at every density, and a test claiming it would be claiming
+/// something the code cannot do; moving the residual means moving the height
+/// ladder, which [`neither_chip_moves_on_the_vertical_ladder`] exists to stop
+/// happening by accident.
 ///
 /// **The first assertion is what the correction buys at this altitude**: one
 /// offset for every keystroke. Under font-box centring the drawn offset is a
@@ -776,7 +795,10 @@ fn the_drawn_keystroke_sits_at_one_offset_whatever_the_keystroke_is() {
                 .iter()
                 .map(|k| {
                     let keycap = drawn_key_chip_at(mode, k, density);
-                    (*k, keycap.drawn_glyphs.center().y - keycap.chip.center().y)
+                    (
+                        *k,
+                        keycap.drawn_glyphs.center().y - keycap.face().center().y,
+                    )
                 })
                 .collect();
 
@@ -785,7 +807,7 @@ fn the_drawn_keystroke_sits_at_one_offset_whatever_the_keystroke_is() {
             // physical pixel and the glyph quads sit at whole-pixel offsets from
             // it, so a drawn glyph box lands on the grid by construction — while
             // the laid-out one this widget asks for does not, and cannot, for
-            // the same odd-capsule reason the residual exists. A measurement
+            // the same parity reason the residual exists. A measurement
             // that quietly read layout instead of tessellation would agree with
             // everything else here and disagree with this.
             for keystroke in KEYSTROKES {
@@ -805,21 +827,21 @@ fn the_drawn_keystroke_sits_at_one_offset_whatever_the_keystroke_is() {
                 assert!(
                     near(*off, first),
                     "{mode:?} {density}x: `{keystroke}` is drawn {off} off the \
-                     keycap's centreline against `{first_keystroke}`'s {first} — \
+                     keycap face's centreline against `{first_keystroke}`'s {first} — \
                      the keystroke's position is a function of the string, which \
                      is the defect"
                 );
             }
 
-            // Half a physical pixel, in points. The capsule is an odd number of
-            // physical pixels tall and the glyph box an even number, so this is
-            // the floor the snap imposes, not a tolerance.
+            // Half a physical pixel, in points. Where the face and the glyph
+            // box differ in parity this is the floor the snap imposes, not a
+            // tolerance.
             let half_a_physical_pixel = 0.5 / density;
             for (keystroke, off) in &offsets {
                 assert!(
                     off.abs() <= half_a_physical_pixel + EPS,
                     "{mode:?} {density}x: `{keystroke}` is drawn {off} off the \
-                     keycap's centreline, past the {half_a_physical_pixel} the \
+                     keycap face's centreline, past the {half_a_physical_pixel} the \
                      pixel snap can account for"
                 );
             }
@@ -865,12 +887,12 @@ fn a_keystroke_with_nothing_to_ink_falls_back_to_its_font_box() {
                     keycap.text.y_range()
                 );
 
-                let off = keycap.text.center().y - keycap.chip.center().y;
+                let off = keycap.text.center().y - keycap.face().center().y;
                 assert!(
                     off.abs() < EPS,
                     "{mode:?} {density}x {keystroke:?}: with no glyphs to centre, the \
-                     font box is the answer, and it is sitting {off} off the keycap's \
-                     centreline"
+                     font box is the answer, and it is sitting {off} off the keycap \
+                     face's centreline"
                 );
             }
         }
