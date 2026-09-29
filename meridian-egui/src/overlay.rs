@@ -3,7 +3,7 @@
 //! The audit behind ADR 0011 found one conceptual modal card re-declared with
 //! widths, max-heights, paddings and escape hints that agreed with nothing.
 //! This module is the single copy: [`overlay_frame`] draws the card chrome
-//! (surface, hairline, panel radius, modal shadow, title row, keystroke hint
+//! (surface, rule, panel radius, modal shadow, title row, keystroke hint
 //! footer) around any body, and [`ModalLayer`] floats that card over a
 //! token-scrim backdrop with escape / click-outside dismissal.
 //!
@@ -136,16 +136,16 @@ impl ModalChrome {
     }
 }
 
-/// The card frame itself: overlay surface, subtle hairline, panel radius,
-/// modal padding, and the modal elevation shadow the theme derived from the
-/// tokens. In light mode the hairline and shadow are the *only* separation an
-/// overlay has from the plane below (the surfaces are deliberately equal), so
-/// both are always painted.
+/// The card frame itself: overlay surface, a 1px rule in the default border
+/// ink, panel radius, modal padding, and the modal elevation shadow the theme
+/// derived from the tokens — a hard shadow, offset with no blur. In light mode
+/// the rule and shadow are the *only* separation an overlay has from the plane
+/// below (the surfaces are deliberately equal), so both are always painted.
 fn card_frame(style: &egui::Style, tokens: &Tokens) -> egui::Frame {
     let sem = semantic(style.visuals.dark_mode);
     egui::Frame::new()
         .fill(to_color32(sem.surfaces.overlay))
-        .stroke(egui::Stroke::new(1.0, to_color32(sem.borders.subtle)))
+        .stroke(egui::Stroke::new(1.0, to_color32(sem.borders.default_)))
         .corner_radius(tokens.radius_panel)
         .inner_margin(egui::Margin::same(tokens.modal_padding as i8))
         .shadow(style.visuals.window_shadow)

@@ -3,12 +3,14 @@
 //! Every "row of things you can hover, select, and click" — picker matches,
 //! navigation lists, palette results — draws through [`list_row`], which
 //! paints hover/selected/pressed state **from the semantic row tokens only**.
-//! The function takes no colour and no height in pixels: the height is a rung
-//! of the row ladder ([`RowHeight`]) and the state colours come from
+//! The function takes no fill colour and no height in pixels: the height is a
+//! rung of the row ladder ([`RowHeight`]) and the state fills come from
 //! [`meridian_design::semantic`], so a hand-rolled row background cannot be
 //! expressed through this API at all. That is deliberate — the audit behind
 //! ADR 0011 found rows re-inventing their own accent at the call site, and the
-//! durable fix is an API with no colour parameter to misuse.
+//! durable fix is an API with no fill parameter to misuse. The one ink a caller
+//! may pass is the cursor bar's ([`ListRow::bar_ink`]): a surface that marks a
+//! kind of data by hue puts it there and nowhere else on the row.
 //!
 //! Hover-revealed affordances are **visibility-based**: the content closure
 //! receives the row's [`RowState`] and simply does not add the affordance
@@ -20,7 +22,8 @@
 //! flicker: the pointer is over the row whether or not the affordance exists
 //! yet.
 
-use egui::{Sense, StrokeKind, UiBuilder};
+use egui::{Color32, CornerRadius, Rect, Sense, UiBuilder};
+use meridian_design::control::ROW_BAR_WIDTH;
 use meridian_design::{semantic, Role};
 
 use crate::theme::to_color32;
@@ -55,13 +58,14 @@ impl RowHeight {
     }
 }
 
-/// Configuration for one [`list_row`]: which rung, and whether the row is the
-/// current (persistent) selection. Nothing else is configurable — treatment
-/// is the tokens' job.
+/// Configuration for one [`list_row`]: which rung, whether the row is the one
+/// under the cursor, and — for a caller that marks a kind of data with its bar —
+/// the bar's ink. Nothing else is configurable — treatment is the tokens' job.
 #[derive(Clone, Copy, Debug)]
 pub struct ListRow {
     height: RowHeight,
     selected: bool,
+    bar_ink: Option<Color32>,
 }
 
 impl ListRow {
@@ -71,13 +75,25 @@ impl ListRow {
         Self {
             height,
             selected: false,
+            bar_ink: None,
         }
     }
 
-    /// Mark the row as the persistent selection.
+    /// Mark the row as the one under the cursor — where the keys act. It takes
+    /// the cursor fill and a bar on its leading edge.
     #[must_use]
     pub fn selected(mut self, selected: bool) -> Self {
         self.selected = selected;
+        self
+    }
+
+    /// The ink of the bar on the leading edge of the row under the cursor, for
+    /// a caller that marks a kind of data with it. Left unset, the bar is in
+    /// the token's ink (`semantic::Rows::cursor_bar`, the focus ink). It has no
+    /// effect on a row that is not under the cursor: only the cursor has a bar.
+    #[must_use]
+    pub fn bar_ink(mut self, ink: Color32) -> Self {
+        self.bar_ink = Some(ink);
         self
     }
 }
@@ -89,7 +105,7 @@ pub struct RowState {
     /// The pointer is over the row (anywhere in its rect, including over
     /// child widgets).
     pub hovered: bool,
-    /// The row is the persistent selection.
+    /// The row is the one under the cursor.
     pub selected: bool,
     /// The primary button is down on the row.
     pub pressed: bool,
@@ -117,12 +133,18 @@ impl<R> ListRowResponse<R> {
 }
 
 /// Draw one row: allocate the full available width at the rung's height,
-/// paint hover/selected/pressed treatment from the semantic row tokens, then
-/// lay out `content` vertically centred inside it with ladder padding.
+/// paint its state from the semantic row tokens, then lay out `content`
+/// vertically centred inside it with ladder padding.
 ///
-/// State precedence: selected > pressed > hovered > nothing. Selected rows
-/// additionally carry the token `selected_border` hairline, so selection
-/// survives losing the pointer.
+/// A row has three looks and no corner. At rest it draws nothing. Under the
+/// pointer it takes the hover fill. Under the cursor it takes the cursor fill
+/// and a [`ROW_BAR_WIDTH`] bar on its leading edge: the pointer is a passing
+/// glance and the cursor is where the keys act, so only the cursor has a bar.
+/// The bar is in the token's ink unless the caller passes one with
+/// [`ListRow::bar_ink`].
+///
+/// State precedence: under the cursor > pressed > hovered > nothing, so the
+/// cursor survives losing the pointer.
 pub fn list_row<R>(
     ui: &mut egui::Ui,
     row: ListRow,
@@ -145,7 +167,7 @@ pub fn list_row<R>(
     if ui.is_rect_visible(rect) {
         let rows = &sem.rows;
         let fill = if state.selected {
-            Some(rows.selected_background)
+            Some(rows.cursor_background)
         } else if state.pressed {
             // The rows vocabulary has no pressed slot; the neutral role's
             // active state is the token for "a chrome-wearing control, held".
@@ -157,15 +179,12 @@ pub fn list_row<R>(
         };
         if let Some(fill) = fill {
             ui.painter()
-                .rect_filled(rect, t.radius_control, to_color32(fill));
+                .rect_filled(rect, CornerRadius::ZERO, to_color32(fill));
         }
         if state.selected {
-            ui.painter().rect_stroke(
-                rect,
-                t.radius_control,
-                egui::Stroke::new(1.0, to_color32(rows.selected_border)),
-                StrokeKind::Inside,
-            );
+            let bar = Rect::from_min_size(rect.min, egui::vec2(ROW_BAR_WIDTH, rect.height()));
+            let ink = row.bar_ink.unwrap_or_else(|| to_color32(rows.cursor_bar));
+            ui.painter().rect_filled(bar, CornerRadius::ZERO, ink);
         }
     }
 
