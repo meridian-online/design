@@ -418,24 +418,22 @@ fn nothing_in_a_strip_has_a_corner_and_every_width_is_the_tokens() {
 #[test]
 fn a_click_on_a_closed_tab_reports_it_and_a_click_on_the_open_one_reports_none() {
     for mode in MODES {
-        for open in 0..NAMES.len() {
-            for target in 0..NAMES.len() {
+        for (open, open_name) in NAMES.iter().enumerate() {
+            for (target, target_name) in NAMES.iter().enumerate() {
                 let mut harness = drawn(mode, open, None);
                 assert!(
                     harness.state().clicks.is_empty(),
                     "{mode:?}: a click before any click"
                 );
                 harness
-                    .get_by_role_and_label(A11yRole::Tab, NAMES[target])
+                    .get_by_role_and_label(A11yRole::Tab, target_name)
                     .click();
                 harness.run();
                 let expected: Vec<usize> = if target == open { vec![] } else { vec![target] };
                 assert_eq!(
                     harness.state().clicks,
                     expected,
-                    "{mode:?}: clicking {:?} with {:?} open",
-                    NAMES[target],
-                    NAMES[open]
+                    "{mode:?}: clicking {target_name:?} with {open_name:?} open"
                 );
             }
         }
