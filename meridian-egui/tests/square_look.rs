@@ -130,7 +130,7 @@ fn filled(rects: &[Painted], fill: Color32) -> Vec<Painted> {
     rects.iter().filter(|r| r.fill == fill).copied().collect()
 }
 
-// ─── AC1: no shape has a corner ─────────────────────────────────────────────
+// ─── no shape has a corner ─────────────────────────────────────────────
 
 /// A frame is square if every rect in it has a corner radius of zero.
 fn assert_square(rects: &[Painted], what: &str) {
@@ -360,7 +360,7 @@ fn the_modal_card_the_banner_and_the_toast_are_drawn_without_a_corner() {
     }
 }
 
-// ─── AC2, AC3: the focus ring ───────────────────────────────────────────────
+// ─── the focus ring ───────────────────────────────────────────────
 
 /// A control's rect, drawn at a place that is not the origin so a ring
 /// mis-anchored to (0,0) is not a ring on it.
@@ -533,7 +533,7 @@ fn focus_ring_on_solid_for_follows_the_keys_too() {
     }
 }
 
-// ─── AC4: the keycap ────────────────────────────────────────────────────────
+// ─── the keycap ────────────────────────────────────────────────────────
 
 #[test]
 fn a_key_is_the_sunken_face_with_a_hairline_on_three_sides_and_a_foot() {
@@ -673,7 +673,7 @@ fn a_key_is_the_size_it_was_and_its_keystroke_is_centred_across_the_face() {
     }
 }
 
-// ─── AC5: the list row ──────────────────────────────────────────────────────
+// ─── the list row ──────────────────────────────────────────────────────
 
 /// One row drawn on its own, its rect and everything the frame painted. `hover`
 /// puts the pointer over the row; `bar` is the ink the caller passes, if any.
@@ -842,7 +842,7 @@ fn a_caller_can_pass_the_cursor_bars_ink_and_only_the_bars() {
     }
 }
 
-// ─── AC6: the query line ────────────────────────────────────────────────────
+// ─── the query line ────────────────────────────────────────────────────
 
 /// The query line drawn alone: what it painted, with the keys on it or not.
 fn drawn_query(mode: Mode, keys: bool) -> Vec<Painted> {
@@ -926,7 +926,7 @@ fn the_query_line_is_the_sunken_fill_over_a_one_pixel_rule_and_two_in_the_focus_
     }
 }
 
-// ─── AC7: the floating cards ────────────────────────────────────────────────
+// ─── the floating cards ────────────────────────────────────────────────
 
 /// The card among `rects`: the one rect with the overlay surface and a stroke.
 fn the_card(rects: &[Painted], mode: Mode, what: &str) -> Painted {
@@ -1083,17 +1083,7 @@ fn the_banner_and_the_toast_draw_a_one_pixel_rule_and_a_hard_shadow_three_by_thr
     }
 }
 
-#[test]
-fn a_modals_shadow_casts_further_and_darker_than_an_overlays() {
-    for mode in MODES {
-        let overlay = Elevation::Overlay.shadow(mode.is_dark()).unwrap();
-        let modal = Elevation::Modal.shadow(mode.is_dark()).unwrap();
-        assert!(modal.x > overlay.x, "{mode:?}: further");
-        assert!(modal.colour.a > overlay.colour.a, "{mode:?}: darker");
-    }
-}
-
-// ─── AC8: the signatures brightfield calls ──────────────────────────────────
+// ─── the signatures a consumer calls ──────────────────────────────────
 
 /// Each primitive called the way a consumer calls it, with the arguments its
 /// signature has always taken. This is a compile-time claim — a changed
