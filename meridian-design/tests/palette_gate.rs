@@ -130,3 +130,29 @@ fn diverging_arms_descend_toward_their_poles() {
     assert!(okc(DIVERGING_MID_LIGHT) < CHROMA_FLOOR);
     assert!(okc(DIVERGING_MID_DARK) < CHROMA_FLOOR);
 }
+
+/// The tint's strength is the pair the desktop's column header drew before the
+/// system named it. It is pinned to literals, not to the constants under test,
+/// so re-pinning it is a decision a diff shows.
+#[test]
+fn chrome_tint_alpha_is_the_pair_the_desktop_drew() {
+    assert_eq!(CHROME_TINT_ALPHA_LIGHT, 0x12);
+    assert_eq!(CHROME_TINT_ALPHA_DARK, 0x1a);
+}
+
+/// `chrome_tint` is the seam a consumer calls, so the mode-to-alpha choice is
+/// tested through it: a swap of the two branches leaves the constants intact
+/// and paints light chrome at the dark strength.
+#[test]
+fn chrome_tint_keeps_the_hue_and_takes_the_modes_alpha() {
+    for (dark, palette, alpha) in [
+        (false, CATEGORICAL_LIGHT, 0x12),
+        (true, CATEGORICAL_DARK, 0x1a),
+    ] {
+        for (slot, hue) in palette.iter().enumerate() {
+            let tint = chrome_tint(*hue, dark);
+            assert!(tint.same_paint(hue), "slot {slot} changed paint");
+            assert_eq!(tint, hue.with_alpha_u8(alpha), "slot {slot}, dark={dark}");
+        }
+    }
+}

@@ -39,6 +39,27 @@ pub const CATEGORICAL_DARK: [Rgba; 8] = [
     Rgba::from_u8(0x47, 0x94, 0x4c, 0xff), // #47944c
 ];
 
+/// The alpha a categorical hue takes when it tints chrome that stands for a
+/// kind of data (`guidelines/colour.md`, "A hue in chrome"), out of 255: the
+/// hue over the surface it tints, in light and in dark. These are the values
+/// the desktop's column header drew before the system named them.
+///
+/// A Rust constant beside the palette, deliberately NOT emitted to
+/// `tokens.css`: the web's stylesheet is pinned byte-for-byte, so a consumer
+/// that draws the tint reads it from this crate.
+pub const CHROME_TINT_ALPHA_LIGHT: u8 = 0x12;
+pub const CHROME_TINT_ALPHA_DARK: u8 = 0x1a;
+
+/// A categorical hue at the tint strength for the mode. Which hue marks which
+/// kind of data is the caller's to name; this fixes only how strong it is.
+pub const fn chrome_tint(hue: Rgba, dark: bool) -> Rgba {
+    hue.with_alpha_u8(if dark {
+        CHROME_TINT_ALPHA_DARK
+    } else {
+        CHROME_TINT_ALPHA_LIGHT
+    })
+}
+
 /// Meridian blue-240 sequential ramp, steps 100..=700 — an OPT-IN named
 /// scheme ("meridian"); the DEFAULT sequential scheme remains viridis
 /// (Hugh's call, 2026-07-16). Ordinal use: light no lighter than index 3

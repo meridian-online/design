@@ -1,7 +1,7 @@
 ---
 status: accepted
 date-created: 2026-07-16
-date-modified: 2026-07-16
+date-modified: 2026-09-29
 ---
 # 0006. Meridian-native viz palette; Mosaic portability via renderer default + explicit ranges
 
@@ -39,3 +39,13 @@ Values live in `meridian-design/src/{viz,scales,chrome}.rs`, gated by `tests/pal
 - Good, because the canvas carries the identity while portable specs stay byte-honest in vanilla Mosaic.
 - Good, because `null_ink` closes the known NULL-renders-as-steel-blue bug as a side effect.
 - Bad, because Brightfield must first implement `colorRange`/`colorDomain` consumption (currently parsed but ignored) — a prerequisite chore in Phase 4.
+
+### Update (2026-09-29 — a categorical hue may mark a kind of data in chrome)
+
+The Harbour set was decided for charts, and nothing said whether a hue may mark a kind of data outside a plot. The desktop's column header already tints a column's head with a categorical hue at an alpha of its own, and the website colours a domain by a rule of its own, so the two can spend the palette differently until one rule says when a hue may mark chrome.
+
+`guidelines/colour.md` now states that rule ("A hue in chrome"): a hue marks a kind of data in chrome as a tint under its name, a bar on its edge or a marker beside it; it is not text ink; it is not spent on chrome that stands for no data. Which kind of data takes which hue is the consuming app's to name, and the design system names none.
+
+The tint's strength is a token of `meridian-design`: `viz::CHROME_TINT_ALPHA_LIGHT` (`0x12`) and `viz::CHROME_TINT_ALPHA_DARK` (`0x1a`), with `viz::chrome_tint` applying the one for the mode. They are the values the desktop drew before the system named them, so its header repaints no differently. They are Rust constants beside the palette and are not emitted to `tokens.css`, because emitting them would change a stylesheet the web pins byte-for-byte.
+
+The palette itself is unchanged: same slots, same order, same gate. `tests/palette_gate.rs` pins the alpha pair and the mode-to-alpha choice; `tests/chrome_gate.rs` holds text ink over each tint, for the eight hues in both modes, to the floors it holds it to over a bare surface.
