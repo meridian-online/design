@@ -292,9 +292,6 @@ pub struct Rows {
     /// [`Self::cursor_bar`].
     pub selected_background: Rgba,
     pub selected_border: Rgba,
-    /// The row under the cursor: one step darker than
-    /// [`Self::hover_background`], so the two read as two states when the
-    /// pointer rests beside the cursor.
     pub cursor_background: Rgba,
     /// The bar on the leading edge of the row under the cursor,
     /// [`crate::control::ROW_BAR_WIDTH`] wide. [`Borders::focus`]: the

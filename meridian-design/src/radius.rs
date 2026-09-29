@@ -1,13 +1,5 @@
 //! Corner radii — one definition, every consumer.
 //!
-//! Before this module the system had two radii that existed *only* as literal
-//! numbers inside the desktop theme emitter (`"radius": 6` and
-//! `"radius.lg": 8`), invisible to any Rust consumer, while the web declared
-//! its own `--radius` independently. Same intent, three declarations, no
-//! shared source. [`CONTROL`] and [`PANEL`] are those two values, promoted:
-//! the emitter now reads them, and `emit::tokens_css` publishes them so the
-//! web can stop re-declaring.
-//!
 //! **The chrome is square** (`guidelines/chrome.md`, ADR 0013). Every rung a
 //! chrome surface reads is `0`: a rule and a bar do the work a corner used to
 //! do. The rungs keep their names because consumers read them in their own
