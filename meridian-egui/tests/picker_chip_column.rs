@@ -27,6 +27,7 @@
 //! the CPU tessellation path and is green on a headless runner.
 
 use egui_kittest::Harness;
+use meridian_design::control::KEYCAP_FOOT_WIDTH;
 use meridian_design::radius;
 use meridian_design::semantic::semantic;
 use meridian_design::spacing::{ICON_LABEL_GAP, ROW_GRID};
@@ -201,14 +202,30 @@ impl DrawnRow {
 /// reported a defect that was not there.
 fn drawn_rows<S>(harness: &Harness<'_, S>, mode: Mode) -> Vec<DrawnRow> {
     let shapes = paint_list(harness);
-    let chip_fill = theme::to_color32(semantic(mode.is_dark()).surfaces.sunken);
-    let chip_radius = egui::CornerRadius::from(radius::CHIP);
+    let sem = semantic(mode.is_dark());
+    let chip_fill = theme::to_color32(sem.surfaces.sunken);
+    let foot_ink = theme::to_color32(sem.borders.default_);
 
+    // The sunken fill is also the query line's, so a box with that fill is a
+    // keycap only if it stands on a foot: a rect in the default border ink as
+    // wide as the box, flush with its bottom edge, and the named foot tall.
+    let stands_on_a_foot = |chip: &egui::Rect| {
+        shapes.iter().any(|s| match s {
+            Shape::Rect(foot, ink, _) => {
+                *ink == foot_ink
+                    && (foot.left() - chip.left()).abs() < EPS
+                    && (foot.right() - chip.right()).abs() < EPS
+                    && (foot.bottom() - chip.bottom()).abs() < EPS
+                    && (foot.height() - KEYCAP_FOOT_WIDTH).abs() < EPS
+            }
+            Shape::Text(_) => false,
+        })
+    };
     let chips: Vec<(usize, egui::Rect)> = shapes
         .iter()
         .enumerate()
         .filter_map(|(n, s)| match s {
-            Shape::Rect(rect, fill, cr) if *fill == chip_fill && *cr == chip_radius => {
+            Shape::Rect(rect, fill, _) if *fill == chip_fill && stands_on_a_foot(rect) => {
                 Some((n, *rect))
             }
             _ => None,
@@ -512,32 +529,30 @@ fn the_match_rows_still_sit_on_their_named_ladder_rung() {
         for density in DENSITIES {
             let harness = draw(mode, density);
             let shapes = paint_list(&harness);
-            let selected = theme::to_color32(semantic(mode.is_dark()).rows.selected_background);
+            let cursor = theme::to_color32(semantic(mode.is_dark()).rows.cursor_background);
             let control = egui::CornerRadius::from(radius::CONTROL);
             let boxes: Vec<egui::Rect> = shapes
                 .iter()
                 .filter_map(|s| match s {
-                    Shape::Rect(rect, fill, cr) if *fill == selected && *cr == control => {
-                        Some(*rect)
-                    }
+                    Shape::Rect(rect, fill, cr) if *fill == cursor && *cr == control => Some(*rect),
                     _ => None,
                 })
                 .collect();
             assert_eq!(
                 boxes.len(),
                 1,
-                "the picker draws exactly one selected row, and it is the only \
-                 row that paints a box to measure"
+                "the picker draws exactly one row under the cursor, and it is the \
+                 only row that paints a box to measure"
             );
             assert!(
                 (boxes[0].height() - ROW_GRID).abs() < EPS,
-                "in {mode:?} at {density}x the selected match row measures {:.2} \
-                 pt and the Grid rung names {ROW_GRID}",
+                "in {mode:?} at {density}x the match row under the cursor measures \
+                 {:.2} pt and the Grid rung names {ROW_GRID}",
                 boxes[0].height()
             );
 
-            // The first row is the selected one, so its box is the band every
-            // description of that row must stay inside.
+            // The first row is the one under the cursor, so its box is the band
+            // every description of that row must stay inside.
             for row in drawn_rows(&harness, mode) {
                 if row.index != 0 {
                     continue;

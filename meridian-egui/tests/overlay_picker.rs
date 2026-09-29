@@ -9,6 +9,7 @@
 
 use egui_kittest::kittest::Queryable;
 use egui_kittest::Harness;
+use meridian_design::control::KEYCAP_FOOT_WIDTH;
 use meridian_egui::{
     key_chip, list_row, theme, ListRow, MeridianUi, ModalChrome, ModalLayer, Mode, Notification,
     NotificationId, NotificationLayer, Picker, PickerDelegate, PickerEvent, PickerHint,
@@ -513,9 +514,10 @@ fn toast_layer_renders_queued_toasts() {
 // These read the *paint list*, not the accesskit tree, and that is the point.
 // A chip is an `egui::Frame` around a galley: the galley is what the tree
 // carries a size for, and the galley never stretched. What stretched was the
-// chip's own box, which exists only as a painted shape. `surfaces.sunken` at
-// `radius_chip` is drawn by `key_chip` and by nothing else in the crate, so
-// that pair addresses the chip boxes exactly.
+// chip's own box, which exists only as a painted shape. `surfaces.sunken` is
+// the keycap's fill and the query line's too, so a chip box is the sunken rect
+// that stands on a keycap foot — see `keycap_boxes` — and the pair of fill and
+// radius no longer tells them apart, the chrome having no corner.
 
 /// The hairline every box in this crate is stroked with. Named here so the
 /// content-derived chip height below is spelled out term by term rather than
@@ -549,6 +551,30 @@ fn boxes_of<S>(harness: &Harness<'_, S>, fill: egui::Color32, radius: f32) -> Ve
         .into_iter()
         .filter(|(_, f, r)| *f == fill && *r == radius)
         .map(|(rect, _, _)| rect)
+        .collect()
+}
+
+/// The keycap boxes a frame painted: the rects filled with the sunken surface
+/// that stand on a foot — a rect in the default border ink as wide as the box,
+/// flush with its bottom edge and [`KEYCAP_FOOT_WIDTH`] tall.
+fn keycap_boxes<S>(harness: &Harness<'_, S>, dark: bool) -> Vec<egui::Rect> {
+    let sem = meridian_design::semantic(dark);
+    let sunken = theme::to_color32(sem.surfaces.sunken);
+    let foot_ink = theme::to_color32(sem.borders.default_);
+    let rects = painted_rects(harness);
+    rects
+        .iter()
+        .filter(|(rect, fill, _)| {
+            *fill == sunken
+                && rects.iter().any(|(foot, ink, _)| {
+                    *ink == foot_ink
+                        && (foot.left() - rect.left()).abs() < 0.01
+                        && (foot.right() - rect.right()).abs() < 0.01
+                        && (foot.bottom() - rect.bottom()).abs() < 0.01
+                        && (foot.height() - KEYCAP_FOOT_WIDTH).abs() < 0.01
+                })
+        })
+        .map(|(rect, _, _)| *rect)
         .collect()
 }
 
@@ -600,11 +626,7 @@ fn draw_modal(
     harness.run();
 
     let sem = meridian_design::semantic(mode.is_dark());
-    let mut chips = boxes_of(
-        &harness,
-        theme::to_color32(sem.surfaces.sunken),
-        meridian_egui::TOKENS.radius_chip,
-    );
+    let mut chips = keycap_boxes(&harness, mode.is_dark());
     chips.sort_by(|a, b| b.height().total_cmp(&a.height()));
     let card = boxes_of(
         &harness,
@@ -771,11 +793,7 @@ fn drawn_chip_box(place: ChipPlacement) -> (f32, f32) {
         );
     harness.run();
     let content = harness.state().0;
-    let boxes = boxes_of(
-        &harness,
-        theme::to_color32(meridian_design::semantic(false).surfaces.sunken),
-        meridian_egui::TOKENS.radius_chip,
-    );
+    let boxes = keycap_boxes(&harness, false);
     assert_eq!(boxes.len(), 1, "one chip box painted");
     (boxes[0].height(), content)
 }
