@@ -10,5 +10,6 @@ The rules tokens can't carry. Each page is short, imperative, and citable in a r
 | [colour.md](colour.md) | Colour by job; the Harbour order is a safety mechanism; the validator gate; Mosaic portability. |
 | [typography.md](typography.md) | Inter + JetBrains Mono (+`CALT_OFF`) + Anybody; upstream builds only; features by scope. |
 | [icons.md](icons.md) | Tabler everywhere; framework internals exempt; one binding module per surface. |
+| [chrome.md](chrome.md) | Square chrome: no corners, the ring inside the edge, the keycap, three row states, line tabs, the hard shadow. |
 
-Decisions behind these pages live in `../decisions/` (ADRs 0001–0012); palette evidence in `../validation/`; the mark itself in `../meridian-design/brand/`.
+Decisions behind these pages live in `../decisions/` (ADRs 0001–0013); palette evidence in `../validation/`; the mark itself in `../meridian-design/brand/`.

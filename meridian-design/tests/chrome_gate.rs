@@ -50,12 +50,40 @@ fn chrome_backgrounds(s: &Semantic) -> Vec<(&'static str, Rgba)> {
     v
 }
 
-/// The chrome backgrounds plus the text-selection wash. Real text can be
-/// selected; a control border or a placeholder cannot, which is why the two
-/// lists differ.
+/// Every fill the focus ink is drawn over as a ring or a bar. The ring is a
+/// rule inside the control's edge (`focus::RING_OFFSET` is 0), so it lands on
+/// the control's own fill — a field's sunken fill, a row under the pointer or
+/// the cursor, a default control in each of its states — and the bars land on
+/// the row under the cursor and on the tab strip. A solid fill is not here: the
+/// ring there takes the on-solid ink, which the test after this one measures.
+fn ring_fills(s: &Semantic) -> Vec<(&'static str, Rgba)> {
+    let neutral = s.role(Role::Neutral).background;
+    let mut v = chrome_backgrounds(s);
+    v.extend([
+        ("row-cursor", s.rows.cursor_background),
+        ("neutral", neutral.base),
+        ("neutral-hover", neutral.hover),
+        ("neutral-active", neutral.active),
+        ("tabs-bar", s.tabs.bar_background),
+        ("tabs", s.tabs.background),
+        ("tabs-active", s.tabs.active_background),
+    ]);
+    v
+}
+
+/// The chrome backgrounds plus the text-selection wash and the row under the
+/// cursor. Real text can be selected; a control border or a placeholder
+/// cannot, which is why the two lists differ.
+///
+/// The row under the cursor carries text and the focus ink's bar, and both are
+/// gated on it (here and in [`ring_fills`]). It is not in
+/// [`chrome_backgrounds`], so `borders.control` is not held to 3:1 on it: on
+/// the light cursor fill that border measures under the floor, and no control
+/// with a drawn boundary sits in a row under the cursor today.
 fn text_backgrounds(s: &Semantic) -> Vec<(&'static str, Rgba)> {
     let mut v = chrome_backgrounds(s);
     v.push(("editor-selection", s.editor.selection));
+    v.push(("row-cursor", s.rows.cursor_background));
     v
 }
 
@@ -157,35 +185,56 @@ fn the_control_boundary_is_findable_everywhere() {
 #[test]
 fn the_focus_ring_is_visible_against_everything_it_can_land_on() {
     for (mode, s) in modes() {
+        // The ring and the two bars share one ink, and the measurements below
+        // are taken on that ink, so a bar token that left it would go
+        // unmeasured. Hold the bars to it first.
         let ring = s.borders.focus;
-        // The ring is drawn OUTSIDE the control across a gap of
-        // `focus::RING_OFFSET`, so the background it must survive is the
-        // plane, never the control's own fill.
-        //
-        // That premise used to be recorded as `assert!(RING_OFFSET > 0.0)`,
-        // which is a comparison of two constants: it documented the
-        // assumption but could not fail at runtime, so it was not a gate at
-        // all. What actually needs gating is the *reason* the offset exists —
-        // a Maritime ring drawn flush against the Maritime accent fill is
-        // invisible. Assert that over the real token values: if the accent
-        // role or the ring ever moved far enough apart for a flush ring to
-        // pass 3:1, this premise would be stale and the gate should be
-        // widened to cover role fills.
-        let accent_fill = s.role(Role::Accent).background.base;
-        let flush = contrast(ring, accent_fill);
-        assert!(
-            flush < NON_TEXT,
-            "{mode}: ring-on-accent is {flush:.2}:1 — a flush ring would now \
-             be legible, so this gate no longer justifies skipping role fills"
+        assert_eq!(
+            s.rows.cursor_bar, ring,
+            "{mode}: the row's bar left the focus ink"
+        );
+        assert_eq!(
+            s.tabs.active_bar, ring,
+            "{mode}: the tab's bar left the focus ink"
         );
 
-        for (name, bg) in chrome_backgrounds(s) {
+        for (name, bg) in ring_fills(s) {
             let c = contrast(ring, bg);
             assert!(
                 c >= NON_TEXT,
-                "{mode}: focus ring on {name} is {c:.2}:1, below {NON_TEXT}"
+                "{mode}: the focus ink on {name} is {c:.2}:1, below {NON_TEXT}"
             );
         }
+    }
+}
+
+/// On the accent's solid fill the ring takes the on-solid ink, one pixel in
+/// from the edge (`focus::RING_WIDTH_ON_SOLID`, `focus::RING_INSET`). This
+/// holds that ink to 3:1 on the fill in every state a focused control can be
+/// in, and holds the reason it exists: the focus ink on that fill measures
+/// under 3:1, so a ring in the focus ink there would not be seen.
+#[test]
+fn the_ring_on_the_accent_takes_the_on_solid_ink_and_is_seen() {
+    for (mode, s) in modes() {
+        let accent = s.role(Role::Accent).background;
+        for (state, fill) in [
+            ("base", accent.base),
+            ("hover", accent.hover),
+            ("active", accent.active),
+            ("focus", accent.focus),
+        ] {
+            let c = contrast(s.text.on_solid, fill);
+            assert!(
+                c >= NON_TEXT,
+                "{mode}: the on-solid ring on accent.{state} is {c:.2}:1, below {NON_TEXT}"
+            );
+        }
+        let lost = contrast(s.borders.focus, accent.base);
+        assert!(
+            lost < NON_TEXT,
+            "{mode}: the focus ink on the accent is {lost:.2}:1 — a ring in the \
+             focus ink would now be seen there, and the on-solid ring's reason is gone"
+        );
     }
 }
 

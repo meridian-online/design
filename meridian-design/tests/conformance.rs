@@ -45,6 +45,72 @@ fn tokens_css_carries_the_geometry_layer() {
     assert!(!css.contains("--m-shadow-flat"));
 }
 
+/// The square look, as the web receives it. The values are the ruling's,
+/// written out rather than read back from the Rust constants: a test that
+/// formats `radius::CONTROL` passes whatever `CONTROL` holds, and what has to
+/// hold here is the look.
+#[test]
+fn tokens_css_draws_the_square_look() {
+    let css = meridian_design::emit::tokens_css();
+    let (light, dark) = css.split_once("\n.dark {").expect("two mode blocks");
+    let value = |block: &str, name: &str| -> String {
+        let at = format!("  --m-{name}: ");
+        let line = block
+            .lines()
+            .find(|l| l.starts_with(&at))
+            .unwrap_or_else(|| panic!("--m-{name} is not emitted"));
+        line[at.len()..].trim_end_matches(';').to_string()
+    };
+
+    for (name, want) in [
+        ("radius-chip", "0px"),
+        ("radius-control", "0px"),
+        ("radius-panel", "0px"),
+        ("radius-full", "9999px"),
+        ("focus-ring-width", "2px"),
+        ("focus-ring-offset", "0px"),
+        ("focus-ring-bleed", "0px"),
+        ("focus-ring-width-on-solid", "1px"),
+        ("row-bar-width", "3px"),
+        ("tab-bar-width", "2px"),
+        ("keycap-foot-width", "2px"),
+    ] {
+        assert_eq!(value(light, name), want, "--m-{name}");
+    }
+
+    for (mode, block, dark) in [("light", light, false), ("dark", dark, true)] {
+        // A shadow is `x y blur colour`; the colour's last two hex digits are
+        // its alpha.
+        let shadow = |name: &str| -> (String, u8) {
+            let v = value(block, name);
+            let (geometry, colour) = v.rsplit_once(' ').expect("x y blur colour");
+            let alpha = u8::from_str_radix(&colour[colour.len() - 2..], 16).unwrap();
+            (geometry.to_string(), alpha)
+        };
+        let (overlay, overlay_alpha) = shadow("shadow-overlay");
+        let (modal, modal_alpha) = shadow("shadow-modal");
+        assert_eq!(overlay, "3px 3px 0px", "{mode}: the overlay's shadow");
+        assert_eq!(modal, "6px 6px 0px", "{mode}: the modal's shadow");
+        assert!(
+            modal_alpha > overlay_alpha,
+            "{mode}: the modal's shadow is not darker than the overlay's"
+        );
+
+        // The new colour tokens reach the web, and they are the values a Rust
+        // consumer reads.
+        let s = meridian_design::semantic::semantic(dark);
+        for (name, rust) in [
+            ("rows-cursor-bg", s.rows.cursor_background),
+            ("rows-cursor-bar", s.rows.cursor_bar),
+            ("tabs-active-bar", s.tabs.active_bar),
+        ] {
+            assert_eq!(value(block, name), rust.hex(), "{mode}: --m-{name}");
+        }
+    }
+    // The working plane casts nothing, so it has no shadow token to emit.
+    assert!(!css.contains("--m-shadow-raised") && !css.contains("--m-shadow-flat"));
+}
+
 /// Every semantic slot reaches the web artefact, in both modes.
 #[test]
 fn tokens_css_carries_the_semantic_layer_in_both_modes() {

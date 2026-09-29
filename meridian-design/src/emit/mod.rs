@@ -164,6 +164,15 @@ fn geometry(css: &mut String) {
     decl(css, "focus-ring-offset", &px(focus::RING_OFFSET));
     decl(css, "focus-ring-inset", &px(focus::RING_INSET));
     decl(css, "focus-ring-bleed", &px(focus::RING_BLEED));
+    decl(
+        css,
+        "focus-ring-width-on-solid",
+        &px(focus::RING_WIDTH_ON_SOLID),
+    );
+
+    decl(css, "row-bar-width", &px(ROW_BAR_WIDTH));
+    decl(css, "tab-bar-width", &px(TAB_BAR_WIDTH));
+    decl(css, "keycap-foot-width", &px(KEYCAP_FOOT_WIDTH));
 
     decl(css, "motion-spatial", &format!("{}ms", motion::SPATIAL_MS));
     decl(
@@ -233,6 +242,8 @@ fn semantic_block(css: &mut String, dark: bool) {
     decl(css, "rows-hover-bg", &s.rows.hover_background.hex());
     decl(css, "rows-selected-bg", &s.rows.selected_background.hex());
     decl(css, "rows-selected-border", &s.rows.selected_border.hex());
+    decl(css, "rows-cursor-bg", &s.rows.cursor_background.hex());
+    decl(css, "rows-cursor-bar", &s.rows.cursor_bar.hex());
     decl(css, "rows-border", &s.rows.row_border.hex());
 
     decl(css, "tabs-bar-bg", &s.tabs.bar_background.hex());
@@ -241,6 +252,7 @@ fn semantic_block(css: &mut String, dark: bool) {
     decl(css, "tabs-fg", &s.tabs.foreground.hex());
     decl(css, "tabs-active-bg", &s.tabs.active_background.hex());
     decl(css, "tabs-active-fg", &s.tabs.active_foreground.hex());
+    decl(css, "tabs-active-bar", &s.tabs.active_bar.hex());
 
     decl(css, "scrollbar-track", &s.scrollbar.track.hex());
     decl(css, "scrollbar-thumb", &s.scrollbar.thumb.hex());

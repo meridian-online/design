@@ -1,9 +1,10 @@
 //! Elevation — the typed form of quiet chrome.
 //!
 //! `guidelines/identity.md`: chrome is quiet, and "if chrome competes with
-//! marks for attention, chrome loses". A drop shadow is chrome competing.
-//! So the rule is not "how much shadow" but **whether the thing is on the
-//! working plane at all**:
+//! marks for attention, chrome loses". A shadow on the working plane is
+//! chrome competing. So the rule (`guidelines/chrome.md`, ADR 0013) is not
+//! "how much shadow" but **whether the thing is on the working plane at
+//! all**:
 //!
 //! - Separation *on* the plane is a hairline. Panels, cards, toolbars, docked
 //!   containers, table headers — all flat, all separated by a one-pixel
@@ -12,11 +13,17 @@
 //!   float and must be read as temporary: overlays (menus, popovers,
 //!   tooltips, autocomplete) and modals.
 //!
+//! The shadow that does exist is **hard**: the card's own rectangle, offset
+//! down and to the right with no blur, under a one-pixel rule. It says the
+//! card floats the way a rule says where an edge is, without a soft wash the
+//! eye has to resolve. A modal's is offset twice as far and is darker, so a
+//! dialog over an open menu still reads as the higher of the two.
+//!
 //! [`Elevation::Flat`] and [`Elevation::Raised`] therefore both return `None`
 //! from [`Elevation::shadow`]. That is the point of the type: "raised" is a
 //! statement about hairline treatment and stacking, not an invitation to a
-//! soft shadow. If a surface seems to need a shadow to be legible, its
-//! background is wrong, not its elevation.
+//! shadow. If a surface seems to need a shadow to be legible, its background
+//! is wrong, not its elevation.
 
 use crate::chrome::INK_LIGHT;
 use crate::colour::Rgba;
@@ -29,7 +36,8 @@ const BLACK: Rgba = Rgba::from_u8(0x00, 0x00, 0x00, 0xff);
 
 /// A drop shadow, framework-neutral: offsets and blur in logical pixels,
 /// colour as straight-alpha sRGB. No spread — a spread shadow is a glow, and
-/// glows are decoration.
+/// glows are decoration. Every shadow the system casts has a `blur` of `0`;
+/// the field stays so a consumer's shadow type maps one to one.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Shadow {
     pub x: f32,
@@ -66,9 +74,9 @@ impl Elevation {
         match self {
             Self::Flat | Self::Raised => None,
             Self::Overlay => Some(Shadow {
-                x: 0.0,
-                y: 2.0,
-                blur: 8.0,
+                x: 3.0,
+                y: 3.0,
+                blur: 0.0,
                 colour: if dark {
                     BLACK.with_alpha_u8(0x66)
                 } else {
@@ -76,9 +84,9 @@ impl Elevation {
                 },
             }),
             Self::Modal => Some(Shadow {
-                x: 0.0,
-                y: 8.0,
-                blur: 24.0,
+                x: 6.0,
+                y: 6.0,
+                blur: 0.0,
                 colour: if dark {
                     BLACK.with_alpha_u8(0x8c)
                 } else {
@@ -126,14 +134,27 @@ mod tests {
         }
     }
 
+    /// The ruling's shadows, pinned: an overlay's is offset 3 by 3 and a
+    /// modal's 6 by 6, and neither is blurred. Stated values rather than an
+    /// ordering, because an ordering holds just as well for a soft shadow.
     #[test]
-    fn shadows_grow_monotonically_and_never_spread_sideways() {
+    fn a_floating_card_casts_a_hard_shadow() {
+        for dark in [false, true] {
+            for (e, offset) in [(Elevation::Overlay, 3.0), (Elevation::Modal, 6.0)] {
+                let sh = e.shadow(dark).unwrap();
+                assert_eq!((sh.x, sh.y), (offset, offset), "{e:?} dark={dark}");
+                assert_eq!(sh.blur, 0.0, "{e:?} dark={dark}: a hard shadow");
+            }
+        }
+    }
+
+    /// A modal sits above an overlay, so it casts further and darker.
+    #[test]
+    fn a_modal_casts_further_and_darker_than_an_overlay() {
         for dark in [false, true] {
             let o = Elevation::Overlay.shadow(dark).unwrap();
             let m = Elevation::Modal.shadow(dark).unwrap();
-            assert_eq!(o.x, 0.0);
-            assert_eq!(m.x, 0.0);
-            assert!(m.y > o.y && m.blur > o.blur);
+            assert!(m.x > o.x && m.y > o.y);
             assert!(m.colour.a > o.colour.a);
         }
     }

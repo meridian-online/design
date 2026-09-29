@@ -693,7 +693,13 @@ pub fn tokens_md() -> String {
         "--m-modal-",
     ]);
     let mut rows = rows;
-    rows.extend(sheet.exact(&["--m-panel-padding", "--m-section-gap", "--m-pane-gap"]));
+    rows.extend(sheet.exact(&[
+        "--m-panel-padding",
+        "--m-section-gap",
+        "--m-pane-gap",
+        "--m-tab-bar-width",
+        "--m-keycap-foot-width",
+    ]));
     rows.sort_unstable();
     sheet.table(&rows);
 

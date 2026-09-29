@@ -234,6 +234,8 @@ Named parts that earn their own slots because two consumers both need them and n
 | `--m-rows-hover-bg` | `#ebeae9` | `#232221` |
 | `--m-rows-selected-bg` | `#e3eef6` | `#172835` |
 | `--m-rows-selected-border` | `#b5cee2` | `#2f5068` |
+| `--m-rows-cursor-bg` | `#e4e2e0` | `#2a2928` |
+| `--m-rows-cursor-bar` | `#4b7a9b` | `#8fc1e4` |
 | `--m-rows-border` | `#ebeae9` | `#232221` |
 | `--m-tabs-bar-bg` | `#f4f3f2` | `#191817` |
 | `--m-tabs-segmented-bg` | `#ebeae9` | `#232221` |
@@ -241,6 +243,7 @@ Named parts that earn their own slots because two consumers both need them and n
 | `--m-tabs-fg` | `#605c58` | `#b7b2ae` |
 | `--m-tabs-active-bg` | `#fcfcfb` | `#161413` |
 | `--m-tabs-active-fg` | `#231f1c` | `#efeeec` |
+| `--m-tabs-active-bar` | `#4b7a9b` | `#8fc1e4` |
 | `--m-scrollbar-track` | `#f4f3f2` | `#191817` |
 | `--m-scrollbar-thumb` | `#d4d2cf` | `#3c3a38` |
 | `--m-scrollbar-thumb-hover` | `#cac6c3` | `#4a4744` |
@@ -266,8 +269,8 @@ Named parts that earn their own slots because two consumers both need them and n
 | `--m-accordion-hover-bg` | `#ebeae9` | `#232221` |
 | `--m-popover-bg` | `#fcfcfb` | `#232221` |
 | `--m-window-border` | `#d4d2cf` | `#3c3a38` |
-| `--m-shadow-overlay` | `0px 2px 8px #231f1c1f` | `0px 2px 8px #00000066` |
-| `--m-shadow-modal` | `0px 8px 24px #231f1c29` | `0px 8px 24px #0000008c` |
+| `--m-shadow-overlay` | `3px 3px 0px #231f1c1f` | `3px 3px 0px #00000066` |
+| `--m-shadow-modal` | `6px 6px 0px #231f1c29` | `6px 6px 0px #0000008c` |
 
 ## Box model
 
@@ -276,9 +279,9 @@ Stated once, in logical pixels, and mode-invariant throughout. The spacing ladde
 | Token | Value |
 |---|---|
 | `--m-radius-none` | `0px` |
-| `--m-radius-chip` | `3px` |
-| `--m-radius-control` | `6px` |
-| `--m-radius-panel` | `8px` |
+| `--m-radius-chip` | `0px` |
+| `--m-radius-control` | `0px` |
+| `--m-radius-panel` | `0px` |
 | `--m-radius-full` | `9999px` |
 | `--m-space-0` | `0px` |
 | `--m-space-1` | `2px` |
@@ -312,9 +315,13 @@ Stated once, in logical pixels, and mode-invariant throughout. The spacing ladde
 | `--m-icon-lg` | `20px` |
 | `--m-icon-xl` | `24px` |
 | `--m-focus-ring-width` | `2px` |
-| `--m-focus-ring-offset` | `1px` |
+| `--m-focus-ring-offset` | `0px` |
 | `--m-focus-ring-inset` | `1px` |
-| `--m-focus-ring-bleed` | `3px` |
+| `--m-focus-ring-bleed` | `0px` |
+| `--m-focus-ring-width-on-solid` | `1px` |
+| `--m-row-bar-width` | `3px` |
+| `--m-tab-bar-width` | `2px` |
+| `--m-keycap-foot-width` | `2px` |
 
 ## Type and motion
 
