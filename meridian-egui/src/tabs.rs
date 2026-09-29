@@ -129,7 +129,10 @@ pub fn line_tabs(ui: &mut egui::Ui, tabs: LineTabs<'_>) -> LineTabsResponse {
                 .painter()
                 .layout_no_wrap((*name).to_owned(), font.clone(), word_ink(i));
             let width = galley.size().x + 2.0 * pad;
-            let cell = Rect::from_min_size(egui::pos2(x, strip.top()), egui::vec2(width, strip.height()));
+            let cell = Rect::from_min_size(
+                egui::pos2(x, strip.top()),
+                egui::vec2(width, strip.height()),
+            );
             x = cell.right();
             Word { galley, cell }
         })
@@ -152,7 +155,9 @@ pub fn line_tabs(ui: &mut egui::Ui, tabs: LineTabs<'_>) -> LineTabsResponse {
                     egui::pos2(word.cell.left(), strip.bottom() - TAB_BAR_WIDTH),
                     word.cell.right_bottom(),
                 );
-                let ink = tabs.bar_ink.unwrap_or_else(|| to_color32(sem.tabs.active_bar));
+                let ink = tabs
+                    .bar_ink
+                    .unwrap_or_else(|| to_color32(sem.tabs.active_bar));
                 painter.rect_filled(bar, CornerRadius::ZERO, ink);
             }
             let top = optically_centred_galley_top(&word.galley, centre_y);
