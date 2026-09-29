@@ -15,7 +15,6 @@
 //! — supported, but a panel of rows should be wrapped in a scope.
 
 use egui::{Align, Layout, Response, RichText, Sense, StrokeKind, UiBuilder};
-use meridian_design::chrome::{OverlayTokens, OVERLAY_DARK, OVERLAY_LIGHT};
 use meridian_design::semantic::{semantic, Role};
 use meridian_design::typography::UI_SIZE;
 use meridian_design::{control, focus};
@@ -33,16 +32,6 @@ pub fn mode_of(ui: &egui::Ui) -> Mode {
         Mode::Dark
     } else {
         Mode::Light
-    }
-}
-
-/// The mode's overlay tokens (the "never in the data scene" group: brush
-/// wash, brush border, focus ring).
-fn overlay(mode: Mode) -> &'static OverlayTokens {
-    if mode.is_dark() {
-        &OVERLAY_DARK
-    } else {
-        &OVERLAY_LIGHT
     }
 }
 
@@ -306,25 +295,29 @@ pub fn status_pill(ui: &mut egui::Ui, icon: &Icon, label: &str, role: Role) -> R
     response
 }
 
-/// Draw the keyboard focus ring around `rect` — the **one** focus/selection
-/// treatment. Colour is the overlay `focus_ring` token (Maritime: focus is
-/// the purest "accent as a verb"); geometry is the token set in
-/// [`meridian_design::focus`] — an outset ring at [`focus::RING_OFFSET`],
-/// [`focus::RING_WIDTH`] thick, concentric with the control's corners.
+/// Draw the keyboard focus ring on `rect` — the **one** focus/selection
+/// treatment: a [`focus::RING_WIDTH`] rule in the focus ink
+/// (`semantic::Borders::focus`, Maritime: focus is the purest "accent as a
+/// verb"), drawn **inside** the control's edge over the control's own fill.
 ///
-/// `control_radius` is the corner radius of the control the ring surrounds
-/// (usually `ui.tokens().radius_control`). Layouts that clip hard at the
-/// control's box must reserve [`focus::RING_BLEED`] or use an inset treatment.
+/// Drawn inside, no pixel of it lands outside `rect`, so a parent that clips
+/// at the control's box cannot cut it and a neighbour cannot be overlapped by
+/// it — a layout reserves nothing for it ([`focus::RING_BLEED`] is `0`).
+///
+/// `control_radius` is the corner radius of the control the ring follows
+/// (usually `ui.tokens().radius_control`, which is `0`: chrome is square). A
+/// round mark — a dot, a slider's thumb — passes [`meridian_design::radius::FULL`]
+/// and keeps a concentric ring.
+///
+/// On a control filled with the accent the focus ink can be lost, so that
+/// control takes [`focus_ring_on_solid`] instead.
 pub fn focus_ring(ui: &egui::Ui, rect: egui::Rect, control_radius: f32) {
-    let colour = overlay(mode_of(ui)).focus_ring;
-    // `StrokeKind::Outside` keeps the whole stroke outside the given rect, so
-    // expanding by the offset alone puts the ring's inner edge exactly
-    // RING_OFFSET off the control.
+    let colour = semantic(mode_of(ui).is_dark()).borders.focus;
     ui.painter().rect_stroke(
-        rect.expand(focus::RING_OFFSET),
+        rect,
         egui::CornerRadius::same(focus::ring_radius(control_radius).round() as u8),
         egui::Stroke::new(focus::RING_WIDTH, to_color32(colour)),
-        StrokeKind::Outside,
+        StrokeKind::Inside,
     );
 }
 
@@ -333,6 +326,30 @@ pub fn focus_ring(ui: &egui::Ui, rect: egui::Rect, control_radius: f32) {
 pub fn focus_ring_for(ui: &egui::Ui, response: &Response) {
     if response.has_focus() {
         focus_ring(ui, response.rect, ui.tokens().radius_control);
+    }
+}
+
+/// Draw the focus ring on a control **filled with the accent** on `rect`:
+/// [`focus::RING_WIDTH_ON_SOLID`] wide in the on-solid ink
+/// (`semantic::Text::on_solid`), [`focus::RING_INSET`] in from the edge, so the
+/// solid shows as a line outside it and the ring reads as a mark on the control
+/// rather than a second border. The focus ink measures under 3:1 on the
+/// accent's own fill, which is why a solid takes its own ring.
+pub fn focus_ring_on_solid(ui: &egui::Ui, rect: egui::Rect, control_radius: f32) {
+    let colour = semantic(mode_of(ui).is_dark()).text.on_solid;
+    ui.painter().rect_stroke(
+        rect.shrink(focus::RING_INSET),
+        egui::CornerRadius::same(focus::inset_ring_radius(control_radius).round() as u8),
+        egui::Stroke::new(focus::RING_WIDTH_ON_SOLID, to_color32(colour)),
+        StrokeKind::Inside,
+    );
+}
+
+/// [`focus_ring_on_solid`] around a widget iff it has keyboard focus — the
+/// twin of [`focus_ring_for`] for a control filled with the accent.
+pub fn focus_ring_on_solid_for(ui: &egui::Ui, response: &Response) {
+    if response.has_focus() {
+        focus_ring_on_solid(ui, response.rect, ui.tokens().radius_control);
     }
 }
 
