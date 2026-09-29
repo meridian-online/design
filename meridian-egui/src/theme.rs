@@ -19,8 +19,7 @@
 //!
 //! - **Corner radii** come from [`meridian_design::radius`] — controls at
 //!   [`radius::CONTROL`], containers at [`radius::PANEL`] — not egui's stock
-//!   rounding. Both rungs are `0`: the chrome is square. The one mark egui's
-//!   own widgets draw that stays round is a slider's thumb.
+//!   rounding. Both rungs are `0`: the chrome is square.
 //! - **Elevation shadows** come from [`meridian_design::Elevation`]: the modal
 //!   shadow drives [`egui::Visuals::window_shadow`], the overlay shadow drives
 //!   [`egui::Visuals::popup_shadow`]. The two flat elevations cast nothing, so
