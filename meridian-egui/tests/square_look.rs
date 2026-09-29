@@ -257,22 +257,30 @@ fn the_slider_thumb_stays_round() {
     // The look squares every corner but a slider's thumb, one of the marks
     // that holds no icon and no word. egui draws its stock thumb as a rounded
     // rectangle with the widget corner, so squaring the corners would square
-    // the thumb unless the theme asks for a circle.
+    // the thumb unless the theme asks for a circle. The slider is drawn alone:
+    // a radio button draws a circle of its own, which would answer for it.
     for mode in MODES {
-        let harness = own_widgets(mode);
+        let mut harness = Harness::builder()
+            .with_size(egui::vec2(300.0, 100.0))
+            .build_ui_state(
+                move |ui, v: &mut f32| {
+                    theme::apply(ui.ctx(), mode);
+                    ui.add(egui::Slider::new(v, 0.0..=1.0));
+                },
+                0.5,
+            );
+        harness.run();
         let circles: Vec<_> = harness
             .output()
             .shapes
             .iter()
             .filter_map(|c| match &c.shape {
-                egui::Shape::Circle(circle) => Some(circle.clone()),
+                egui::Shape::Circle(circle) => Some(*circle),
                 _ => None,
             })
             .collect();
-        assert!(
-            !circles.is_empty(),
-            "{mode:?}: the slider drew no round thumb"
-        );
+        assert_eq!(circles.len(), 1, "{mode:?}: the slider drew {circles:?}");
+        assert!(circles[0].radius > 0.0, "{mode:?}: a thumb of no size");
     }
 }
 
