@@ -9,4 +9,5 @@ __pycache__/
 motion/output/
 # roborev snapshots
 /.roborev/
+# Kata per-machine overrides
 .kata.local.toml
