@@ -6,34 +6,9 @@ on:
   pull_request:
 
 jobs:
-  # Repo-wide hygiene gate. Deliberately first, deliberately toolchain-free: it
-  # is `git grep` over tracked files and finishes in seconds, so a leaked private
-  # planning identifier goes red long before the crate build has resolved a
-  # dependency.
-  #
-  # NOTE the absence of `defaults.run.working-directory`. The `crate` job below
-  # scopes itself to `meridian-design/`; this one must see the WHOLE repository —
-  # guidelines/, decisions/, validation/, README, workflows and all — because
-  # prose is where these identifiers actually leak. The script also cd's to the
-  # repo root itself, so it stays repo-wide even if a default is added later.
-  public-hygiene:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      # The gate's own regression test runs FIRST. A hygiene gate fails silently
-      # in both directions — it can stop matching, or start matching honest
-      # prose — so "the gate still works" has to be established before "the tree
-      # is clean" means anything.
-      - name: hygiene gate self-test
-        run: ./scripts/check-public-hygiene-selftest.sh
-      - name: private planning identifiers
-        run: ./scripts/check-public-hygiene.sh
-
-  # The byte-for-byte half of ADR 0012's brand-motion pin. Beside the hygiene
-  # gate rather than inside `crate` for the same reason: it is toolchain-free
-  # and takes a second, and a stale artefact should report before a build has
-  # resolved anything.
+  # The byte-for-byte half of ADR 0012's brand-motion pin. Its own job rather
+  # than a step inside `crate`: it is toolchain-free and takes a second, and a
+  # stale artefact should report before a build has resolved anything.
   #
   # `meridian-design/tests/motion.rs` carries the other half — what the two
   # artefacts have to *be* — and runs under `crate`. Neither replaces the

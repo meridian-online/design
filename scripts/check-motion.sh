@@ -16,10 +16,9 @@
 # CHOREOGRAPHY and not regenerating — a schedule change that lands in the
 # generator, ships nowhere, and leaves the tree looking clean.
 #
-# Toolchain-free and takes about a second, so it sits beside the hygiene gate
-# rather than behind the crate build. Needs Python 3 and nothing else: the
-# generator has no dependencies, by the same rule that keeps the crate free of
-# them.
+# Toolchain-free and takes about a second, so it runs in its own CI job rather
+# than behind the crate build. Needs Python 3 and nothing else: the generator
+# has no dependencies, by the same rule that keeps the crate free of them.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
