@@ -28,6 +28,7 @@
   /* Values with no token yet. Listed at the foot of the page. */
   --x-hairline: 1px;
   --x-keycap-line: 15px;          /* JetBrains Mono's text box at 11px, as key_chip measures it */
+  --x-keycap-line-compact: 13px;  /* the keycap's text box inside a control: see section 1 */
   --x-band: 32px;                 /* ROW_GRID + 2 x SPACE_2: the title band and the command row */
   --x-popover-narrow: 240px;
   --x-popover-wide: 320px;
@@ -78,9 +79,21 @@ figure.wide { width: 100%; align-items: stretch; }
 .kc.dim { color: var(--m-text-disabled); }
 .kc.solid { background: transparent; color: var(--m-text-on-solid); border-color: color-mix(in srgb, var(--m-text-on-solid) 45%, transparent); border-bottom-color: color-mix(in srgb, var(--m-text-on-solid) 80%, transparent); }
 
+/* A keycap inside a control. The full keycap is 21 tall, and a 24 control draws
+   its focus ring 2px inside its edge, which leaves 20: the ring would run through
+   the cap. Inside a button or a segmented option the cap is therefore 17 tall,
+   which clears the ring by 1.5 on every side. .full keeps the 21 cap. */
+.btn .kc:not(.full), .seg .kc:not(.full) { line-height: var(--x-keycap-line-compact); padding: var(--x-hairline) var(--m-space-2) 0; }
+.btn.lg { height: var(--m-control-lg); }
+.btn.lg:has(.kc) { padding-right: var(--m-space-2); }
+.btn.flush { padding-right: 0; }
+.btn.flush .key { align-self: stretch; display: flex; align-items: center; padding: 0 var(--m-space-3); margin-left: var(--m-space-1); border-left: var(--x-hairline) solid var(--m-neutral-border); font: var(--m-font-size-chart) var(--m-font-mono), monospace; font-feature-settings: "calt" 0; color: var(--m-text-secondary); }
+.btn.primary.flush .key { border-left-color: color-mix(in srgb, var(--m-text-on-solid) 45%, transparent); color: var(--m-text-on-solid); }
+
 /* ---------- 1. button ---------- */
 .btn { display: inline-flex; align-items: center; gap: var(--m-icon-label-gap); height: var(--m-control-md); padding: 0 var(--m-space-4); background: var(--m-neutral-bg); border: var(--x-hairline) solid var(--m-neutral-border); color: var(--m-neutral-fg); font: inherit; white-space: nowrap; cursor: default; }
 .btn:has(.kc) { padding-right: var(--m-space-1); }
+.btn.flush:has(.key) { padding-right: 0; }
 .btn .ic { color: var(--m-text-secondary); }
 .btn.is-hover, .btn:not(.is-off):not(.still):hover { background: var(--m-neutral-bg-hover); border-color: var(--m-neutral-border-hover); }
 .btn.is-active { background: var(--m-neutral-bg-active); border-color: var(--m-neutral-border-active); }
@@ -346,6 +359,7 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
 
 <table class="open">
 <tr><th>Open choice</th><th>Candidates</th><th>Pick</th></tr>
+<tr><td>1 · a key inside a control</td><td>A a 17 cap · B the key as the last cell · C a 30 button</td><td>A</td></tr>
 <tr><td>1 · keycap on a primary button</td><td>A keeps the chip · B draws it in the on-solid ink</td><td>B</td></tr>
 <tr><td>1 · keycap on an unavailable command</td><td>A unchanged · B dimmed with its label</td><td>B</td></tr>
 <tr><td>2 · text field's edge</td><td>A a rule under the fill · B a box with a heavier foot</td><td>A</td></tr>
@@ -362,7 +376,7 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
 
 <!-- ================================================================= -->
 <h2>0 · What is already settled <small>drawn for comparison, not reopened</small></h2>
-<p>The keycap, the list row and the line tabs, as <code>key_chip</code>, <code>list_row</code> and <code>line_tabs</code> draw them today. One measurement governs much of what follows: the keycap is 21 tall, so it fits a 24 control and does not fit a 20 one. Every component that carries a keycap therefore draws at the 24 rung.</p>
+<p>The keycap, the list row and the line tabs, as <code>key_chip</code>, <code>list_row</code> and <code>line_tabs</code> draw them today. One measurement governs much of what follows: the keycap is 21 tall. It fits a 24 row, which draws no ring. It does not fit inside a 24 control, whose focus ring is 2px inside its edge and leaves 20. Section 1 settles what a key looks like inside a control.</p>
 <div class="spec">
   <div class="row">
     <figure><span class="kc">⌘↩</span><figcaption>keycap</figcaption></figure>
@@ -389,6 +403,33 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
     <figure><span class="btn icon-only still"><i class="ic" data-i="refresh"></i></span><figcaption>icon only</figcaption></figure>
     <figure><span class="btn sm still">Rename</span><figcaption>20 rung, no keycap</figcaption></figure>
   </div>
+</div>
+<div class="spec"><div class="cap">A key inside a control<span>candidates; each shown at rest and with keyboard focus</span></div>
+  <div class="row">
+    <figure><span class="btn still"><i class="ic" data-i="download"></i>Export<span class="kc full">⌘E</span></span><figcaption>the problem: the 21 cap, at rest</figcaption></figure>
+    <figure><span class="btn is-focus still"><i class="ic" data-i="download"></i>Export<span class="kc full">⌘E</span></span><figcaption>the ring runs through the cap</figcaption></figure>
+    <figure><span class="btn primary is-focus still"><i class="ic" data-i="player-play"></i>Run<span class="kc solid full">⌘↩</span></span><figcaption>and on the solid fill</figcaption></figure>
+  </div>
+  <div class="row">
+    <figure><span class="btn still"><i class="ic" data-i="download"></i>Export<span class="kc">⌘E</span></span><figcaption>A · a 17 cap inside a control</figcaption></figure>
+    <figure><span class="btn is-focus still"><i class="ic" data-i="download"></i>Export<span class="kc">⌘E</span></span><figcaption>A · focus</figcaption></figure>
+    <figure><span class="btn primary still"><i class="ic" data-i="player-play"></i>Run<span class="kc solid">⌘↩</span></span><figcaption>A · primary</figcaption></figure>
+    <figure><span class="btn primary is-focus still"><i class="ic" data-i="player-play"></i>Run<span class="kc solid">⌘↩</span></span><figcaption>A · primary, focus</figcaption></figure>
+    <figure><span class="btn quiet is-focus still"><i class="ic" data-i="filter"></i>Filter<span class="kc">F</span></span><figcaption>A · quiet, focus</figcaption></figure>
+  </div>
+  <div class="row">
+    <figure><span class="btn flush still"><i class="ic" data-i="download"></i>Export<span class="key">⌘E</span></span><figcaption>B · the key as the button's last cell</figcaption></figure>
+    <figure><span class="btn flush is-focus still"><i class="ic" data-i="download"></i>Export<span class="key">⌘E</span></span><figcaption>B · focus</figcaption></figure>
+    <figure><span class="btn primary flush still"><i class="ic" data-i="player-play"></i>Run<span class="key">⌘↩</span></span><figcaption>B · primary</figcaption></figure>
+    <figure><span class="btn primary flush is-focus still"><i class="ic" data-i="player-play"></i>Run<span class="key">⌘↩</span></span><figcaption>B · primary, focus</figcaption></figure>
+  </div>
+  <div class="row">
+    <figure><span class="btn lg still"><i class="ic" data-i="download"></i>Export<span class="kc full">⌘E</span></span><figcaption>C · a 30 button, the 21 cap kept</figcaption></figure>
+    <figure><span class="btn lg is-focus still"><i class="ic" data-i="download"></i>Export<span class="kc full">⌘E</span></span><figcaption>C · focus</figcaption></figure>
+    <figure><span class="btn primary lg still"><i class="ic" data-i="player-play"></i>Run<span class="kc solid full">⌘↩</span></span><figcaption>C · primary</figcaption></figure>
+    <figure><span class="btn primary lg is-focus still"><i class="ic" data-i="player-play"></i>Run<span class="kc solid full">⌘↩</span></span><figcaption>C · primary, focus</figcaption></figure>
+  </div>
+  <div class="note">Every other button and segmented option on this page is drawn with A. Keycaps in rows (the list row, the menu item, the status band) keep the 21 cap, since a row draws no ring.</div>
 </div>
 <div class="spec"><div class="cap">Primary<span>candidates for the keycap on the solid fill</span></div>
   <div class="row">
@@ -418,7 +459,8 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
     <figure><span class="btn primary is-off"><i class="ic" data-i="player-play"></i>Run<span class="kc dim">⌘↩</span></span><figcaption>B · primary</figcaption></figure>
   </div>
 </div>
-<p class="pick"><b>Pick: B and B.</b> On the accent fill the grey chip reads as a hole in the button; the on-solid keycap keeps the chip's size and foot. Dimming an unavailable command's key with its label says the key will not act either, which is true, and the chip's box still shows where the key is.</p>
+<p class="pick"><b>Pick: A for the key inside a control.</b> It keeps the keycap's look, its foot included, and the ribbon keeps its 24 rung. It does mean the keycap has two sizes, 21 in a row and 17 in a control, which the chrome guideline's "it keeps the key chip's size" has to be rewritten to allow; the alternative that keeps one size is to make every keycap 17. B has no overlap by construction and loses the cap. C keeps everything and no longer fits the 32 band.</p>
+<p class="pick"><b>Pick: B and B for the two keycap inks.</b> On the accent fill the grey chip reads as a hole in the button; the on-solid keycap keeps the chip's size and foot. Dimming an unavailable command's key with its label says the key will not act either, which is true, and the chip's box still shows where the key is.</p>
 <p class="ruling"><b>Ruling:</b> open.</p>
 
 <!-- ================================================================= -->
@@ -739,6 +781,7 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
 <tr><td>96</td><td>the inline progress bar in (12) B</td><td>dropped if A is ruled</td></tr>
 <tr><td>6</td><td>the unsaved dot</td><td>a dot size; equal to <code>SPACE_3</code></td></tr>
 <tr><td>0.06em, capitals</td><td>the section label in (7) A</td><td>a label style in the type ramp</td></tr>
+<tr><td>13</td><td>the keycap's text box inside a control, in (1) A</td><td>a second keycap size, or the only one</td></tr>
 <tr><td>15</td><td>the keycap's text box</td><td>none: it is JetBrains Mono's line at 11px, as <code>key_chip</code> measures it</td></tr>
 <tr><td>1</td><td>every hairline</td><td>none: a rule is 1px throughout the system</td></tr>
 </table>
