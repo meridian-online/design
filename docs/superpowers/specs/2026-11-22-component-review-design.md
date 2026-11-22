@@ -378,7 +378,7 @@ pub fn vertical_tab(ui: &mut egui::Ui, tab: VerticalTab<'_>) -> VerticalTabRespo
 pub enum RunStatus<'a> {
     Running { step: Option<&'a str>, done: usize, total: usize },
     Ran { when: &'a str, age: &'a str, mark: StepMark },      // Ok, Stale or Failed
-    NotRun,
+    NotRun { label: &'a str },                                // the caller's words, such as "Not run yet"
 }
 pub fn run_status(ui: &mut egui::Ui, status: RunStatus<'_>) -> egui::Response;
 
