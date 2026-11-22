@@ -361,10 +361,10 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
 </div>
 
 <h1>Component sheet</h1>
-<p class="lede">The twelve components the design review adds to <code>meridian-egui</code>, each drawn in every state its entry lists, in light and dark, over the emitted <code>tokens.css</code>. Where a look is open, the candidates are lettered. Hover and pressed states are drawn fixed, so nothing here depends on where the pointer is. Each component ends with a pick and a ruling; the page with its rulings is the reference the build's goldens are checked against.</p>
+<p class="lede">The twelve components the design review adds to <code>meridian-egui</code>, each drawn in every state its entry lists, in light and dark, over the emitted <code>tokens.css</code>. Where a look was open, the candidates are lettered and kept beside the one that was ruled. Hover and pressed states are drawn fixed, so nothing here depends on where the pointer is. Each component ends with the pick, its reason and the ruling; this page with its rulings is the reference the build's goldens are checked against.</p>
 
 <table class="open">
-<tr><th>Open choice</th><th>Candidates</th><th>Pick</th></tr>
+<tr><th>Choice</th><th>Candidates</th><th>Ruled, 22 November 2026</th></tr>
 <tr><td>1 · a key inside a control</td><td>A a 16 cap · B the key as the last cell · C a 30 button</td><td>A</td></tr>
 <tr><td>1 · keycap on a primary button</td><td>A keeps the chip · B draws it in the on-solid ink</td><td>B</td></tr>
 <tr><td>1 · keycap on an unavailable command</td><td>A unchanged · B dimmed with its label</td><td>B</td></tr>
@@ -468,7 +468,7 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
 </div>
 <p class="pick"><b>Pick: A for the key inside a control.</b> It keeps the keycap's look, its foot included, and the ribbon keeps its 24 rung. It does mean the keycap has two sizes, 21 in a row and 16 in a control, which the chrome guideline's "it keeps the key chip's size" has to be rewritten to allow; the alternative that keeps one size is to make every keycap 16. B has no overlap by construction and loses the cap. C keeps everything and no longer fits the 32 band.</p>
 <p class="pick"><b>Pick: B and B for the two keycap inks.</b> On the accent fill the grey chip reads as a hole in the button; the on-solid keycap keeps the chip's size and foot. Dimming an unavailable command's key with its label says the key will not act either, which is true, and the chip's box still shows where the key is.</p>
-<p class="ruling"><b>Ruling, 22 November 2026:</b> a key inside a control is A, the smaller cap. It is 16 tall and sits 4 from the control's top, bottom and trailing edge, so it clears the focus ring by 2 on all three. The two keycap inks are open.</p>
+<p class="ruling"><b>Ruling, 22 November 2026:</b> a key inside a control is A, the smaller cap. It is 16 tall and sits 4 from the control's top, bottom and trailing edge, so it clears the focus ring by 2 on all three. The two keycap inks are B and B: the on-solid ink on a primary button, and dimmed with its label on an unavailable command.</p>
 
 <!-- ================================================================= -->
 <h2>2 · Text field <small>earned by 14 hand-built inputs; wraps egui's own text editing</small></h2>
@@ -500,7 +500,7 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
   </div>
 </div>
 <p class="pick"><b>Pick: A.</b> It is what the chrome guideline says, and it keeps a field from reading as a button, which is the boxed sunken fill in (1).</p>
-<p class="ruling"><b>Ruling:</b> open.</p>
+<p class="ruling"><b>Ruling, 22 November 2026:</b> the pick stands.</p>
 
 <!-- ================================================================= -->
 <h2>3 · Ribbon tabs &nbsp;and&nbsp; 4 · Ribbon row</h2>
@@ -567,7 +567,7 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
     </div></div><figcaption>then, with a tab chosen, a tip on each of its commands; while tips are on, a command's own keycap gives way to its tip</figcaption></figure>
 </div>
 <p class="pick"><b>Pick: A.</b> The joined cell says which tab owns the row beneath, which a bar cannot, and it is the one treatment here that cannot be taken for a line tab. Collapsed, the cell goes and only the heavier word remains, so selected and open stay distinct. One thing to settle with the tint: the contextual tab uses the Maritime wash, and Maritime otherwise means interaction; the alternative is the neutral header fill with the divider alone.</p>
-<p class="ruling"><b>Ruling:</b> open.</p>
+<p class="ruling"><b>Ruling, 22 November 2026:</b> the pick stands.</p>
 
 <!-- ================================================================= -->
 <h2>5 · Popover <small>the reason popover and the anchored layer as one component</small></h2>
@@ -585,7 +585,7 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
   </div>
 </div>
 <p class="pick"><b>Pick: 240</b> for the reason form, with the general form sized by its body. A reason is one sentence, and at 320 a short one leaves the card half empty.</p>
-<p class="ruling"><b>Ruling:</b> open.</p>
+<p class="ruling"><b>Ruling, 22 November 2026:</b> the pick stands.</p>
 
 <!-- ================================================================= -->
 <h2>6 · Segmented control <small>the activity switcher</small></h2>
@@ -609,7 +609,7 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
   <figure class="w520" style="margin-top: var(--m-space-6)"><div class="phead tall"><i class="ic" data-i="table"></i><span class="t">ranking</span><span class="end">19,028 rows</span><div class="seg b"><span class="opt on">Grid<span class="kc">G</span></span><span class="opt">Chart<span class="kc">C</span></span></div></div><figcaption>in a pane header</figcaption></figure>
 </div>
 <p class="pick"><b>Pick: B.</b> The chrome guideline keeps the selection wash for a toggle that is on, and an option here is one. The ruled box makes it one control with parts, where the track in A sits on the header's own grey and loses its edge.</p>
-<p class="ruling"><b>Ruling:</b> open.</p>
+<p class="ruling"><b>Ruling, 22 November 2026:</b> the pick stands.</p>
 
 <!-- ================================================================= -->
 <h2>7 · Section with a count &nbsp;and&nbsp; 8 · Distribution bar</h2>
@@ -651,7 +651,7 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
   </div>
 </div>
 <p class="pick"><b>Pick: A for the section, A for the category.</b> The small capital label is the detail the mockups took from Foundry, and it leaves the pane header as the only grey band in a rail, so a stack of sections reads as one pane. It needs letter-spacing, which no token carries yet. For categories, bars keep one shape for both kinds of column, and a bar's height can be compared where a segment's width in a stack cannot.</p>
-<p class="ruling"><b>Ruling:</b> open.</p>
+<p class="ruling"><b>Ruling, 22 November 2026:</b> the pick stands.</p>
 
 <!-- ================================================================= -->
 <h2>9 · Menu item</h2>
@@ -678,7 +678,7 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
   </div>
 </div>
 <p class="pick"><b>One look.</b> It follows the list row and the unavailable ruling in (1).</p>
-<p class="ruling"><b>Ruling:</b> open.</p>
+<p class="ruling"><b>Ruling, 22 November 2026:</b> the pick stands.</p>
 
 <!-- ================================================================= -->
 <h2>10 · Step row <small>the spine row, with its state mark and its thin form</small></h2>
@@ -704,7 +704,7 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
 </div>
 <p class="pick"><b>Pick: timeline B.</b> Measured from a live Flight Explainer run: its rows are 30, its bar is 16 with a 1px rule and a 2px corner, and its marks sit on their lane in the gutter, 7 across with a 1.5 stroke, as they are drawn here. At 6 the bar reads as an underline; at half the row it reads as a span of time. Flight Explainer draws its marks in one grey and tells state apart by fill alone; the marks here keep an ink per state as well.</p>
 <p class="pick"><b>Pick: marks B, focused A.</b> Round marks told apart by ink alone fail for a reader who cannot tell red from green, and the icons at 14 are busier than a list of forty steps wants. The shapes are a ring, a half disc, a disc, a diamond and a ring with a centre: five outlines that differ in grey. For the focused step, the selection wash is what the guideline keeps for a thing that is selected, and it stays visible beside the cursor's bar when both land on one row.</p>
-<p class="ruling"><b>Ruling:</b> open.</p>
+<p class="ruling"><b>Ruling, 22 November 2026:</b> the pick stands.</p>
 
 <!-- ================================================================= -->
 <h2>11 · Vertical tab <small>an open place</small></h2>
@@ -735,7 +735,7 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
   </div>
 </div>
 <p class="pick"><b>Pick: A.</b> It is the ribbon's joined cell turned on its side: the current place is the tab whose edge opens onto the canvas. B is a line tab rotated, which is consistent, and at a glance it is the list row's cursor moved to the other edge.</p>
-<p class="ruling"><b>Ruling:</b> open.</p>
+<p class="ruling"><b>Ruling, 22 November 2026:</b> the pick stands.</p>
 
 <!-- ================================================================= -->
 <h2>12 · Run status <small>the activity area in the title band's centre</small></h2>
@@ -761,7 +761,7 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
   <figure class="wide"><div class="sband"><span><b>Fold group</b> · next time, press</span><span class="kc">⌥F</span><span class="end">19,028 rows</span></div><figcaption>in a status band at the 24 rung, which the keycap needs</figcaption></figure>
 </div>
 <p class="pick"><b>Pick: A.</b> The bar along the foot uses the width the words already take, so the area does not jump when a run starts, and it is the same 2px the tab bar uses.</p>
-<p class="ruling"><b>Ruling:</b> open.</p>
+<p class="ruling"><b>Ruling, 22 November 2026:</b> the pick stands.</p>
 
 <!-- ================================================================= -->
 <h2>The three treatments together <small>with the line tabs that exist today</small></h2>
