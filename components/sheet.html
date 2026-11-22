@@ -271,6 +271,10 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
 .fa .srow.is-focused.is-cursor { background: var(--m-rows-selected-bg); box-shadow: inset var(--m-row-bar-width) 0 0 var(--m-rows-cursor-bar), inset 0 0 0 var(--x-hairline) var(--m-rows-selected-border); }
 .fb .srow.is-focused .name { font-weight: 600; color: var(--m-text-primary); }
 .fb .srow.is-focused::after { content: ""; width: var(--x-dot); height: var(--x-dot); border-radius: var(--m-radius-full); background: var(--m-border-focus); flex: none; order: 9; }
+.tb .srow .tl { height: var(--m-row-grid); background: linear-gradient(to right, var(--m-gridline) var(--x-hairline), transparent var(--x-hairline)) 0 0 / 50% 100%; }
+.tb .srow .tl i { top: var(--m-space-3); bottom: var(--m-space-3); border: var(--x-hairline) solid var(--m-border-control); }
+.tb .srow .tl i.failed { border-color: var(--m-status-critical); }
+.tb .srow .tl i.running { border-color: var(--m-progress-bar); }
 .mk { width: var(--m-icon-sm); height: var(--m-icon-sm); flex: none; display: inline-block; }
 .mk svg { display: block; }
 .marks { display: grid; grid-template-columns: 210px repeat(5, 64px); align-items: center; row-gap: var(--m-space-4); }
@@ -370,6 +374,7 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
 <tr><td>7 · section header</td><td>A a small capital label over a hairline · B the pane header's band</td><td>A</td></tr>
 <tr><td>8 · top values of a category</td><td>A bars, as the bins are · B one stacked bar</td><td>A</td></tr>
 <tr><td>10 · state marks</td><td>A round, told apart by ink · B told apart by shape and ink · C Tabler icons</td><td>B</td></tr>
+<tr><td>10 · the timeline bar</td><td>A a 6 bar · B a 12 bar inside a rule, on gridlines</td><td>B</td></tr>
 <tr><td>10 · the focused step</td><td>A the selection wash · B a heavier name and a dot</td><td>A</td></tr>
 <tr><td>11 · vertical tab's current place</td><td>A a cell joined to the canvas · B a bar on the canvas edge</td><td>A</td></tr>
 <tr><td>12 · run status while running</td><td>A the bar along the foot · B the bar inline</td><td>A</td></tr>
@@ -688,11 +693,15 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
 <div class="spec"><div class="cap">B<span>the focused step has a heavier name and a dot</span></div>
   <div class="row" style="align-items: flex-start"><figure class="wide"><div class="steps fb" data-steps="list"></div><figcaption>the same list</figcaption></figure></div>
 </div>
+<div class="spec"><div class="cap">The timeline bar<span>candidates: A is the 6 bar drawn above; B is a 12 bar inside a rule, on gridlines</span></div>
+  <div class="row" style="align-items: flex-start"><figure class="wide"><div class="steps fa tb" data-steps="list"></div><figcaption>B · measured from Flight Explainer, whose bar is 16 in a 30 row, ruled, with a 2px corner, over a gridline per interval</figcaption></figure></div>
+</div>
 <div class="spec"><div class="cap">The thin form<span>one mark per step in a 24 cell; composed from the mark, not a component of its own</span></div>
   <div class="row" style="align-items: flex-start">
     <figure><div class="thin" data-thin></div><figcaption>ranking focused</figcaption></figure>
   </div>
 </div>
+<p class="pick"><b>Pick: timeline B.</b> Measured from a live Flight Explainer run: its rows are 30, its bar is 16 with a 1px rule and a 2px corner, and its marks sit on their lane in the gutter, 7 across with a 1.5 stroke, as they are drawn here. At 6 the bar reads as an underline; at half the row it reads as a span of time. Flight Explainer draws its marks in one grey and tells state apart by fill alone; the marks here keep an ink per state as well.</p>
 <p class="pick"><b>Pick: marks B, focused A.</b> Round marks told apart by ink alone fail for a reader who cannot tell red from green, and the icons at 14 are busier than a list of forty steps wants. The shapes are a ring, a half disc, a disc, a diamond and a ring with a centre: five outlines that differ in grey. For the focused step, the selection wash is what the guideline keeps for a thing that is selected, and it stays visible beside the cursor's bar when both land on one row.</p>
 <p class="ruling"><b>Ruling:</b> open.</p>
 
