@@ -100,7 +100,7 @@ Of the primitives that exist today, these take a corner: the key chip and the st
 
 Consequences inside this repo: `radius.rs`'s test that every radius is 0 is rewritten to pin the three values; `tests/square_look.rs` is rewritten so that each primitive is asserted to draw its token's corner, and rows and bars are asserted square; `guidelines/chrome.md` replaces "Chrome has no corner" with what rounds and what does not; `theme::apply` passes the control and panel radii to egui's own widgets, windows and menus.
 
-Consequences outside: `tokens.css` changes three values, so web's pinned block changes at its next bump, and Brightfield's gallery goldens change at its bump.
+Consequences outside, which a bump alone does not settle. Both consumers drew square rows by reading the radius tokens while those were 0, so with 2, 3 and 3 those rows would round against this ruling. Brightfield's shell and workbench read `radius::CHIP`, `CONTROL` or `PANEL` in about 25 places, some of them row fills and selection washes. Web's stylesheet maps its base `--radius` and its radius rungs onto `--m-radius-*`. Each consumer therefore moves its row fills, bars and edge-to-edge bands to `radius::NONE` (`--m-radius-none`) in the same change as its bump, and Brightfield's gallery goldens and web's pinned token block change with it. That work is each consumer's and is tracked there. In this crate the primitives that stay square already pass a zero corner and do not read a token, and the rewritten look tests hold them there.
 
 ### 3. The keycap has two sizes
 

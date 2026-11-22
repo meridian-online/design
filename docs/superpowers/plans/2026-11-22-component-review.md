@@ -74,7 +74,7 @@ Docs: `decisions/0011-…md`, `decisions/0013-…md`, `guidelines/chrome.md`, `C
 
 Run: `cargo test --workspace` — Expected: the renamed tests FAIL on the values.
 
-- [ ] **Step 2: Change the three constants; make each primitive pass its own token's radius.** The key chip is drawn as five square rects today; redraw it as one rect with `radius::CHIP`, the hairline on three sides and the 2px foot, so the corner is the shape's and the foot follows it. The list row, query line, line tabs and pane header keep `0`.
+- [ ] **Step 2: Change the three constants; make each primitive pass its own token's radius.** The key chip is drawn as five square rects today; redraw it as one rect with `radius::CHIP`, the hairline on three sides and the 2px foot, so the corner is the shape's and the foot follows it. The list row, query line, line tabs and pane header keep a zero corner, written as `radius::NONE`, never as `CHIP`, `CONTROL` or `PANEL`: a square shape that reads a rounding token rounds the day the token changes, which is what both consumers must now undo.
 - [ ] **Step 3: Regenerate `tokens.css` and `reference/tokens.md`.**
 - [ ] **Step 4: Amend ADR 0013 and `guidelines/chrome.md`** as spec decision 2 says: an `### Update (2026-11-22 — a small corner returns)` section with `date-modified` bumped, stating what narrows, what stands and what stays square; and in `chrome.md` replace "Chrome has no corner" with the three radii, what takes each, and the list that stays square.
 - [ ] **Step 5: Run the gate. Commit:** `Corners return at 2, 3 and 3; ADR 0013 amended`
