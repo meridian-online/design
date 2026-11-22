@@ -1,0 +1,850 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Component sheet — Meridian Design System</title>
+<!--
+  The component sheet: every component the review adds to meridian-egui, drawn
+  in each of its states, in both themes, over the emitted tokens.css. It is
+  hand-written HTML and CSS and uses no component library. It is the reference
+  the build's goldens are checked against.
+
+  Every colour here is a var(--m-*) read from the linked tokens.css. Dimensions
+  read the spacing, row, control and icon tokens. The values with no token yet
+  are gathered in the one :root block below, prefixed --x-, and listed at the
+  foot of the page: each is a token the build has to add or a value to drop.
+
+  Icons: Tabler Icons, MIT, © Paweł Kuna and contributors, https://tabler.io/icons
+  (outline style, 24 grid, stroke 2), the same set meridian-egui's manifest takes.
+-->
+<link rel="stylesheet" href="../meridian-design/tests/snapshots/tokens.css">
+<style>
+@font-face { font-family: Inter; src: url('../meridian-design/fonts/Inter-Regular.ttf'); font-weight: 400; }
+@font-face { font-family: Inter; src: url('../meridian-design/fonts/Inter-Medium.ttf'); font-weight: 500; }
+@font-face { font-family: Inter; src: url('../meridian-design/fonts/Inter-SemiBold.ttf'); font-weight: 600; }
+@font-face { font-family: 'JetBrains Mono'; src: url('../meridian-design/fonts/JetBrainsMono-Regular.ttf'); font-weight: 400; }
+
+:root {
+  /* Values with no token yet. Listed at the foot of the page. */
+  --x-hairline: 1px;
+  --x-keycap-line: 15px;          /* JetBrains Mono's text box at 11px, as key_chip measures it */
+  --x-band: 32px;                 /* ROW_GRID + 2 x SPACE_2: the title band and the command row */
+  --x-popover-narrow: 240px;
+  --x-popover-wide: 320px;
+  --x-lane: 12px;                 /* one lane of the step row's graph gutter */
+  --x-mark-cell: 24px;            /* the thin form's cell: control::SPINE_MARK_CELL in the plan */
+  --x-timeline: 72px;
+  --x-progress: 96px;
+  --x-dot: 6px;
+}
+
+* { box-sizing: border-box; }
+html { background: var(--m-gray-5); }
+body { margin: 0; padding: var(--m-space-7) var(--m-space-8) var(--m-space-9); font: var(--m-font-size-ui)/1.45 var(--m-font-sans), sans-serif; color: var(--m-text-primary); }
+h1 { font-size: 16px; font-weight: 600; margin: 0 0 var(--m-space-2); }
+h2 { font-size: 14px; font-weight: 600; margin: var(--m-space-9) 0 var(--m-space-2); padding-top: var(--m-space-5); border-top: var(--x-hairline) solid var(--m-border-strong); }
+h2 small { font-weight: 400; color: var(--m-text-secondary); font-size: var(--m-font-size-ui); margin-left: var(--m-space-4); }
+p { margin: 0 0 var(--m-space-4); max-width: 920px; }
+.lede { color: var(--m-text-secondary); }
+.pick { border-left: var(--m-row-bar-width) solid var(--m-border-focus); padding-left: var(--m-space-4); }
+.ruling { border-left: var(--m-row-bar-width) solid var(--m-border-strong); padding-left: var(--m-space-4); color: var(--m-text-secondary); }
+.ruling b, .pick b { font-weight: 600; color: var(--m-text-primary); }
+table.open { border-collapse: collapse; margin: var(--m-space-4) 0 var(--m-space-6); }
+table.open td, table.open th { text-align: left; padding: var(--m-space-2) var(--m-space-5) var(--m-space-2) 0; border-bottom: var(--x-hairline) solid var(--m-border-default); vertical-align: top; }
+table.open th { font-weight: 500; color: var(--m-text-secondary); }
+code { font: var(--m-font-size-chart) var(--m-font-mono), monospace; font-feature-settings: "calt" 0; }
+
+/* A specimen is written once and cloned into a light pane and a dark pane. */
+.spec { margin: var(--m-space-5) 0 var(--m-space-6); }
+.spec > .cap { font-weight: 600; margin-bottom: var(--m-space-2); }
+.spec > .cap span { font-weight: 400; color: var(--m-text-secondary); margin-left: var(--m-space-3); }
+.panes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--m-space-5); }
+.pane { background: var(--m-surface-app); color: var(--m-text-primary); border: var(--x-hairline) solid var(--m-border-subtle); padding: var(--m-space-6); min-width: 0; }
+.pane.flush { padding: 0; }
+.row { display: flex; flex-wrap: wrap; gap: var(--m-space-6) var(--m-space-7); align-items: flex-end; }
+.row + .row { margin-top: var(--m-space-6); }
+figure { margin: 0; display: flex; flex-direction: column; gap: var(--m-space-2); align-items: flex-start; min-width: 0; }
+figcaption { font-size: var(--m-font-size-chart); color: var(--m-text-muted); }
+figure.wide { width: 100%; align-items: stretch; }
+.note { font-size: var(--m-font-size-chart); color: var(--m-text-muted); margin-top: var(--m-space-4); }
+
+/* ---------- shared pieces ---------- */
+.ic { width: var(--m-icon-sm); height: var(--m-icon-sm); flex: none; display: inline-block; }
+.ic svg { display: block; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ic.xs { width: var(--m-icon-xs); height: var(--m-icon-xs); }
+
+/* The keycap, as key_chip draws it: 21 tall, a 2px foot inside the box. */
+.kc { display: inline-block; flex: none; font: var(--m-font-size-chart)/var(--x-keycap-line) var(--m-font-mono), monospace; font-feature-settings: "calt" 0; color: var(--m-text-secondary); background: var(--m-surface-sunken); padding: var(--m-space-1) var(--m-space-3) var(--x-hairline); border: var(--x-hairline) solid var(--m-border-subtle); border-bottom: var(--m-keycap-foot-width) solid var(--m-border-default); white-space: nowrap; }
+.kc.dim { color: var(--m-text-disabled); }
+.kc.solid { background: transparent; color: var(--m-text-on-solid); border-color: color-mix(in srgb, var(--m-text-on-solid) 45%, transparent); border-bottom-color: color-mix(in srgb, var(--m-text-on-solid) 80%, transparent); }
+
+/* ---------- 1. button ---------- */
+.btn { display: inline-flex; align-items: center; gap: var(--m-icon-label-gap); height: var(--m-control-md); padding: 0 var(--m-space-4); background: var(--m-neutral-bg); border: var(--x-hairline) solid var(--m-neutral-border); color: var(--m-neutral-fg); font: inherit; white-space: nowrap; cursor: default; }
+.btn:has(.kc) { padding-right: var(--m-space-1); }
+.btn .ic { color: var(--m-text-secondary); }
+.btn.is-hover, .btn:not(.is-off):not(.still):hover { background: var(--m-neutral-bg-hover); border-color: var(--m-neutral-border-hover); }
+.btn.is-active { background: var(--m-neutral-bg-active); border-color: var(--m-neutral-border-active); }
+.btn.is-focus { box-shadow: inset 0 0 0 var(--m-focus-ring-width) var(--m-border-focus); }
+.btn.is-off { background: var(--m-neutral-bg-disabled); border-color: var(--m-neutral-border-disabled); color: var(--m-text-disabled); }
+.btn.is-off .ic { color: var(--m-text-disabled); }
+.btn.sm { height: var(--m-control-sm); padding: 0 var(--m-space-3); }
+.btn.icon-only { padding: 0; width: var(--m-control-md); justify-content: center; }
+
+.btn.primary { background: var(--m-accent-bg); border-color: var(--m-accent-border); color: var(--m-accent-fg); }
+.btn.primary .ic { color: var(--m-accent-fg); }
+.btn.primary.is-hover, .btn.primary:not(.is-off):not(.still):hover { background: var(--m-accent-bg-hover); border-color: var(--m-accent-border-hover); }
+.btn.primary.is-active { background: var(--m-accent-bg-active); border-color: var(--m-accent-border-active); }
+.btn.primary.is-focus { box-shadow: inset 0 0 0 var(--m-focus-ring-inset) var(--m-accent-bg), inset 0 0 0 calc(var(--m-focus-ring-inset) + var(--m-focus-ring-width-on-solid)) var(--m-text-on-solid); }
+.btn.primary.is-off { background: var(--m-accent-bg-disabled); border-color: var(--m-accent-border-disabled); color: var(--m-accent-fg-disabled); }
+
+.btn.quiet { background: transparent; border-color: transparent; }
+.btn.quiet.is-hover, .btn.quiet:not(.is-off):not(.still):hover { background: var(--m-neutral-bg-hover); border-color: transparent; }
+.btn.quiet.is-active { background: var(--m-neutral-bg-active); border-color: transparent; }
+.btn.quiet.is-off { background: transparent; border-color: transparent; }
+
+/* ---------- 2. text field ---------- */
+.fld { display: flex; align-items: center; gap: var(--m-space-2); height: var(--m-control-md); width: 200px; padding: 0 var(--m-space-3); background: var(--m-surface-sunken); box-shadow: inset 0 calc(-1 * var(--x-hairline)) 0 var(--m-border-control); color: var(--m-text-primary); }
+.fld .ic { color: var(--m-text-muted); }
+.fld .v { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fld .ph { color: var(--m-text-placeholder); }
+.fld .unit { color: var(--m-text-muted); }
+.fld .caret { width: var(--x-hairline); height: var(--m-icon-sm); background: var(--m-editor-caret); margin-left: calc(-1 * var(--m-space-2)); }
+.fld .sel { background: var(--m-editor-selection); }
+.fld.is-hover { box-shadow: inset 0 calc(-1 * var(--x-hairline)) 0 var(--m-text-primary); }
+.fld.is-focus { box-shadow: inset 0 calc(-1 * var(--m-focus-ring-width)) 0 var(--m-border-focus); }
+.fld.is-error { box-shadow: inset 0 calc(-1 * var(--m-focus-ring-width)) 0 var(--m-danger-border); }
+.fld.is-off { color: var(--m-text-disabled); box-shadow: inset 0 calc(-1 * var(--x-hairline)) 0 var(--m-neutral-border-disabled); }
+.fld.sm { height: var(--m-control-sm); }
+.fld.boxed { box-shadow: inset 0 0 0 var(--x-hairline) var(--m-border-subtle), inset 0 calc(-1 * var(--x-hairline)) 0 var(--m-border-control); }
+.fld.boxed.is-focus { box-shadow: inset 0 0 0 var(--m-focus-ring-width) var(--m-border-focus); }
+.fld.boxed.is-error { box-shadow: inset 0 0 0 var(--x-hairline) var(--m-danger-border), inset 0 calc(-1 * var(--m-focus-ring-width)) 0 var(--m-danger-border); }
+.frow { display: grid; grid-template-columns: 88px 200px; column-gap: var(--m-control-gap); row-gap: var(--m-space-1); align-items: center; }
+.frow label { color: var(--m-text-secondary); }
+.frow .msg { grid-column: 2; font-size: var(--m-font-size-chart); color: var(--m-text-muted); }
+.frow .msg.err { color: var(--m-red-11); }
+
+/* ---------- existing: line tabs ---------- */
+.ltabs { display: flex; height: var(--m-row-grid); box-shadow: inset 0 calc(-1 * var(--x-hairline)) 0 var(--m-border-divider); }
+.ltabs span { display: flex; align-items: center; padding: 0 var(--m-space-4); color: var(--m-tabs-fg); }
+.ltabs span.on { color: var(--m-tabs-active-fg); box-shadow: inset 0 calc(-1 * var(--m-tab-bar-width)) 0 var(--m-tabs-active-bar); }
+
+/* ---------- 3. ribbon tabs, 4. ribbon row ---------- */
+.rib { background: var(--m-title-bar-bg); position: relative; }
+.rtabs { display: flex; align-items: stretch; height: var(--m-row-grid); padding: 0 var(--m-space-4); box-shadow: inset 0 calc(-1 * var(--x-hairline)) 0 var(--m-border-subtle); }
+.rtab { position: relative; display: flex; align-items: center; padding: 0 var(--m-space-5); color: var(--m-text-secondary); border: var(--x-hairline) solid transparent; border-bottom: none; }
+.rtab.is-hover, .rtab:hover { color: var(--m-text-primary); }
+.rtab.is-pressed { background: var(--m-neutral-bg-active); }
+.rtab.is-focus { box-shadow: inset 0 0 0 var(--m-focus-ring-width) var(--m-border-focus); }
+.rtab.sel { color: var(--m-text-primary); font-weight: 500; }
+.rsep { width: var(--x-hairline); background: var(--m-border-subtle); margin: var(--m-space-2) var(--m-space-4); }
+.rtab.ctx { background: var(--m-maritime-3); color: var(--m-maritime-11); }
+.rtab.ctx.sel { color: var(--m-maritime-12); }
+.rrow { display: flex; align-items: center; height: var(--x-band); padding: 0 var(--m-space-4); gap: var(--m-space-1); box-shadow: inset 0 calc(-1 * var(--x-hairline)) 0 var(--m-border-subtle); overflow: hidden; }
+.rgrp { display: flex; align-items: center; gap: var(--m-space-1); }
+.rgrp + .rgrp::before { content: ""; width: var(--x-hairline); height: var(--m-space-6); background: var(--m-border-subtle); margin: 0 var(--m-space-3); }
+.rrow .btn.bare { padding: 0 var(--m-space-1) 0 var(--m-space-3); }
+/* A: the open tab is a cell joined to the command row beneath it. */
+.rib.a .rtab.open { background: var(--m-surface-raised); border-color: var(--m-border-subtle); color: var(--m-text-primary); font-weight: 500; box-shadow: 0 var(--x-hairline) 0 var(--m-surface-raised); }
+.rib.a .rtab.ctx.open { background: var(--m-surface-raised); box-shadow: 0 var(--x-hairline) 0 var(--m-surface-raised), inset 0 var(--m-tab-bar-width) 0 var(--m-maritime-9); color: var(--m-maritime-12); }
+.rib.a .rrow { background: var(--m-surface-raised); }
+/* B: the open tab carries a bar on its top edge. */
+.rib.b .rtab.open { color: var(--m-text-primary); font-weight: 500; box-shadow: inset 0 var(--m-tab-bar-width) 0 var(--m-tabs-active-bar); }
+.rib.b .rtab.ctx.open { box-shadow: inset 0 var(--m-tab-bar-width) 0 var(--m-maritime-9); color: var(--m-maritime-12); }
+.rib.b .rtabs { box-shadow: none; }
+
+/* composed: the key tip, a keycap on the target's bottom edge */
+.tipped { position: relative; }
+.tipped > .kc.tip { position: absolute; right: 0; bottom: 0; transform: translate(25%, 50%); z-index: 3; box-shadow: var(--m-shadow-overlay); }
+
+/* ---------- 5. popover ---------- */
+.pop { background: var(--m-popover-bg); border: var(--x-hairline) solid var(--m-border-default); box-shadow: var(--m-shadow-overlay); color: var(--m-text-primary); }
+.pop.reason { width: var(--x-popover-narrow); padding: var(--m-space-4) var(--m-space-5); display: flex; gap: var(--m-space-4); align-items: flex-start; }
+.pop.reason.wide { width: var(--x-popover-wide); }
+.pop.reason p { margin: 0; flex: 1; color: var(--m-text-primary); }
+.anchor { display: flex; flex-direction: column; align-items: flex-start; gap: var(--m-space-2); }
+.anchor.up { flex-direction: column-reverse; }
+.pop.menu { width: var(--x-popover-narrow); padding: var(--m-space-2) 0; }
+.pop.body { padding: 0; }
+
+/* ---------- 6. segmented control ---------- */
+.seg { display: inline-flex; height: var(--m-control-md); }
+.seg .opt { display: flex; align-items: center; gap: var(--m-icon-label-gap); padding: 0 var(--m-space-1) 0 var(--m-space-4); color: var(--m-tabs-fg); border: var(--x-hairline) solid transparent; }
+.seg .opt.plain { padding: 0 var(--m-space-4); }
+.seg .opt.off { color: var(--m-text-disabled); }
+.seg.a { background: var(--m-tabs-segmented-bg); }
+.seg.a .opt.is-hover { color: var(--m-tabs-active-fg); }
+.seg.a .opt.is-pressed { background: var(--m-neutral-bg-active); }
+.seg.a .opt.on { background: var(--m-tabs-active-bg); border-color: var(--m-border-default); color: var(--m-tabs-active-fg); }
+.seg.a .opt.is-focus { box-shadow: inset 0 0 0 var(--m-focus-ring-width) var(--m-border-focus); }
+.seg.b { box-shadow: inset 0 0 0 var(--x-hairline) var(--m-neutral-border); }
+.seg.b .opt + .opt { border-left-color: var(--m-neutral-border); }
+.seg.b .opt.is-hover { background: var(--m-neutral-bg-hover); }
+.seg.b .opt.is-pressed { background: var(--m-neutral-bg-active); }
+.seg.b .opt.on { background: var(--m-neutral-bg-selected); border-color: var(--m-neutral-border-selected); color: var(--m-neutral-fg-selected); }
+.seg.b .opt.is-focus { box-shadow: inset 0 0 0 var(--m-focus-ring-width) var(--m-border-focus); }
+.seg.sm { height: var(--m-control-sm); }
+.phead { display: flex; align-items: center; gap: var(--m-space-3); height: var(--m-control-md); padding: 0 var(--m-space-3); background: var(--m-surface-header); box-shadow: inset 0 calc(-1 * var(--x-hairline)) 0 var(--m-border-subtle); }
+.phead .t { font-weight: 500; }
+.phead .ic { color: var(--m-text-secondary); }
+.phead .end { margin-left: auto; color: var(--m-text-secondary); font-variant-numeric: tabular-nums; }
+.phead.tall { padding-right: 0; }
+
+/* ---------- 7. section, 8. distribution bar ---------- */
+.insp { width: 280px; background: var(--m-surface-sidebar); border: var(--x-hairline) solid var(--m-sidebar-border); }
+.sech { display: flex; align-items: center; gap: var(--m-space-2); height: var(--m-row-grid); padding: 0 var(--m-space-4) 0 var(--m-space-2); }
+.sech .ic { color: var(--m-text-muted); }
+.sech .n { margin-left: auto; color: var(--m-text-secondary); font-variant-numeric: tabular-nums; }
+.sech.is-hover { background: var(--m-accordion-hover-bg); }
+.sech.is-focus { box-shadow: inset 0 0 0 var(--m-focus-ring-width) var(--m-border-focus); }
+.sec.a .sech { box-shadow: inset 0 var(--x-hairline) 0 var(--m-border-divider); }
+.sec.a .sech .t { font-size: var(--m-font-size-chart); letter-spacing: .06em; text-transform: uppercase; color: var(--m-text-secondary); }
+.sec.b .sech { background: var(--m-surface-header); box-shadow: inset 0 calc(-1 * var(--x-hairline)) 0 var(--m-border-subtle); }
+.sec.b .sech.is-hover { background: var(--m-accordion-hover-bg); }
+.sec.b .sech .t { font-weight: 500; }
+.sec.b .sech .n { margin-left: var(--m-space-2); }
+.secb { padding: var(--m-space-2) var(--m-space-4) var(--m-space-5) var(--m-space-6); }
+.kv { display: grid; grid-template-columns: 72px 1fr; row-gap: var(--m-space-2); column-gap: var(--m-control-gap); }
+.kv .k { color: var(--m-text-muted); }
+.kv .n { font-variant-numeric: tabular-nums; }
+
+.dist { display: flex; align-items: flex-end; gap: var(--x-hairline); height: var(--m-row-preview); box-shadow: inset 0 calc(-1 * var(--x-hairline)) 0 var(--m-baseline); }
+.dist i { flex: 1; background: var(--m-cat-1); min-height: var(--m-space-1); }
+.dist i.hov { background: var(--m-seq-600); }
+.dist i.rest { background: var(--m-ink-muted); }
+.dist i.null { background: var(--m-null-ink); }
+.dist .gap { flex: none; width: var(--m-space-2); }
+.dist.sm { height: var(--m-row-dense); }
+.stack { display: flex; height: var(--m-space-4); gap: var(--x-hairline); }
+.stack i { background: var(--m-cat-1); }
+.stack i.hov { background: var(--m-seq-600); }
+.stack i.rest { background: var(--m-ink-muted); }
+.stack i.null { background: var(--m-null-ink); }
+.readout { display: flex; justify-content: space-between; font-size: var(--m-font-size-chart); color: var(--m-text-muted); margin-top: var(--m-space-2); font-variant-numeric: tabular-nums; }
+.readout b { font-weight: 400; color: var(--m-text-primary); }
+.w240 { width: 240px; }
+figure.w240, figure.w360, figure.w520 { align-items: stretch; }
+
+/* ---------- 9. menu item (and the list row it is cut from) ---------- */
+.mi { display: flex; align-items: center; gap: var(--m-icon-label-gap); height: var(--m-row-grid); padding: 0 var(--m-space-2) 0 var(--m-space-4); color: var(--m-text-primary); }
+.mi .chk { width: var(--m-icon-sm); height: var(--m-icon-sm); flex: none; color: var(--m-text-primary); }
+.mi .l { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mi .d { color: var(--m-text-muted); }
+.mi > .ic.sub { color: var(--m-text-muted); }
+.mi.is-hover { background: var(--m-rows-hover-bg); }
+.mi.is-pressed { background: var(--m-neutral-bg-active); }
+.mi.is-cursor { background: var(--m-rows-cursor-bg); box-shadow: inset var(--m-row-bar-width) 0 0 var(--m-rows-cursor-bar); }
+.mi.is-off { color: var(--m-text-disabled); }
+.mi.is-off .chk, .mi.is-off .d { color: var(--m-text-disabled); }
+.msep { height: var(--x-hairline); background: var(--m-border-divider); margin: var(--m-space-2) 0; }
+
+/* ---------- 10. step row ---------- */
+.steps { width: 100%; max-width: 520px; background: var(--m-surface-sidebar); border: var(--x-hairline) solid var(--m-sidebar-border); }
+.srow { display: flex; align-items: center; height: var(--m-row-grid); padding-right: var(--m-space-4); gap: var(--m-space-3); color: var(--m-text-primary); }
+.srow .gut { flex: none; height: var(--m-row-grid); display: block; }
+.srow .gut .edge { fill: none; stroke: var(--m-border-strong); stroke-width: 1.25; }
+.srow .name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.srow.table .name { color: var(--m-text-secondary); }
+.srow .fold { display: inline-flex; align-items: center; gap: var(--m-space-1); color: var(--m-text-muted); font-variant-numeric: tabular-nums; flex: none; }
+.srow .out { color: var(--m-text-secondary); font-variant-numeric: tabular-nums; flex: none; }
+.srow .tl { flex: none; width: var(--x-timeline); height: var(--m-space-3); position: relative; }
+.srow .tl i { position: absolute; top: 0; bottom: 0; background: var(--m-border-strong); min-width: var(--m-space-1); }
+.srow .tl i.failed { background: var(--m-status-critical); }
+.srow .tl i.running { background: var(--m-progress-bar); }
+.srow .dur { flex: none; width: 40px; text-align: right; color: var(--m-text-muted); font-variant-numeric: tabular-nums; }
+.srow.is-hover { background: var(--m-rows-hover-bg); }
+.srow.is-pressed { background: var(--m-neutral-bg-active); }
+.srow.is-cursor { background: var(--m-rows-cursor-bg); box-shadow: inset var(--m-row-bar-width) 0 0 var(--m-rows-cursor-bar); }
+.fa .srow.is-focused { background: var(--m-rows-selected-bg); box-shadow: inset 0 0 0 var(--x-hairline) var(--m-rows-selected-border); }
+.fa .srow.is-focused.is-cursor { background: var(--m-rows-selected-bg); box-shadow: inset var(--m-row-bar-width) 0 0 var(--m-rows-cursor-bar), inset 0 0 0 var(--x-hairline) var(--m-rows-selected-border); }
+.fb .srow.is-focused .name { font-weight: 600; color: var(--m-text-primary); }
+.fb .srow.is-focused::after { content: ""; width: var(--x-dot); height: var(--x-dot); border-radius: var(--m-radius-full); background: var(--m-border-focus); flex: none; order: 9; }
+.mk { width: var(--m-icon-sm); height: var(--m-icon-sm); flex: none; display: inline-block; }
+.mk svg { display: block; }
+.marks { display: grid; grid-template-columns: 210px repeat(5, 64px); align-items: center; row-gap: var(--m-space-4); }
+.marks .h { font-size: var(--m-font-size-chart); color: var(--m-text-muted); }
+.thin { width: var(--x-mark-cell); background: var(--m-surface-sidebar); border: var(--x-hairline) solid var(--m-sidebar-border); }
+.thin .cell { height: var(--m-row-grid); display: flex; align-items: center; justify-content: center; }
+.thin .cell.is-focused { background: var(--m-rows-selected-bg); box-shadow: inset 0 0 0 var(--x-hairline) var(--m-rows-selected-border); }
+.thin .cell.is-hover { background: var(--m-rows-hover-bg); }
+
+/* ---------- 11. vertical tab ---------- */
+.vtabs { width: 200px; background: var(--m-surface-sidebar); border: var(--x-hairline) solid var(--m-sidebar-border); border-right: none; position: relative; }
+.vt { display: flex; align-items: center; gap: var(--m-space-2); height: var(--m-row-grid); padding: 0 var(--m-space-2) 0 var(--m-space-4); color: var(--m-text-secondary); border: var(--x-hairline) solid transparent; border-right: none; border-left: none; }
+.vt .l { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vt .l em { font-style: normal; color: var(--m-text-muted); }
+.vt .dirty { width: var(--x-dot); height: var(--x-dot); border-radius: var(--m-radius-full); background: var(--m-text-secondary); flex: none; }
+.vt .x { color: var(--m-text-muted); visibility: hidden; width: var(--m-control-xs); height: var(--m-control-xs); display: flex; align-items: center; justify-content: center; flex: none; }
+.vt.is-hover { background: var(--m-rows-hover-bg); color: var(--m-text-primary); }
+.vt.is-hover .x, .vt.cur .x { visibility: visible; }
+.vt .x.is-hover { background: var(--m-neutral-bg-active); color: var(--m-text-primary); }
+.vt.is-focus { box-shadow: inset 0 0 0 var(--m-focus-ring-width) var(--m-border-focus); }
+.vtabs.a .vt.cur { position: relative; z-index: 1; margin-right: calc(-1 * var(--x-hairline)); background: var(--m-surface-raised); border-color: var(--m-border-subtle); color: var(--m-text-primary); font-weight: 500; }
+.vtabs.a .vt.cur .l em { color: var(--m-text-secondary); font-weight: 400; }
+.vtabs.b .vt.cur { color: var(--m-tabs-active-fg); box-shadow: inset calc(-1 * var(--m-tab-bar-width)) 0 0 var(--m-tabs-active-bar); }
+.vtabs.b .vt.cur.is-hover { background: var(--m-rows-hover-bg); }
+.vtabs.a .vt.cur.is-hover { background: var(--m-surface-raised); }
+.canvas-stub { flex: 1; min-width: 120px; background: var(--m-surface-raised); border: var(--x-hairline) solid var(--m-border-subtle); color: var(--m-text-muted); display: flex; align-items: center; justify-content: center; }
+.vwrap { display: flex; align-items: stretch; width: 360px; }
+
+/* ---------- 12. run status ---------- */
+.band { height: var(--x-band); display: flex; align-items: center; justify-content: center; background: var(--m-title-bar-bg); box-shadow: inset 0 calc(-1 * var(--x-hairline)) 0 var(--m-border-divider); padding: 0 var(--m-space-5); }
+.rs { position: relative; display: inline-flex; align-items: center; gap: var(--m-space-3); height: var(--m-row-grid); padding: 0 var(--m-space-4); color: var(--m-text-secondary); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.rs b { font-weight: 500; color: var(--m-text-primary); }
+.rs .q { color: var(--m-text-muted); }
+.rs.is-hover { background: var(--m-neutral-bg-hover); }
+.rs.is-focus { box-shadow: inset 0 0 0 var(--m-focus-ring-width) var(--m-border-focus); }
+.rs .pb { width: var(--x-progress); height: var(--m-space-2); background: var(--m-progress-track); flex: none; }
+.rs .pb i { display: block; height: 100%; background: var(--m-progress-bar); }
+.rs.a .pb { position: absolute; left: 0; right: 0; bottom: 0; width: auto; height: var(--m-tab-bar-width); }
+
+/* composed: the teaching message, in a status band */
+.sband { height: var(--m-row-grid); display: flex; align-items: center; gap: var(--m-space-3); padding: 0 var(--m-space-4); background: var(--m-status-bar-bg); box-shadow: inset 0 var(--x-hairline) 0 var(--m-border-subtle); color: var(--m-text-secondary); }
+.sband b { font-weight: 400; color: var(--m-text-primary); }
+.sband .end { margin-left: auto; }
+.w360 { width: 360px; }
+.w520 { width: 520px; }
+</style>
+</head>
+<body>
+
+<h1>Component sheet</h1>
+<p class="lede">The twelve components the design review adds to <code>meridian-egui</code>, each drawn in every state its entry lists, in light and dark, over the emitted <code>tokens.css</code>. Where a look is open, the candidates are lettered. Hover and pressed states are drawn fixed, so nothing here depends on where the pointer is. Each component ends with a pick and a ruling; the page with its rulings is the reference the build's goldens are checked against.</p>
+
+<table class="open">
+<tr><th>Open choice</th><th>Candidates</th><th>Pick</th></tr>
+<tr><td>1 · keycap on a primary button</td><td>A keeps the chip · B draws it in the on-solid ink</td><td>B</td></tr>
+<tr><td>1 · keycap on an unavailable command</td><td>A unchanged · B dimmed with its label</td><td>B</td></tr>
+<tr><td>2 · text field's edge</td><td>A a rule under the fill · B a box with a heavier foot</td><td>A</td></tr>
+<tr><td>3 · ribbon's open tab</td><td>A a cell joined to the command row · B a bar on the top edge</td><td>A</td></tr>
+<tr><td>5 · reason popover's width</td><td>240 · 320</td><td>240</td></tr>
+<tr><td>6 · segmented control's selected option</td><td>A a raised cell on a track · B the selection wash in a ruled box</td><td>B</td></tr>
+<tr><td>7 · section header</td><td>A a small capital label over a hairline · B the pane header's band</td><td>A</td></tr>
+<tr><td>8 · top values of a category</td><td>A bars, as the bins are · B one stacked bar</td><td>A</td></tr>
+<tr><td>10 · state marks</td><td>A round, told apart by ink · B told apart by shape and ink · C Tabler icons</td><td>B</td></tr>
+<tr><td>10 · the focused step</td><td>A the selection wash · B a heavier name and a dot</td><td>A</td></tr>
+<tr><td>11 · vertical tab's current place</td><td>A a cell joined to the canvas · B a bar on the canvas edge</td><td>A</td></tr>
+<tr><td>12 · run status while running</td><td>A the bar along the foot · B the bar inline</td><td>A</td></tr>
+</table>
+
+<!-- ================================================================= -->
+<h2>0 · What is already settled <small>drawn for comparison, not reopened</small></h2>
+<p>The keycap, the list row and the line tabs, as <code>key_chip</code>, <code>list_row</code> and <code>line_tabs</code> draw them today. One measurement governs much of what follows: the keycap is 21 tall, so it fits a 24 control and does not fit a 20 one. Every component that carries a keycap therefore draws at the 24 rung.</p>
+<div class="spec">
+  <div class="row">
+    <figure><span class="kc">⌘↩</span><figcaption>keycap</figcaption></figure>
+    <figure><span class="kc">Esc</span><figcaption>keycap</figcaption></figure>
+    <figure class="w240"><div class="mi"><span class="l">Open a Protocol</span><span class="kc">⌘O</span></div><figcaption>list row, rest</figcaption></figure>
+    <figure class="w240"><div class="mi is-hover"><span class="l">Open a Protocol</span><span class="kc">⌘O</span></div><figcaption>hover</figcaption></figure>
+    <figure class="w240"><div class="mi is-cursor"><span class="l">Open a Protocol</span><span class="kc">⌘O</span></div><figcaption>cursor</figcaption></figure>
+  </div>
+  <div class="row">
+    <figure class="w360"><div class="ltabs"><span class="on">Run log</span><span>Problems</span><span>Editor</span><span>Versions</span></div><figcaption>line tabs</figcaption></figure>
+  </div>
+</div>
+
+<!-- ================================================================= -->
+<h2>1 · Button <small>earned by 32 hand-built buttons in Brightfield; the ribbon command is this, laid out in a row</small></h2>
+<p>An optional icon, a label and an optional keycap, in three weights. The default weight is a sunken fill inside a rule. The primary weight is the accent fill, for the one action a surface is for. The quiet weight has no fill and no rule until the pointer is on it, and is what a toolbar and the ribbon use. An unavailable button keeps its place and its keycap, and reports its reason for the popover (5).</p>
+<div class="spec"><div class="cap">Default</div>
+  <div class="row">
+    <figure><span class="btn still"><i class="ic" data-i="download"></i>Export<span class="kc">⌘E</span></span><figcaption>rest</figcaption></figure>
+    <figure><span class="btn is-hover"><i class="ic" data-i="download"></i>Export<span class="kc">⌘E</span></span><figcaption>hover</figcaption></figure>
+    <figure><span class="btn is-active"><i class="ic" data-i="download"></i>Export<span class="kc">⌘E</span></span><figcaption>pressed</figcaption></figure>
+    <figure><span class="btn is-focus still"><i class="ic" data-i="download"></i>Export<span class="kc">⌘E</span></span><figcaption>keyboard focus</figcaption></figure>
+    <figure><span class="btn still">Choose…</span><figcaption>label only</figcaption></figure>
+    <figure><span class="btn icon-only still"><i class="ic" data-i="refresh"></i></span><figcaption>icon only</figcaption></figure>
+    <figure><span class="btn sm still">Rename</span><figcaption>20 rung, no keycap</figcaption></figure>
+  </div>
+</div>
+<div class="spec"><div class="cap">Primary<span>candidates for the keycap on the solid fill</span></div>
+  <div class="row">
+    <figure><span class="btn primary still"><i class="ic" data-i="player-play"></i>Run<span class="kc">⌘↩</span></span><figcaption>A · rest</figcaption></figure>
+    <figure><span class="btn primary is-hover"><i class="ic" data-i="player-play"></i>Run<span class="kc">⌘↩</span></span><figcaption>A · hover</figcaption></figure>
+    <figure><span class="btn primary still"><i class="ic" data-i="player-play"></i>Run<span class="kc solid">⌘↩</span></span><figcaption>B · rest</figcaption></figure>
+    <figure><span class="btn primary is-hover"><i class="ic" data-i="player-play"></i>Run<span class="kc solid">⌘↩</span></span><figcaption>B · hover</figcaption></figure>
+    <figure><span class="btn primary is-active"><i class="ic" data-i="player-play"></i>Run<span class="kc solid">⌘↩</span></span><figcaption>B · pressed</figcaption></figure>
+    <figure><span class="btn primary is-focus still"><i class="ic" data-i="player-play"></i>Run<span class="kc solid">⌘↩</span></span><figcaption>B · keyboard focus</figcaption></figure>
+  </div>
+</div>
+<div class="spec"><div class="cap">Quiet<span>the toolbar and ribbon weight</span></div>
+  <div class="row">
+    <figure><span class="btn quiet still"><i class="ic" data-i="filter"></i>Filter<span class="kc">F</span></span><figcaption>rest</figcaption></figure>
+    <figure><span class="btn quiet is-hover"><i class="ic" data-i="filter"></i>Filter<span class="kc">F</span></span><figcaption>hover</figcaption></figure>
+    <figure><span class="btn quiet is-active"><i class="ic" data-i="filter"></i>Filter<span class="kc">F</span></span><figcaption>pressed</figcaption></figure>
+    <figure><span class="btn quiet is-focus still"><i class="ic" data-i="filter"></i>Filter<span class="kc">F</span></span><figcaption>keyboard focus</figcaption></figure>
+    <figure><span class="btn quiet still"><i class="ic" data-i="filter"></i><span class="kc">F</span></span><figcaption>icon and key, label dropped</figcaption></figure>
+  </div>
+</div>
+<div class="spec"><div class="cap">Unavailable<span>candidates for its keycap</span></div>
+  <div class="row">
+    <figure><span class="btn is-off"><i class="ic" data-i="download"></i>Export<span class="kc">⌘E</span></span><figcaption>A · default</figcaption></figure>
+    <figure><span class="btn quiet is-off"><i class="ic" data-i="arrows-join"></i>Join<span class="kc">J</span></span><figcaption>A · quiet</figcaption></figure>
+    <figure><span class="btn is-off"><i class="ic" data-i="download"></i>Export<span class="kc dim">⌘E</span></span><figcaption>B · default</figcaption></figure>
+    <figure><span class="btn quiet is-off"><i class="ic" data-i="arrows-join"></i>Join<span class="kc dim">J</span></span><figcaption>B · quiet</figcaption></figure>
+    <figure><span class="btn primary is-off"><i class="ic" data-i="player-play"></i>Run<span class="kc dim">⌘↩</span></span><figcaption>B · primary</figcaption></figure>
+  </div>
+</div>
+<p class="pick"><b>Pick: B and B.</b> On the accent fill the grey chip reads as a hole in the button; the on-solid keycap keeps the chip's size and foot. Dimming an unavailable command's key with its label says the key will not act either, which is true, and the chip's box still shows where the key is.</p>
+<p class="ruling"><b>Ruling:</b> open.</p>
+
+<!-- ================================================================= -->
+<h2>2 · Text field <small>earned by 14 hand-built inputs; wraps egui's own text editing</small></h2>
+<p>The guideline already fixes most of this: a field is a sunken fill over a 1px rule, and while it has the keys the rule is 2px in the focus ink. What is open is whether the fill is also boxed, as the mockups drew it. A field carries an optional leading icon and an optional unit. Its label, help and error sit in the existing field row.</p>
+<div class="spec"><div class="cap">A<span>a rule under the fill</span></div>
+  <div class="row">
+    <figure><div class="fld"><span class="v ph">Name</span></div><figcaption>empty, with placeholder</figcaption></figure>
+    <figure><div class="fld is-hover"><span class="v">ranking</span></div><figcaption>hover</figcaption></figure>
+    <figure><div class="fld is-focus"><span class="v">ranking</span><span class="caret"></span></div><figcaption>has the keys</figcaption></figure>
+    <figure><div class="fld is-focus"><span class="v"><span class="sel">ranking</span></span></div><figcaption>text selected</figcaption></figure>
+  </div>
+  <div class="row">
+    <figure><div class="fld"><i class="ic" data-i="search"></i><span class="v ph">Find a column</span></div><figcaption>leading icon</figcaption></figure>
+    <figure><div class="fld"><span class="v">30</span><span class="unit">days</span></div><figcaption>unit</figcaption></figure>
+    <figure><div class="fld is-off"><span class="v">analytics_30d</span></div><figcaption>unavailable</figcaption></figure>
+    <figure><div class="fld sm"><span class="v">ranking</span></div><figcaption>20 rung</figcaption></figure>
+  </div>
+  <div class="row">
+    <figure><div class="frow"><label>Window</label><div class="fld"><span class="v">30</span><span class="unit">days</span></div><span class="msg">How far back installs are counted.</span></div><figcaption>in a field row, with help</figcaption></figure>
+    <figure><div class="frow"><label>Window</label><div class="fld is-error"><span class="v">thirty</span><span class="unit">days</span></div><span class="msg err">Enter a whole number of days.</span></div><figcaption>error</figcaption></figure>
+  </div>
+</div>
+<div class="spec"><div class="cap">B<span>a box with a heavier foot</span></div>
+  <div class="row">
+    <figure><div class="fld boxed"><span class="v ph">Name</span></div><figcaption>empty</figcaption></figure>
+    <figure><div class="fld boxed"><span class="v">ranking</span></div><figcaption>filled</figcaption></figure>
+    <figure><div class="fld boxed is-focus"><span class="v">ranking</span><span class="caret"></span></div><figcaption>has the keys</figcaption></figure>
+    <figure><div class="fld boxed is-error"><span class="v">thirty</span></div><figcaption>error</figcaption></figure>
+  </div>
+</div>
+<p class="pick"><b>Pick: A.</b> It is what the chrome guideline says, and it keeps a field from reading as a button, which is the boxed sunken fill in (1).</p>
+<p class="ruling"><b>Ruling:</b> open.</p>
+
+<!-- ================================================================= -->
+<h2>3 · Ribbon tabs &nbsp;and&nbsp; 4 · Ribbon row</h2>
+<p>The stage tabs, then the contextual tab set apart by a divider and a tint and named for the focused activity and node. The row beneath holds quiet buttons (1) in groups divided by a rule, in a 32 band with its contents at the 24 rung. The open tab must not read as a line tab, whose mark is a bar under the word.</p>
+<div class="spec"><div class="cap">A<span>the open tab is a cell joined to the command row</span></div>
+  <figure class="wide"><div class="rib a">
+    <div class="rtabs"><span class="rtab">Bring in</span><span class="rtab open">Shape</span><span class="rtab is-hover">Model</span><span class="rtab">Publish</span><span class="rsep"></span><span class="rtab ctx">Grid · ranking</span></div>
+    <div class="rrow">
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="filter"></i>Filter<span class="kc">F</span></span><span class="btn quiet bare is-hover"><i class="ic" data-i="arrows-sort"></i>Sort<span class="kc">S</span></span><span class="btn quiet bare still"><i class="ic" data-i="eye-off"></i>Hide<span class="kc">H</span></span></div>
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="math-function"></i>Derive<span class="kc">D</span></span><span class="btn quiet bare is-off"><i class="ic" data-i="arrows-join"></i>Join<span class="kc dim">J</span></span><span class="btn quiet bare still"><i class="ic" data-i="sum"></i>Group<span class="kc">G</span></span></div>
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="trash"></i>Remove<span class="kc">⌫</span></span></div>
+    </div></div><figcaption>open on Shape; Model under the pointer; Join unavailable</figcaption></figure>
+  <div class="row"></div>
+  <figure class="wide"><div class="rib a">
+    <div class="rtabs"><span class="rtab">Bring in</span><span class="rtab">Shape</span><span class="rtab">Model</span><span class="rtab">Publish</span><span class="rsep"></span><span class="rtab ctx open">Grid · ranking</span></div>
+    <div class="rrow">
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="layout-columns"></i>Columns<span class="kc">C</span></span><span class="btn quiet bare still"><i class="ic" data-i="cursor-text"></i>Rename<span class="kc">F2</span></span></div>
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="zoom-in"></i>Zoom in<span class="kc">+</span></span><span class="btn quiet bare still"><i class="ic" data-i="zoom-out"></i>Zoom out<span class="kc">−</span></span></div>
+    </div></div><figcaption>open on the contextual tab</figcaption></figure>
+  <div class="row"></div>
+  <figure class="wide"><div class="rib a">
+    <div class="rtabs"><span class="rtab">Bring in</span><span class="rtab sel">Shape</span><span class="rtab">Model</span><span class="rtab is-focus">Publish</span><span class="rsep"></span><span class="rtab ctx">Grid · ranking</span></div>
+  </div><figcaption>collapsed: Shape is selected and not open; Publish has keyboard focus</figcaption></figure>
+</div>
+<div class="spec"><div class="cap">B<span>the open tab carries a bar on its top edge</span></div>
+  <figure class="wide"><div class="rib b">
+    <div class="rtabs"><span class="rtab">Bring in</span><span class="rtab open">Shape</span><span class="rtab is-hover">Model</span><span class="rtab">Publish</span><span class="rsep"></span><span class="rtab ctx">Grid · ranking</span></div>
+    <div class="rrow">
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="filter"></i>Filter<span class="kc">F</span></span><span class="btn quiet bare is-hover"><i class="ic" data-i="arrows-sort"></i>Sort<span class="kc">S</span></span><span class="btn quiet bare still"><i class="ic" data-i="eye-off"></i>Hide<span class="kc">H</span></span></div>
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="math-function"></i>Derive<span class="kc">D</span></span><span class="btn quiet bare is-off"><i class="ic" data-i="arrows-join"></i>Join<span class="kc dim">J</span></span><span class="btn quiet bare still"><i class="ic" data-i="sum"></i>Group<span class="kc">G</span></span></div>
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="trash"></i>Remove<span class="kc">⌫</span></span></div>
+    </div></div><figcaption>open on Shape</figcaption></figure>
+  <div class="row"></div>
+  <figure class="wide"><div class="rib b">
+    <div class="rtabs"><span class="rtab">Bring in</span><span class="rtab sel">Shape</span><span class="rtab">Model</span><span class="rtab">Publish</span><span class="rsep"></span><span class="rtab ctx">Grid · ranking</span></div>
+  </div><figcaption>collapsed</figcaption></figure>
+</div>
+<div class="spec"><div class="cap">The row as it narrows<span>labels are dropped from the right until it fits; the icon and the key remain</span></div>
+  <figure><div class="rib a"><div class="rrow" style="overflow: visible">
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="filter"></i>Filter<span class="kc">F</span></span><span class="btn quiet bare still"><i class="ic" data-i="arrows-sort"></i>Sort<span class="kc">S</span></span><span class="btn quiet bare still"><i class="ic" data-i="eye-off"></i>Hide<span class="kc">H</span></span></div>
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="math-function"></i>Derive<span class="kc">D</span></span><span class="btn quiet bare is-off"><i class="ic" data-i="arrows-join"></i><span class="kc dim">J</span></span><span class="btn quiet bare still"><i class="ic" data-i="sum"></i><span class="kc">G</span></span></div>
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="trash"></i><span class="kc">⌫</span></span></div>
+  </div></div><figcaption>narrower: three labels dropped</figcaption></figure>
+  <div class="row"></div>
+  <figure><div class="rib a"><div class="rrow" style="overflow: visible">
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="filter"></i><span class="kc">F</span></span><span class="btn quiet bare still"><i class="ic" data-i="arrows-sort"></i><span class="kc">S</span></span><span class="btn quiet bare still"><i class="ic" data-i="eye-off"></i><span class="kc">H</span></span></div>
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="math-function"></i><span class="kc">D</span></span><span class="btn quiet bare is-off"><i class="ic" data-i="arrows-join"></i><span class="kc dim">J</span></span><span class="btn quiet bare still"><i class="ic" data-i="sum"></i><span class="kc">G</span></span></div>
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="trash"></i><span class="kc">⌫</span></span></div>
+  </div></div><figcaption>narrowest: every label dropped</figcaption></figure>
+</div>
+<div class="spec"><div class="cap">Key tips on<span>composed from the keycap; not a component of its own</span></div>
+  <figure class="wide"><div class="rib a">
+    <div class="rtabs"><span class="rtab tipped">Bring in<span class="kc tip">B</span></span><span class="rtab open tipped">Shape<span class="kc tip">S</span></span><span class="rtab tipped">Model<span class="kc tip">M</span></span><span class="rtab tipped">Publish<span class="kc tip">P</span></span><span class="rsep"></span><span class="rtab ctx tipped">Grid · ranking<span class="kc tip">G</span></span></div>
+    <div class="rrow" style="overflow: visible">
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="filter"></i>Filter<span class="kc">F</span></span><span class="btn quiet bare still"><i class="ic" data-i="arrows-sort"></i>Sort<span class="kc">S</span></span><span class="btn quiet bare still"><i class="ic" data-i="eye-off"></i>Hide<span class="kc">H</span></span></div>
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="math-function"></i>Derive<span class="kc">D</span></span><span class="btn quiet bare is-off"><i class="ic" data-i="arrows-join"></i>Join<span class="kc dim">J</span></span></div>
+    </div></div><figcaption>first, a tip on each tab: a keycap at the tab's trailing bottom corner, on a layer above, casting the overlay shadow</figcaption></figure>
+  <div class="row"></div>
+  <figure class="wide"><div class="rib a" style="padding-bottom: var(--m-space-5)">
+    <div class="rtabs"><span class="rtab">Bring in</span><span class="rtab open">Shape</span><span class="rtab">Model</span><span class="rtab">Publish</span><span class="rsep"></span><span class="rtab ctx">Grid · ranking</span></div>
+    <div class="rrow" style="overflow: visible">
+      <div class="rgrp"><span class="btn quiet bare still tipped" style="padding-right: var(--m-space-3)"><i class="ic" data-i="filter"></i>Filter<span class="kc tip">F</span></span><span class="btn quiet bare still tipped" style="padding-right: var(--m-space-3)"><i class="ic" data-i="arrows-sort"></i>Sort<span class="kc tip">O</span></span><span class="btn quiet bare still tipped" style="padding-right: var(--m-space-3)"><i class="ic" data-i="eye-off"></i>Hide<span class="kc tip">H</span></span></div>
+      <div class="rgrp"><span class="btn quiet bare still tipped" style="padding-right: var(--m-space-3)"><i class="ic" data-i="math-function"></i>Derive<span class="kc tip">D</span></span><span class="btn quiet bare is-off tipped" style="padding-right: var(--m-space-3)"><i class="ic" data-i="arrows-join"></i>Join<span class="kc tip dim">J</span></span></div>
+    </div></div><figcaption>then, with a tab chosen, a tip on each of its commands; while tips are on, a command's own keycap gives way to its tip</figcaption></figure>
+</div>
+<p class="pick"><b>Pick: A.</b> The joined cell says which tab owns the row beneath, which a bar cannot, and it is the one treatment here that cannot be taken for a line tab. Collapsed, the cell goes and only the heavier word remains, so selected and open stay distinct. One thing to settle with the tint: the contextual tab uses the Maritime wash, and Maritime otherwise means interaction; the alternative is the neutral header fill with the divider alone.</p>
+<p class="ruling"><b>Ruling:</b> open.</p>
+
+<!-- ================================================================= -->
+<h2>5 · Popover <small>the reason popover and the anchored layer as one component</small></h2>
+<p>An overlay card anchored below a rect, or above it when there is no room below, holding any body. It casts the overlay shadow (3px), not the modal's (6px), and has no arrow. The reason form is one sentence and, when given, the command's keycap. The width scale has only the modal's 480 and 560, which are too wide for a sentence, so a popover width is a new token.</p>
+<div class="spec">
+  <div class="row" style="align-items: flex-start">
+    <figure><div class="anchor"><span class="btn quiet is-off"><i class="ic" data-i="arrows-join"></i>Join<span class="kc dim">J</span></span><div class="pop reason"><p>Join needs a second table. Bring one in first.</p><span class="kc">J</span></div></div><figcaption>240, below its anchor</figcaption></figure>
+    <figure><div class="anchor"><span class="btn quiet is-off"><i class="ic" data-i="arrows-join"></i>Join<span class="kc dim">J</span></span><div class="pop reason wide"><p>Join needs a second table. Bring one in first.</p><span class="kc">J</span></div></div><figcaption>320</figcaption></figure>
+    <figure><div class="anchor up"><span class="btn quiet is-off"><i class="ic" data-i="file-import"></i>Publish<span class="kc dim">⌘P</span></span><div class="pop reason"><p>Nothing has run yet, so there is nothing to publish.</p></div></div><figcaption>above its anchor, no keycap</figcaption></figure>
+  </div>
+  <div class="row" style="align-items: flex-start">
+    <figure><div class="anchor"><span class="rtab sel" style="background: var(--m-neutral-bg-hover)">Shape</span><div class="pop body"><div class="rrow" style="box-shadow: none">
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="filter"></i>Filter<span class="kc">F</span></span><span class="btn quiet bare still"><i class="ic" data-i="arrows-sort"></i>Sort<span class="kc">S</span></span></div>
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="math-function"></i>Derive<span class="kc">D</span></span></div></div></div></div><figcaption>any body: the collapsed ribbon's row, dropped from its tab</figcaption></figure>
+  </div>
+</div>
+<p class="pick"><b>Pick: 240</b> for the reason form, with the general form sized by its body. A reason is one sentence, and at 320 a short one leaves the card half empty.</p>
+<p class="ruling"><b>Ruling:</b> open.</p>
+
+<!-- ================================================================= -->
+<h2>6 · Segmented control <small>the activity switcher</small></h2>
+<p>A small set of mutually exclusive options in a pane header, each with its keycap. It must not read as a tab strip. Because it carries keycaps it fills the header's 24; without them it draws at 20.</p>
+<div class="spec"><div class="cap">A<span>a raised cell on a track</span></div>
+  <div class="row">
+    <figure><div class="seg a"><span class="opt on">Grid<span class="kc">G</span></span><span class="opt">Chart<span class="kc">C</span></span><span class="opt">Model<span class="kc">M</span></span></div><figcaption>Grid selected</figcaption></figure>
+    <figure><div class="seg a"><span class="opt on">Grid<span class="kc">G</span></span><span class="opt is-hover">Chart<span class="kc">C</span></span><span class="opt is-pressed">Model<span class="kc">M</span></span></div><figcaption>hover, pressed</figcaption></figure>
+    <figure><div class="seg a"><span class="opt on is-focus">Grid<span class="kc">G</span></span><span class="opt">Chart<span class="kc">C</span></span><span class="opt off">Model<span class="kc dim">M</span></span></div><figcaption>keyboard focus; Model unavailable</figcaption></figure>
+    <figure><div class="seg a sm"><span class="opt plain on">Grid</span><span class="opt plain">Chart</span></div><figcaption>20 rung, no keycaps</figcaption></figure>
+  </div>
+  <figure class="w520" style="margin-top: var(--m-space-6)"><div class="phead tall"><i class="ic" data-i="table"></i><span class="t">ranking</span><span class="end">19,028 rows</span><div class="seg a"><span class="opt on">Grid<span class="kc">G</span></span><span class="opt">Chart<span class="kc">C</span></span></div></div><figcaption>in a pane header</figcaption></figure>
+</div>
+<div class="spec"><div class="cap">B<span>the selection wash in a ruled box</span></div>
+  <div class="row">
+    <figure><div class="seg b"><span class="opt on">Grid<span class="kc">G</span></span><span class="opt">Chart<span class="kc">C</span></span><span class="opt">Model<span class="kc">M</span></span></div><figcaption>Grid selected</figcaption></figure>
+    <figure><div class="seg b"><span class="opt on">Grid<span class="kc">G</span></span><span class="opt is-hover">Chart<span class="kc">C</span></span><span class="opt is-pressed">Model<span class="kc">M</span></span></div><figcaption>hover, pressed</figcaption></figure>
+    <figure><div class="seg b"><span class="opt on is-focus">Grid<span class="kc">G</span></span><span class="opt">Chart<span class="kc">C</span></span><span class="opt off">Model<span class="kc dim">M</span></span></div><figcaption>keyboard focus; Model unavailable</figcaption></figure>
+    <figure><div class="seg b sm"><span class="opt plain on">Grid</span><span class="opt plain">Chart</span></div><figcaption>20 rung, no keycaps</figcaption></figure>
+  </div>
+  <figure class="w520" style="margin-top: var(--m-space-6)"><div class="phead tall"><i class="ic" data-i="table"></i><span class="t">ranking</span><span class="end">19,028 rows</span><div class="seg b"><span class="opt on">Grid<span class="kc">G</span></span><span class="opt">Chart<span class="kc">C</span></span></div></div><figcaption>in a pane header</figcaption></figure>
+</div>
+<p class="pick"><b>Pick: B.</b> The chrome guideline keeps the selection wash for a toggle that is on, and an option here is one. The ruled box makes it one control with parts, where the track in A sits on the header's own grey and loses its edge.</p>
+<p class="ruling"><b>Ruling:</b> open.</p>
+
+<!-- ================================================================= -->
+<h2>7 · Section with a count &nbsp;and&nbsp; 8 · Distribution bar</h2>
+<p>A section is a header row (a disclosure, a title, an optional count) and a body drawn only while it is open. The distribution bar draws a column's values in chart ink: equal bins low to high for a number, the top values for a category with the others as one bar, and the missing count in the null ink. The bar under the pointer is reported back, and Brightfield writes the line beneath.</p>
+<div class="spec"><div class="cap">A<span>a small capital label over a hairline, the count at the right</span></div>
+  <div class="row" style="align-items: flex-start">
+    <figure><div class="insp sec a">
+      <div class="sech"><i class="ic" data-i="chevron-down"></i><span class="t">Column</span></div>
+      <div class="secb"><div class="kv"><span class="k">Name</span><span>install_count</span><span class="k">Type</span><span>whole number</span><span class="k">Missing</span><span class="n">412 of 19,028</span></div>
+        <div style="height: var(--m-space-5)"></div>
+        <div class="dist"><i style="height:92%"></i><i style="height:64%"></i><i style="height:41%"></i><i class="hov" style="height:30%"></i><i style="height:22%"></i><i style="height:15%"></i><i style="height:11%"></i><i style="height:8%"></i><i style="height:5%"></i><i style="height:4%"></i><i style="height:3%"></i><i style="height:2%"></i><span class="gap"></span><i class="null" style="height:12%"></i></div>
+        <div class="readout"><span><b>3,000 to 4,000</b></span><span>1,204 rows</span></div></div>
+      <div class="sech"><i class="ic" data-i="chevron-down"></i><span class="t">Fields</span><span class="n">7</span></div>
+      <div class="secb"><div class="kv"><span class="k">x</span><span>install_count</span><span class="k">y</span><span>growth_30d</span></div></div>
+      <div class="sech is-hover"><i class="ic" data-i="chevron-right"></i><span class="t">Parameters</span><span class="n">2</span></div>
+      <div class="sech"><i class="ic" data-i="chevron-right"></i><span class="t">Step</span></div>
+    </div><figcaption>two open, two closed; Parameters under the pointer</figcaption></figure>
+    <figure><div class="insp sec a"><div class="sech is-focus"><i class="ic" data-i="chevron-right"></i><span class="t">Fields</span><span class="n">7</span></div></div><figcaption>keyboard focus</figcaption></figure>
+  </div>
+</div>
+<div class="spec"><div class="cap">B<span>the pane header's band, the count beside the title</span></div>
+  <div class="row" style="align-items: flex-start">
+    <figure><div class="insp sec b">
+      <div class="sech"><i class="ic" data-i="chevron-down"></i><span class="t">Column</span></div>
+      <div class="secb" style="padding-top: var(--m-space-4)"><div class="kv"><span class="k">Name</span><span>install_count</span><span class="k">Type</span><span>whole number</span><span class="k">Missing</span><span class="n">412 of 19,028</span></div></div>
+      <div class="sech"><i class="ic" data-i="chevron-down"></i><span class="t">Fields</span><span class="n">7</span></div>
+      <div class="secb" style="padding-top: var(--m-space-4)"><div class="kv"><span class="k">x</span><span>install_count</span><span class="k">y</span><span>growth_30d</span></div></div>
+      <div class="sech is-hover"><i class="ic" data-i="chevron-right"></i><span class="t">Parameters</span><span class="n">2</span></div>
+      <div class="sech"><i class="ic" data-i="chevron-right"></i><span class="t">Step</span></div>
+    </div><figcaption>the same stack</figcaption></figure>
+  </div>
+</div>
+<div class="spec"><div class="cap">Distribution bar<span>candidates for a category's top values</span></div>
+  <div class="row" style="align-items: flex-start">
+    <figure class="w240"><div class="dist"><i style="height:92%"></i><i style="height:64%"></i><i style="height:41%"></i><i style="height:30%"></i><i style="height:22%"></i><i style="height:15%"></i><i style="height:11%"></i><i style="height:8%"></i><i style="height:5%"></i><i style="height:4%"></i><i style="height:3%"></i><i style="height:2%"></i><span class="gap"></span><i class="null" style="height:12%"></i></div><div class="readout"><span>0 to 12,000</span><span>412 missing</span></div><figcaption>a number: twelve bins, then the missing</figcaption></figure>
+    <figure class="w240"><div class="dist"><i style="height:92%"></i><i class="hov" style="height:71%"></i><i style="height:38%"></i><i style="height:20%"></i><i style="height:9%"></i><span class="gap"></span><i class="rest" style="height:26%"></i><span class="gap"></span><i class="null" style="height:0%"></i></div><div class="readout"><span><b>cask</b></span><span>5,410 rows</span></div><figcaption>A · a category: top five, the others, the missing (none)</figcaption></figure>
+    <figure class="w240"><div style="height: var(--m-row-preview); display: flex; align-items: flex-end"><div class="stack" style="width: 100%"><i style="flex:38"></i><i class="hov" style="flex:28"></i><i style="flex:14"></i><i style="flex:7"></i><i style="flex:3"></i><i class="rest" style="flex:8"></i><i class="null" style="flex:2"></i></div></div><div class="readout"><span><b>cask</b></span><span>5,410 rows</span></div><figcaption>B · one stacked bar</figcaption></figure>
+    <figure class="w240"><div class="dist sm"><i style="height:92%"></i><i style="height:64%"></i><i style="height:41%"></i><i style="height:30%"></i><i style="height:22%"></i><i style="height:15%"></i><i style="height:11%"></i><i style="height:8%"></i><span class="gap"></span><i class="null" style="height:12%"></i></div><figcaption>at the 20 rung, for a column header</figcaption></figure>
+  </div>
+</div>
+<p class="pick"><b>Pick: A for the section, A for the category.</b> The small capital label is the detail the mockups took from Foundry, and it leaves the pane header as the only grey band in a rail, so a stack of sections reads as one pane. It needs letter-spacing, which no token carries yet. For categories, bars keep one shape for both kinds of column, and a bar's height can be compared where a segment's width in a stack cannot.</p>
+<p class="ruling"><b>Ruling:</b> open.</p>
+
+<!-- ================================================================= -->
+<h2>9 · Menu item</h2>
+<p>A list row with a check column, a label, a right-aligned keycap and, for a submenu, a chevron. It takes the list row's three states. Unavailable, it is greyed, keeps its keycap, and still takes the cursor so its reason can be read from the keys. The picker row's disabled state is the same treatment and is not a component of its own.</p>
+<div class="spec">
+  <div class="row" style="align-items: flex-start">
+    <figure><div class="pop menu">
+      <div class="mi"><span class="chk"></span><span class="l">Sort ascending</span><span class="kc">S</span></div>
+      <div class="mi is-hover"><span class="chk"></span><span class="l">Sort descending</span><span class="kc">⇧S</span></div>
+      <div class="mi is-cursor"><span class="chk"></span><span class="l">Filter to this value</span><span class="kc">F</span></div>
+      <div class="msep"></div>
+      <div class="mi"><i class="ic chk" data-i="check"></i><span class="l">Show missing</span></div>
+      <div class="mi"><span class="chk"></span><span class="l">Wrap text</span></div>
+      <div class="msep"></div>
+      <div class="mi"><span class="chk"></span><span class="l">Encode as</span><i class="ic sub" data-i="chevron-right"></i></div>
+      <div class="mi is-off"><span class="chk"></span><span class="l">Join on this column</span><span class="kc dim">J</span></div>
+      <div class="mi is-off is-cursor"><span class="chk"></span><span class="l">Split by delimiter</span><span class="kc dim">⌥S</span></div>
+    </div><figcaption>rest, hover, cursor; checked; submenu; unavailable; unavailable with the cursor</figcaption></figure>
+    <figure class="w360"><div class="mi is-pressed"><span class="chk"></span><span class="l">Filter to this value</span><span class="kc">F</span></div><figcaption>pressed</figcaption></figure>
+    <figure class="w360"><div style="width: 100%">
+      <div class="mi" style="padding-left: var(--m-space-4)"><span class="l">Open a Protocol <span class="d">&nbsp; from a folder</span></span><span class="kc">⌘O</span></div>
+      <div class="mi is-off is-cursor" style="padding-left: var(--m-space-4)"><span class="l">Run this step <span class="d">&nbsp; Nothing is focused.</span></span><span class="kc dim">⌘↩</span></div>
+    </div><figcaption>the picker row's disabled state: the reason is its detail</figcaption></figure>
+  </div>
+</div>
+<p class="pick"><b>One look.</b> It follows the list row and the unavailable ruling in (1).</p>
+<p class="ruling"><b>Ruling:</b> open.</p>
+
+<!-- ================================================================= -->
+<h2>10 · Step row <small>the spine row, with its state mark and its thin form</small></h2>
+<p>One row per step or table: the graph's edges in a gutter at the leading edge, the state mark on its lane, the name, what it produced, and for a step a timeline bar and a duration. A folded group shows a fold control and its member count. The row has two marks of place. The cursor is the list row's: the row the keys act on. Focused is the node the canvas shows.</p>
+<p>The state mark's shape and ink per state is plain data in <code>meridian-design</code>, so the graph Brightfield draws and this row read one definition. Drawing the mark on its lane, as a commit graph does, is my call; the chrome plan lists the gutter and the mark as separate columns.</p>
+<div class="spec"><div class="cap">State marks<span>candidates</span></div>
+  <div class="marks" id="marks"></div>
+</div>
+<div class="spec"><div class="cap">A<span>the focused step takes the selection wash</span></div>
+  <div class="row" style="align-items: flex-start"><figure class="wide"><div class="steps fa" data-steps="list"></div><figcaption>ranking is focused; rising has the cursor; join_installs is under the pointer; the loads are folded</figcaption></figure></div>
+  <div class="row" style="align-items: flex-start"><figure class="wide"><div class="steps fa" data-steps="states"></div><figcaption>rest · hover · pressed · focused · cursor · focused with the cursor</figcaption></figure></div>
+</div>
+<div class="spec"><div class="cap">B<span>the focused step has a heavier name and a dot</span></div>
+  <div class="row" style="align-items: flex-start"><figure class="wide"><div class="steps fb" data-steps="list"></div><figcaption>the same list</figcaption></figure></div>
+</div>
+<div class="spec"><div class="cap">The thin form<span>one mark per step in a 24 cell; composed from the mark, not a component of its own</span></div>
+  <div class="row" style="align-items: flex-start">
+    <figure><div class="thin" data-thin></div><figcaption>ranking focused</figcaption></figure>
+  </div>
+</div>
+<p class="pick"><b>Pick: marks B, focused A.</b> Round marks told apart by ink alone fail for a reader who cannot tell red from green, and the icons at 14 are busier than a list of forty steps wants. The shapes are a ring, a half disc, a disc, a diamond and a ring with a centre: five outlines that differ in grey. For the focused step, the selection wash is what the guideline keeps for a thing that is selected, and it stays visible beside the cursor's bar when both land on one row.</p>
+<p class="ruling"><b>Ruling:</b> open.</p>
+
+<!-- ================================================================= -->
+<h2>11 · Vertical tab <small>an open place</small></h2>
+<p>One row naming a node and an activity, with a dot while it holds an unsaved draft and a close control shown under the pointer and on the current place. The current mark has to differ from the list row's cursor (a 3px bar on the leading edge) and from a line tab (a bar under the word).</p>
+<div class="spec"><div class="cap">A<span>the current place is a cell joined to the canvas</span></div>
+  <div class="row" style="align-items: flex-start">
+    <figure><div class="vwrap"><div class="vtabs a">
+      <div class="vt"><span class="l">ranking <em>· Grid</em></span><span class="x"><i class="ic xs" data-i="x"></i></span></div>
+      <div class="vt cur"><span class="l">ranking <em>· Chart</em></span><span class="dirty"></span><span class="x"><i class="ic xs" data-i="x"></i></span></div>
+      <div class="vt is-hover"><span class="l">rising <em>· Grid</em></span><span class="x"><i class="ic xs" data-i="x"></i></span></div>
+      <div class="vt"><span class="l">join_installs <em>· Model</em></span><span class="dirty"></span><span class="x"><i class="ic xs" data-i="x"></i></span></div>
+      <div class="vt is-focus"><span class="l">analytics_30d <em>· Grid</em></span><span class="x"><i class="ic xs" data-i="x"></i></span></div>
+    </div><div class="canvas-stub">canvas</div></div><figcaption>rest · current, unsaved · hover · unsaved · keyboard focus</figcaption></figure>
+    <figure><div class="vtabs a" style="border-right: var(--x-hairline) solid var(--m-border-subtle)">
+      <div class="vt cur is-hover"><span class="l">ranking <em>· Chart</em></span><span class="x"><i class="ic xs" data-i="x"></i></span></div>
+      <div class="vt is-hover"><span class="l">rising <em>· Grid</em></span><span class="x is-hover"><i class="ic xs" data-i="x"></i></span></div>
+    </div><figcaption>current and under the pointer · the close control under the pointer</figcaption></figure>
+  </div>
+</div>
+<div class="spec"><div class="cap">B<span>a bar on the edge that faces the canvas</span></div>
+  <div class="row" style="align-items: flex-start">
+    <figure><div class="vwrap"><div class="vtabs b">
+      <div class="vt"><span class="l">ranking <em>· Grid</em></span><span class="x"><i class="ic xs" data-i="x"></i></span></div>
+      <div class="vt cur"><span class="l">ranking <em>· Chart</em></span><span class="dirty"></span><span class="x"><i class="ic xs" data-i="x"></i></span></div>
+      <div class="vt is-hover"><span class="l">rising <em>· Grid</em></span><span class="x"><i class="ic xs" data-i="x"></i></span></div>
+      <div class="vt"><span class="l">join_installs <em>· Model</em></span><span class="dirty"></span><span class="x"><i class="ic xs" data-i="x"></i></span></div>
+    </div><div class="canvas-stub">canvas</div></div><figcaption>the same rows</figcaption></figure>
+  </div>
+</div>
+<p class="pick"><b>Pick: A.</b> It is the ribbon's joined cell turned on its side: the current place is the tab whose edge opens onto the canvas. B is a line tab rotated, which is consistent, and at a glance it is the list row's cursor moved to the other edge.</p>
+<p class="ruling"><b>Ruling:</b> open.</p>
+
+<!-- ================================================================= -->
+<h2>12 · Run status <small>the activity area in the title band's centre</small></h2>
+<p>During a run: the step running, how many are done of how many, and a progress bar. Otherwise: when the Protocol last ran and how long ago, with the state mark for fresh, stale or failed. Before any run: a quiet "Not run yet". It is clickable. Brightfield supplies every word.</p>
+<div class="spec"><div class="cap">A<span>the progress bar runs along the foot</span></div>
+  <figure class="wide"><div class="band"><span class="rs a"><span class="mk" data-mk="running"></span><b>join_installs</b><span>3 of 7</span><span class="pb"><i style="width:43%"></i></span></span></div><figcaption>running</figcaption></figure>
+  <div class="row"></div>
+  <figure class="wide"><div class="band"><span class="rs a is-hover"><span class="mk" data-mk="running"></span><b>join_installs</b><span>3 of 7</span><span class="pb"><i style="width:43%"></i></span></span></div><figcaption>running, under the pointer</figcaption></figure>
+</div>
+<div class="spec"><div class="cap">B<span>the progress bar inline</span></div>
+  <figure class="wide"><div class="band"><span class="rs"><span class="mk" data-mk="running"></span><b>join_installs</b><span class="pb"><i style="width:43%"></i></span><span>3 of 7</span></span></div><figcaption>running</figcaption></figure>
+</div>
+<div class="spec"><div class="cap">The other cases<span>the same in A and B</span></div>
+  <figure class="wide"><div class="band"><span class="rs"><span class="mk" data-mk="ok"></span><span>Ran 22 Nov, 14:02</span><span class="q">3 hours ago</span></span></div><figcaption>ran, fresh</figcaption></figure>
+  <div class="row"></div>
+  <figure class="wide"><div class="band"><span class="rs"><span class="mk" data-mk="stale"></span><span>Ran 19 Nov, 09:40</span><span class="q">3 days ago · a source has changed</span></span></div><figcaption>ran, stale</figcaption></figure>
+  <div class="row"></div>
+  <figure class="wide"><div class="band"><span class="rs is-focus"><span class="mk" data-mk="failed"></span><span>Failed 22 Nov, 14:02</span><span class="q">at join_installs</span></span></div><figcaption>failed, with keyboard focus</figcaption></figure>
+  <div class="row"></div>
+  <figure class="wide"><div class="band"><span class="rs"><span class="mk" data-mk="notrun"></span><span class="q">Not run yet</span></span></div><figcaption>not run</figcaption></figure>
+</div>
+<div class="spec"><div class="cap">The teaching message<span>composed from a label and a keycap; not a component of its own</span></div>
+  <figure class="wide"><div class="sband"><span><b>Fold group</b> · next time, press</span><span class="kc">⌥F</span><span class="end">19,028 rows</span></div><figcaption>in a status band at the 24 rung, which the keycap needs</figcaption></figure>
+</div>
+<p class="pick"><b>Pick: A.</b> The bar along the foot uses the width the words already take, so the area does not jump when a run starts, and it is the same 2px the tab bar uses.</p>
+<p class="ruling"><b>Ruling:</b> open.</p>
+
+<!-- ================================================================= -->
+<h2>The three treatments together <small>with the line tabs that exist today</small></h2>
+<p>The chrome plan requires that the ribbon's tabs, the activity switcher and the open places cannot be mistaken for one another. These are the picks, side by side.</p>
+<div class="spec">
+  <div class="row" style="align-items: flex-start">
+    <figure class="w240"><div class="ltabs"><span class="on">Run log</span><span>Problems</span><span>Editor</span></div><figcaption>line tabs: a bar under the word</figcaption></figure>
+    <figure><div class="rib a"><div class="rtabs"><span class="rtab">Bring in</span><span class="rtab open">Shape</span><span class="rtab">Model</span></div><div class="rrow" style="height: var(--m-space-4)"></div></div><figcaption>ribbon tabs: a cell joined to its row</figcaption></figure>
+    <figure><div class="seg b"><span class="opt on">Grid<span class="kc">G</span></span><span class="opt">Chart<span class="kc">C</span></span></div><figcaption>segmented control: a wash in a ruled box</figcaption></figure>
+    <figure><div class="vwrap" style="width: 260px"><div class="vtabs a" style="width: 170px">
+      <div class="vt"><span class="l">ranking <em>· Grid</em></span><span class="x"><i class="ic xs" data-i="x"></i></span></div>
+      <div class="vt cur"><span class="l">ranking <em>· Chart</em></span><span class="x"><i class="ic xs" data-i="x"></i></span></div>
+      <div class="vt"><span class="l">rising <em>· Grid</em></span><span class="x"><i class="ic xs" data-i="x"></i></span></div>
+    </div><div class="canvas-stub">canvas</div></div><figcaption>vertical tabs: a cell joined to the canvas</figcaption></figure>
+  </div>
+</div>
+
+<!-- ================================================================= -->
+<h2>Values with no token yet</h2>
+<p>Everything else on this page reads a token. Each of these is a token the build adds to <code>meridian-design</code>, or a value to drop.</p>
+<table class="open">
+<tr><th>Value</th><th>Used by</th><th>Proposed</th></tr>
+<tr><td>32</td><td>the title band and the command row</td><td>a band height, <code>ROW_GRID + 2 × SPACE_2</code>, which Brightfield states today as its own constant</td></tr>
+<tr><td>240, 320</td><td>the popover's reason form</td><td>one popover width, per the ruling in (5)</td></tr>
+<tr><td>12</td><td>one lane of the step row's gutter</td><td>a gutter lane width; equal to <code>SPACE_5</code></td></tr>
+<tr><td>24</td><td>the thin form's cell</td><td><code>control::SPINE_MARK_CELL</code>, as the chrome plan names it; equal to <code>ROW_GRID</code></td></tr>
+<tr><td>72, 40</td><td>the step row's timeline and duration columns</td><td>two column widths</td></tr>
+<tr><td>96</td><td>the inline progress bar in (12) B</td><td>dropped if A is ruled</td></tr>
+<tr><td>6</td><td>the unsaved dot</td><td>a dot size; equal to <code>SPACE_3</code></td></tr>
+<tr><td>0.06em, capitals</td><td>the section label in (7) A</td><td>a label style in the type ramp</td></tr>
+<tr><td>15</td><td>the keycap's text box</td><td>none: it is JetBrains Mono's line at 11px, as <code>key_chip</code> measures it</td></tr>
+<tr><td>1</td><td>every hairline</td><td>none: a rule is 1px throughout the system</td></tr>
+</table>
+
+<script>
+// Tabler Icons 3.44.0, outline, MIT. One entry per glyph: its path data, joined by ";".
+const ICONS = {
+  "adjustments": "M4 10a2 2 0 1 0 4 0a2 2 0 0 0 -4 0;M6 4v4;M6 12v8;M10 16a2 2 0 1 0 4 0a2 2 0 0 0 -4 0;M12 4v10;M12 18v2;M16 7a2 2 0 1 0 4 0a2 2 0 0 0 -4 0;M18 4v1;M18 9v11",
+  "axis-x": "M4 13v.01;M4 9v.01;M4 5v.01;M17 20l3 -3l-3 -3;M4 17h16",
+  "axis-y": "M11 20h-.01;M15 20h-.01;M19 20h-.01;M4 7l3 -3l3 3;M7 20v-16",
+  "palette": "M12 21a9 9 0 0 1 0 -18c4.97 0 9 3.582 9 8c0 1.06 -.474 2.078 -1.318 2.828c-.844 .75 -1.989 1.172 -3.182 1.172h-2.5a2 2 0 0 0 -1 3.75a1.3 1.3 0 0 1 -1 2.25;M7.5 10.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0;M11.5 7.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0;M15.5 10.5a1 1 0 1 0 2 0a1 1 0 1 0 -2 0",
+  "zoom-in": "M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0;M7 10l6 0;M10 7l0 6;M21 21l-6 -6",
+  "zoom-out": "M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0;M7 10l6 0;M21 21l-6 -6",
+  "arrow-back-up": "M9 14l-4 -4l4 -4;M5 10h11a4 4 0 1 1 0 8h-1",
+  "list": "M9 6l11 0;M9 12l11 0;M9 18l11 0;M5 6l0 .01;M5 12l0 .01;M5 18l0 .01",
+  "schema": "M5 2h5v4h-5l0 -4;M15 10h5v4h-5l0 -4;M5 18h5v4h-5l0 -4;M5 10h5v4h-5l0 -4;M10 12h5;M7.5 6v4;M7.5 14v4",
+  "hierarchy": "M10 5a2 2 0 1 0 4 0a2 2 0 1 0 -4 0;M3 19a2 2 0 1 0 4 0a2 2 0 1 0 -4 0;M17 19a2 2 0 1 0 4 0a2 2 0 1 0 -4 0;M6.5 17.5l5.5 -4.5l5.5 4.5;M12 7l0 6",
+  "link": "M9 15l6 -6;M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464;M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463",
+  "unlink": "M17 22v-2;M9 15l6 -6;M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464;M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463;M20 17h2;M2 7h2;M7 2v2",
+  "key": "M16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1 -4.069 0l-.301 -.301l-6.558 6.558a2 2 0 0 1 -1.239 .578l-.175 .008h-1.172a1 1 0 0 1 -.993 -.883l-.007 -.117v-1.172a2 2 0 0 1 .467 -1.284l.119 -.13l.414 -.414h2v-2h2v-2l2.144 -2.144l-.301 -.301a2.877 2.877 0 0 1 0 -4.069l2.643 -2.643a2.877 2.877 0 0 1 4.069 0;M15 9h.01",
+  "fold": "M12 3v6l3 -3m-6 0l3 3;M12 21v-6l3 3m-6 0l3 -3;M4 12l1 0;M9 12l1 0;M14 12l1 0;M19 12l1 0",
+  "trash": "M4 7l16 0;M10 11l0 6;M14 11l0 6;M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12;M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3",
+  "layout-columns": "M4 6a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -12;M12 4l0 16",
+  "eye-off": "M10.585 10.587a2 2 0 0 0 2.829 2.828;M16.681 16.673a8.717 8.717 0 0 1 -4.681 1.327c-3.6 0 -6.6 -2 -9 -6c1.272 -2.12 2.712 -3.678 4.32 -4.674m2.86 -1.146a9.055 9.055 0 0 1 1.82 -.18c3.6 0 6.6 2 9 6c-.666 1.11 -1.379 2.067 -2.138 2.87;M3 3l18 18",
+  "cursor-text": "M10 12h4;M9 4a3 3 0 0 1 3 3v10a3 3 0 0 1 -3 3;M15 4a3 3 0 0 0 -3 3v10a3 3 0 0 0 3 3",
+  "math-function": "M3 19a2 2 0 0 0 2 2c2 0 2 -4 3 -9s1 -9 3 -9a2 2 0 0 1 2 2;M5 12h6;M15 12l6 6;M15 18l6 -6",
+  "transform": "M3 6a3 3 0 1 0 6 0a3 3 0 0 0 -6 0;M21 11v-3a2 2 0 0 0 -2 -2h-6l3 3m0 -6l-3 3;M3 13v3a2 2 0 0 0 2 2h6l-3 -3m0 6l3 -3;M15 18a3 3 0 1 0 6 0a3 3 0 0 0 -6 0",
+  "bucket-droplet": "M5 16l1.465 1.638a2 2 0 1 1 -3.015 .099l1.55 -1.737;M13.737 9.737c2.299 -2.3 3.23 -5.095 2.081 -6.245c-1.15 -1.15 -3.945 -.217 -6.244 2.082c-2.3 2.299 -3.231 5.095 -2.082 6.244c1.15 1.15 3.946 .218 6.245 -2.081;M7.492 11.818c.362 .362 .768 .676 1.208 .934l6.895 4.047c1.078 .557 2.255 -.075 3.692 -1.512c1.437 -1.437 2.07 -2.614 1.512 -3.692c-.372 -.718 -1.72 -3.017 -4.047 -6.895a6.015 6.015 0 0 0 -.934 -1.208",
+  "copy-off": "M19.414 19.415a2 2 0 0 1 -1.414 .585h-8a2 2 0 0 1 -2 -2v-8c0 -.554 .225 -1.055 .589 -1.417m3.411 -.583h6a2 2 0 0 1 2 2v6;M16 8v-2a2 2 0 0 0 -2 -2h-6m-3.418 .59c-.36 .36 -.582 .86 -.582 1.41v8a2 2 0 0 0 2 2h2;M3 3l18 18",
+  "list-numbers": "M11 6h9;M11 12h9;M12 18h8;M4 16a2 2 0 1 1 4 0c0 .591 -.5 1 -1 1.5l-3 2.5h4;M6 10v-6l-2 2",
+  "sum": "M18 16v2a1 1 0 0 1 -1 1h-11l6 -7l-6 -7h11a1 1 0 0 1 1 1v2",
+  "arrows-join": "M3 7h5l3.5 5h9.5;M3 17h5l3.495 -5;M18 15l3 -3l-3 -3",
+  "row-insert-bottom": "M20 6v4a1 1 0 0 1 -1 1h-14a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h14a1 1 0 0 1 1 1;M12 15l0 4;M14 17l-4 0",
+  "file-import": "M14 3v4a1 1 0 0 0 1 1h4;M5 13v-8a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2h-5.5m-9.5 -2h7m-3 -3l3 3l-3 3",
+  "player-play": "M7 4v16l13 -8l-13 -8",
+  "chevron-down": "M6 9l6 6l6 -6",
+  "chevron-right": "M9 6l6 6l-6 6",
+  "x": "M18 6l-12 12;M6 6l12 12",
+  "check": "M5 12l5 5l10 -10",
+  "search": "M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0;M21 21l-6 -6",
+  "table": "M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14;M3 10h18;M10 3v18",
+  "chart-dots": "M3 3v18h18;M7 9a2 2 0 1 0 4 0a2 2 0 1 0 -4 0;M17 7a2 2 0 1 0 4 0a2 2 0 1 0 -4 0;M12 15a2 2 0 1 0 4 0a2 2 0 1 0 -4 0;M10.16 10.62l2.34 2.88;M15.088 13.328l2.837 -4.586",
+  "filter": "M4 4h16v2.172a2 2 0 0 1 -.586 1.414l-4.414 4.414v7l-6 2v-8.5l-4.48 -4.928a2 2 0 0 1 -.52 -1.345v-2.227",
+  "refresh": "M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4;M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4",
+  "circle-dashed": "M8.56 3.69a9 9 0 0 0 -2.92 1.95;M3.69 8.56a9 9 0 0 0 -.69 3.44;M3.69 15.44a9 9 0 0 0 1.95 2.92;M8.56 20.31a9 9 0 0 0 3.44 .69;M15.44 20.31a9 9 0 0 0 2.92 -1.95;M20.31 15.44a9 9 0 0 0 .69 -3.44;M20.31 8.56a9 9 0 0 0 -1.95 -2.92;M15.44 3.69a9 9 0 0 0 -3.44 -.69",
+  "circle-check": "M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0;M9 12l2 2l4 -4",
+  "circle-x": "M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0;M10 10l4 4m0 -4l-4 4",
+  "clock": "M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0;M12 7v5l3 3",
+  "loader-2": "M12 3a9 9 0 1 0 9 9",
+  "alert-triangle": "M12 9v4;M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0;M12 16h.01",
+  "database": "M4 6a8 3 0 1 0 16 0a8 3 0 1 0 -16 0;M4 6v6a8 3 0 0 0 16 0v-6;M4 12v6a8 3 0 0 0 16 0v-6",
+  "plus": "M12 5l0 14;M5 12l14 0",
+  "file": "M14 3v4a1 1 0 0 0 1 1h4;M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2",
+  "download": "M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2;M7 11l5 5l5 -5;M12 4l0 12",
+  "arrows-sort": "M3 9l4 -4l4 4m-4 -4v14;M21 15l-4 4l-4 -4m4 4v-14",
+};
+
+// ---- state marks: shape and ink per state. variant A round, B shapes, C icons.
+const MARK_INK = { notrun: 'var(--m-border-control)', running: 'var(--m-border-focus)', ok: 'var(--m-status-good)', failed: 'var(--m-status-critical)', stale: 'var(--m-status-warning)' };
+const MARK_ICON = { notrun: 'circle-dashed', running: 'loader-2', ok: 'circle-check', failed: 'circle-x', stale: 'clock' };
+function markShape(state, variant) {
+  const ink = MARK_INK[state];
+  if (variant === 'C') return iconPaths(MARK_ICON[state], ink, 14);
+  if (variant === 'A') {
+    if (state === 'notrun') return `<circle cx="7" cy="7" r="3.5" fill="none" stroke="${ink}" stroke-width="1.5"/>`;
+    if (state === 'running') return `<circle cx="7" cy="7" r="3.5" fill="none" stroke="${ink}" stroke-width="2.5"/>`;
+    return `<circle cx="7" cy="7" r="4" fill="${ink}"/>`;
+  }
+  switch (state) {
+    case 'notrun': return `<circle cx="7" cy="7" r="3.5" fill="var(--m-surface-sidebar)" stroke="${ink}" stroke-width="1.5"/>`;
+    case 'running': return `<circle cx="7" cy="7" r="3.5" fill="var(--m-surface-sidebar)" stroke="${ink}" stroke-width="1.5"/><path d="M7 3.5a3.5 3.5 0 0 1 0 7z" fill="${ink}"/>`;
+    case 'ok': return `<circle cx="7" cy="7" r="4" fill="${ink}"/>`;
+    case 'failed': return `<path d="M7 2.2 11.8 7 7 11.8 2.2 7z" fill="${ink}"/>`;
+    case 'stale': return `<circle cx="7" cy="7" r="3.5" fill="var(--m-surface-sidebar)" stroke="${ink}" stroke-width="1.5"/><circle cx="7" cy="7" r="1.4" fill="${ink}"/>`;
+  }
+}
+function iconPaths(name, colour, size) {
+  const d = ICONS[name];
+  if (!d) return '';
+  const s = size / 24;
+  return `<g transform="scale(${s})" fill="none" stroke="${colour}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">` + d.split(';').map(p => `<path d="${p}"/>`).join('') + '</g>';
+}
+function markSvg(state, variant) { return `<svg width="14" height="14" viewBox="0 0 14 14">${markShape(state, variant || 'B')}</svg>`; }
+
+// ---- the step row. A row's gutter: its node's lane, lanes passing through, lanes arriving and leaving.
+const LANE = 12, ROW = 24, PAD = 5;
+function gutter(g, state) {
+  const lanes = Math.max(g.node ?? 0, ...(g.through || []), ...(g.up || []), ...(g.down || []), g.width ?? 0) + 1;
+  const w = PAD * 2 + lanes * LANE, x = l => PAD + l * LANE + LANE / 2, mid = ROW / 2;
+  let s = '';
+  for (const l of g.through || []) s += `<path class="edge" d="M${x(l)} 0V${ROW}"/>`;
+  if (g.node != null) {
+    for (const l of g.up || []) s += l === g.node ? `<path class="edge" d="M${x(l)} 0V${mid}"/>` : `<path class="edge" d="M${x(l)} 0C${x(l)} ${mid} ${x(g.node)} 0 ${x(g.node)} ${mid}"/>`;
+    for (const l of g.down || []) s += l === g.node ? `<path class="edge" d="M${x(l)} ${mid}V${ROW}"/>` : `<path class="edge" d="M${x(g.node)} ${mid}C${x(g.node)} ${ROW} ${x(l)} ${mid} ${x(l)} ${ROW}"/>`;
+    s += `<g transform="translate(${x(g.node) - 7} ${mid - 7})">${markShape(state, 'B')}</g>`;
+  }
+  return `<svg class="gut" width="${w}" height="${ROW}" viewBox="0 0 ${w} ${ROW}">${s}</svg>`;
+}
+function stepRow(r) {
+  const cls = ['srow', r.table ? 'table' : '', ...(r.is || []).map(c => 'is-' + c)].join(' ');
+  const fold = r.fold === undefined ? '' : `<span class="fold"><i class="ic xs" data-i="${r.fold ? 'chevron-right' : 'chevron-down'}"></i>${r.fold || ''}</span>`;
+  const tl = r.tl ? `<span class="tl"><i class="${r.state === 'failed' ? 'failed' : r.state === 'running' ? 'running' : ''}" style="left:${r.tl[0] * 100}%;width:${(r.tl[1] - r.tl[0]) * 100}%"></i></span><span class="dur">${r.dur || ''}</span>` : `<span class="tl"></span><span class="dur"></span>`;
+  return `<div class="${cls}">${gutter({ width: 1, ...r.g }, r.state)}${fold}<span class="name">${r.name}</span><span class="out">${r.out || ''}</span>${tl}</div>`;
+}
+const LIST = [
+  { name: 'loads', state: 'ok', fold: 3, out: '3 tables', tl: [0, .28], dur: '1.9 s', g: { node: 0, down: [0, 1] } },
+  { name: 'join_installs', state: 'ok', out: '19,028 rows', tl: [.28, .52], dur: '1.6 s', g: { node: 0, up: [0], down: [0], through: [1] }, is: ['hover'] },
+  { name: 'installs', state: 'ok', table: true, out: '19,028 rows', g: { node: 0, up: [0], down: [0], through: [1] } },
+  { name: 'ranking', state: 'ok', out: '19,028 rows', tl: [.52, .71], dur: '1.3 s', g: { node: 0, up: [0], down: [0], through: [1] }, is: ['focused'] },
+  { name: 'rising', state: 'failed', out: 'no rows', tl: [.52, .6], dur: '0.5 s', g: { node: 1, up: [1], through: [0] }, is: ['cursor'] },
+  { name: 'publish', state: 'stale', fold: 0, out: '2 tables', tl: [.71, .95], dur: '1.6 s', g: { node: 0, up: [0], down: [0] } },
+  { name: 'top_100', state: 'running', out: '', tl: [.71, .86], dur: '', g: { node: 0, up: [0], down: [0] } },
+  { name: 'export_csv', state: 'notrun', out: '', g: { node: 0, up: [0] } },
+];
+const base = { name: 'ranking', state: 'ok', out: '19,028 rows', tl: [.52, .71], dur: '1.3 s', g: { node: 0, up: [0], down: [0], through: [1] } };
+const STATES = [[], ['hover'], ['pressed'], ['focused'], ['cursor'], ['focused', 'cursor']].map(is => ({ ...base, is }));
+document.querySelectorAll('[data-steps]').forEach(el => { el.innerHTML = (el.dataset.steps === 'list' ? LIST : STATES).map(stepRow).join(''); });
+document.querySelectorAll('[data-thin]').forEach(el => { el.innerHTML = ['ok', 'ok', 'ok', 'ok', 'failed', 'stale', 'running', 'notrun'].map((s, i) => `<div class="cell${i === 3 ? ' is-focused' : i === 1 ? ' is-hover' : ''}"><span class="mk">${markSvg(s)}</span></div>`).join(''); });
+const order = ['notrun', 'running', 'ok', 'failed', 'stale'], words = ['not run', 'running', 'ok', 'failed', 'stale'];
+document.getElementById('marks').innerHTML = '<span></span>' + words.map(w => `<span class="h">${w}</span>`).join('') +
+  [['A', 'round, told apart by ink'], ['B', 'told apart by shape and ink'], ['C', 'Tabler icons']].map(([v, t]) => `<span>${v} · <span class="h">${t}</span></span>` + order.map(s => `<span class="mk">${markSvg(s, v)}</span>`).join('')).join('');
+document.querySelectorAll('[data-mk]').forEach(el => { el.innerHTML = markSvg(el.dataset.mk); });
+
+// ---- icons
+document.querySelectorAll('[data-i]').forEach(el => {
+  const d = ICONS[el.dataset.i];
+  if (!d) { el.textContent = '?'; el.title = 'missing icon: ' + el.dataset.i; return; }
+  el.innerHTML = '<svg viewBox="0 0 24 24">' + d.split(';').map(p => `<path d="${p}"/>`).join('') + '</svg>';
+});
+
+// ---- every specimen is shown twice: light, then dark
+document.querySelectorAll('.spec').forEach(spec => {
+  const cap = spec.querySelector(':scope > .cap');
+  const body = [...spec.childNodes].filter(n => n !== cap);
+  const panes = document.createElement('div'); panes.className = 'panes';
+  const light = document.createElement('div'); light.className = 'pane';
+  body.forEach(n => light.appendChild(n));
+  const dark = light.cloneNode(true); dark.classList.add('dark');
+  panes.append(light, dark); spec.appendChild(panes);
+});
+</script>
+</body>
+</html>
