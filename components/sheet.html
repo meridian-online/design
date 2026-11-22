@@ -303,9 +303,43 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
 .sband .end { margin-left: auto; }
 .w360 { width: 360px; }
 .w520 { width: 520px; }
+
+/* ---------- corners ----------
+   Every corner below reads a radius token. In tokens.css all three are 0 today.
+   The switch at the top of the page overrides them on :root, so the same
+   specimens can be judged square and at each candidate radius. Rows, bars under
+   tabs, rules and data marks have no corner to round and stay as they are. */
+.kc, .srow .tl i, .vt .x { border-radius: var(--m-radius-chip); }
+.btn, .fld.boxed, .seg, .rs, .rtab.is-focus, .sech.is-focus { border-radius: var(--m-radius-control); }
+.seg .opt:first-child { border-radius: var(--m-radius-control) 0 0 var(--m-radius-control); }
+.seg .opt:last-child { border-radius: 0 var(--m-radius-control) var(--m-radius-control) 0; }
+.seg.a .opt.on { border-radius: var(--m-radius-control); }
+.fld { border-radius: var(--m-radius-control) var(--m-radius-control) 0 0; }
+.rtab { border-radius: var(--m-radius-control) var(--m-radius-control) 0 0; }
+.vtabs.a .vt.cur { border-radius: var(--m-radius-control) 0 0 var(--m-radius-control); }
+.pop, .insp, .steps, .thin { border-radius: var(--m-radius-panel); overflow: hidden; }
+.pop.reason { overflow: visible; }
+.rs .pb, .rs .pb i { border-radius: var(--m-radius-chip); }
+.rs.a { overflow: hidden; }
+.rs.a .pb, .rs.a .pb i { border-radius: 0; }
+
+#corners { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: var(--m-space-4); margin: 0 calc(-1 * var(--m-space-8)) var(--m-space-5); padding: var(--m-space-3) var(--m-space-8); background: var(--m-surface-raised); border-bottom: var(--x-hairline) solid var(--m-border-default); }
+#corners b { font-weight: 600; }
+#corners button { font: inherit; color: var(--m-text-primary); height: var(--m-control-md); padding: 0 var(--m-space-4); background: var(--m-neutral-bg); border: var(--x-hairline) solid var(--m-neutral-border); cursor: pointer; }
+#corners button.on { background: var(--m-neutral-bg-selected); border-color: var(--m-neutral-border-selected); }
+#corners span { color: var(--m-text-secondary); }
 </style>
 </head>
 <body>
+
+<div id="corners"><b>Corners</b>
+  <button data-r="0,0,0" class="on">Square (today)</button>
+  <button data-r="2,2,2">2 throughout</button>
+  <button data-r="3,3,3">3 throughout</button>
+  <button data-r="2,3,4">2 chips · 3 controls · 4 cards</button>
+  <button data-r="2,4,6">2 chips · 4 controls · 6 cards</button>
+  <span>chip · control · panel radius, in px, applied to every specimen below</span>
+</div>
 
 <h1>Component sheet</h1>
 <p class="lede">The twelve components the design review adds to <code>meridian-egui</code>, each drawn in every state its entry lists, in light and dark, over the emitted <code>tokens.css</code>. Where a look is open, the candidates are lettered. Hover and pressed states are drawn fixed, so nothing here depends on where the pointer is. Each component ends with a pick and a ruling; the page with its rulings is the reference the build's goldens are checked against.</p>
@@ -845,6 +879,17 @@ document.querySelectorAll('.spec').forEach(spec => {
   const dark = light.cloneNode(true); dark.classList.add('dark');
   panes.append(light, dark); spec.appendChild(panes);
 });
+
+// ---- the corner switch: overrides the three radius tokens on :root. ?r=2,3,4 sets it from the address.
+function setCorners(v) {
+  const [c, k, p] = v.split(',');
+  const s = document.documentElement.style;
+  s.setProperty('--m-radius-chip', c + 'px'); s.setProperty('--m-radius-control', k + 'px'); s.setProperty('--m-radius-panel', p + 'px');
+  document.querySelectorAll('#corners button').forEach(b => b.classList.toggle('on', b.dataset.r === v));
+}
+document.querySelectorAll('#corners button').forEach(b => b.addEventListener('click', () => setCorners(b.dataset.r)));
+const fromAddress = new URLSearchParams(location.search).get('r');
+if (fromAddress) setCorners(fromAddress);
 </script>
 </body>
 </html>
