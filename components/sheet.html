@@ -361,7 +361,7 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
 </div>
 
 <h1>Component sheet</h1>
-<p class="lede">The twelve components the design review adds to <code>meridian-egui</code>, each drawn in every state its entry lists, in light and dark, over the emitted <code>tokens.css</code>. Where a look was open, the candidates are lettered and kept beside the one that was ruled. Hover and pressed states are drawn fixed, so nothing here depends on where the pointer is. Each component ends with the pick, its reason and the ruling; this page with its rulings is the reference the build's goldens are checked against.</p>
+<p class="lede">The twelve components the design review adds to <code>meridian-egui</code>, each drawn in every state its entry lists, in light and dark, over the emitted <code>tokens.css</code>. Where a look was open, the candidates are lettered and kept beside the one that was ruled. Hover and pressed states are drawn fixed, so nothing here depends on where the pointer is. Each component ends with the pick, its reason and the ruling; this page with its rulings is the reference each component is built and reviewed against.</p>
 
 <table class="open">
 <tr><th>Choice</th><th>Candidates</th><th>Ruled, 22 November 2026</th></tr>
@@ -472,7 +472,7 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
 
 <!-- ================================================================= -->
 <h2>2 · Text field <small>earned by 14 hand-built inputs; wraps egui's own text editing</small></h2>
-<p>The guideline already fixes most of this: a field is a sunken fill over a 1px rule, and while it has the keys the rule is 2px in the focus ink. What is open is whether the fill is also boxed, as the mockups drew it. A field carries an optional leading icon and an optional unit. Its label, help and error sit in the existing field row.</p>
+<p>The guideline already fixes most of this: a field is a sunken fill over a 1px rule, and while it has the keys the rule is 2px in the focus ink. What is open is whether the fill is also boxed, as the mockups drew it. A field carries an optional leading icon and an optional unit. It draws its own message line beneath, for help or an error; its label is laid out by the form that holds it.</p>
 <div class="spec"><div class="cap">A<span>a rule under the fill</span></div>
   <div class="row">
     <figure><div class="fld"><span class="v ph">Name</span></div><figcaption>empty, with placeholder</figcaption></figure>

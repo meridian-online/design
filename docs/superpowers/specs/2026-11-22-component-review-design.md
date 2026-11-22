@@ -68,7 +68,15 @@ An `### Update (2026-11-22 — the cap becomes an inventory)` section, with `dat
 - **Added:** a component admitted by a product requirement is a general shape, named for what it is.
 - **Added:** `meridian-egui/INVENTORY.md` lists every component and every composed piece, one row each, with its door and its call sites or its requirement. A test fails when the crate's public surface and the inventory disagree in either direction.
 
-`CLAUDE.md` and `README.md` say "capped at 15" in several places and are corrected in the same change.
+- **Defined:** a variant parameter is an argument that selects among looks of one component: a weight, a rung. Content (an icon, a keycap, a count) and state (unavailable, selected, open) are not variants. By that reading `button` has two, its weight and its rung, and no component here has three.
+
+The inventory has three kinds of row, so that the test can cover the crate's whole public surface:
+
+- **component**: its door, and its call sites or its requirement in plain words. The twelve here name the part of Brightfield's chrome that requires them. The primitives that exist today are entered as admitted under ADR 0011 before the inventory, each with the Brightfield surfaces that call it.
+- **composition**: what it is composed from.
+- **helper**: a public function that draws no component of its own, such as `focus_ring`, `slider_colours`, `align_scope`, `tooltip_for_action`, `optically_centred_galley_top` and `overlay_frame`.
+
+The figure also appears in `CLAUDE.md` ("Capped at 15") and `ROADMAP.md`, which are corrected in the same change. ADR 0002's update mentions "a capped set of ~15 primitives"; it is left as written, and ADR 0011's update is what governs.
 
 ### 2. Corners: ADR 0013 is amended in place
 
@@ -87,6 +95,8 @@ An `### Update (2026-11-22 — a small corner returns)` section on ADR 0013 says
 - **Stands:** everything else the ADR decided. The focus ring is a 2px rule inside the control's edge and follows the control's corner. Overlays cast a hard shadow with no blur. A cursor is a fill and a bar. Tabs are line tabs.
 - **Stays square:** rows and their hover, cursor and selection fills; every bar (a line tab's, a cursor's, a progress bar along a foot); every hairline; data marks, including the distribution bar's bins; bands that run edge to edge.
 - **Joined cells round only their outer corners**: the ribbon's open tab at the top, a vertical tab's current place on the side away from the canvas. A text field rounds its top corners and keeps its rule straight.
+
+Of the primitives that exist today, these take a corner: the key chip and the status pill (chip), the modal card, the banner and the toast (panel), and egui's own buttons, fields, windows and menus through `theme::apply`. These stay square: the list row, line tabs, the pane header, and the query line, which is a band running edge to edge inside the picker's card.
 
 Consequences inside this repo: `radius.rs`'s test that every radius is 0 is rewritten to pin the three values; `tests/square_look.rs` is rewritten so that each primitive is asserted to draw its token's corner, and rows and bars are asserted square; `guidelines/chrome.md` replaces "Chrome has no corner" with what rounds and what does not; `theme::apply` passes the control and panel radii to egui's own widgets, windows and menus.
 
@@ -131,7 +141,15 @@ Composed pieces, exported and listed in the inventory as compositions:
 - `teaching_message(ui, command, keystroke)`: `<command> · next time, press [key]`, the one piece of copy a component owns.
 - `PickerRow::unavailable(reason)`: the menu item's unavailable treatment on the existing picker row, with the reason as its detail. The row still takes the cursor.
 
-Signatures. Brightfield's chrome plan proposed a signature for each of these under its own names. The landed signatures keep those shapes under the names above, with three differences the builder must apply: `ribbon_row` takes groups of the same `Button` config that `button` takes, not a separate command type; the reason popover and the anchored layer are one `Popover` with `show` for any body and `show_reason` for a sentence and keystroke; `step_row`'s gutter carries the mark, so there is no separate mark column. Where a signature detail is not fixed here, the builder follows the nearest existing primitive.
+The signatures are in the appendix. Points the table leaves open are settled as follows.
+
+- **A button's rung.** 24 unless the caller asks for the dense rung with `.dense()`, which is 20. A dense button draws no keycap; passing one is a debug assertion. A rung is a ladder step, as `list_row`'s `RowHeight` is, not a height parameter.
+- **Widths.** A button is as wide as its contents. A text field, a section, a step row, a menu item and a vertical tab fill the width they are given. The popover's reason form is 240; its general form is as wide as its body.
+- **A text field's label and message.** `text_field` draws the field and, beneath it, one message line: help in the muted ink, or the error in the danger text ink when one is passed. The label is laid out by the caller's form, in the left column `align_scope` already provides. The existing `field_row` is a read-only label and value and is not changed.
+- **Menus.** A menu is a `Popover` whose body is `menu_item`s. `menu_separator(ui)` draws the hairline between groups and is listed as a composition. `Popover::show_menu` gives the body the menu's width of 240 and its vertical padding. A submenu's item draws its chevron and reports its rect and that it was chosen; the caller opens a second `Popover` with `Anchor::Beside`, so `Popover` anchors below, above or beside a rect.
+- **Who holds state.** The caller holds everything: which section is open, which tab is selected, where the cursor is, whether a popover is open. A component reports what was clicked and holds nothing between frames.
+- **Unavailable controls and the keyboard.** An unavailable button, segmented option or ribbon command is disabled: it takes no keyboard focus, and its accesskit node is disabled with the reason as its description. Its reason reaches a keyboard user because Brightfield shows the reason popover for a few seconds when the command's key is pressed. An unavailable menu item or picker row does take the cursor, since a list is walked with the keys.
+- **Tokens beyond section 6.** The builder adds a token for any value on the sheet that has none, rather than a literal. The on-solid keycap's two rule inks are new colours: they become semantic tokens and take an entry in `tests/chrome_gate.rs`.
 
 ### 5. The state mark is data
 
@@ -182,6 +200,10 @@ Shown on the sheet and not objected to, but not ruled on individually:
 - State marks carry an ink per state as well as a shape. Flight Explainer uses one grey.
 - A key inside a control is 16 tall, where the candidate first shown was 17; 16 is what makes the inset even.
 - Component names: `segmented`, `section`, `step_row`, `vertical_tab`, `run_status`, `Popover`, `menu_item`.
+- What ADR 0011's "variant parameter" means, in decision 1.
+- A text field draws its own message line and leaves its label to the caller's form.
+- A menu is a popover of menu items with a separator; there is no menu component.
+- The query line stays square.
 
 ## Left to the builder
 
@@ -195,5 +217,175 @@ Shown on the sheet and not objected to, but not ruled on individually:
 
 - `cargo test` in `meridian-design` and `meridian-egui`. Each component has paint-list tests for every state in the table above, in both modes, in the style of `tests/square_look.rs`, and an accesskit test by role and label.
 - The inventory test.
-- `cargo run --example gallery -p meridian-egui` shows every component beside the sheet for a person to compare. The owner compares them before the branch is called ready.
+- `cargo run --example gallery -p meridian-egui` shows every component in every state, laid out in the sheet's order, for a person to compare with the sheet. The example is a stub today that shows only egui's own controls, so this is new work and is planned as such. The owner compares the two before the branch is called ready.
 - The conformance snapshots for `tokens.css` and `reference/tokens.md` are regenerated and pass.
+
+## Appendix: signatures
+
+These keep the shapes Brightfield's chrome plan proposed, under the names above. Lifetimes and derives follow the crate's existing primitives. `Icon` is `meridian_egui::Icon`.
+
+```rust
+// 1. button
+pub enum Weight { Default, Primary, Quiet }
+pub struct Button<'a> { /* icon, label, keystroke, reason, weight, dense */ }
+impl<'a> Button<'a> {
+    pub fn new(label: &'a str) -> Self;
+    pub fn icon_only(icon: &'a Icon, label: &'a str) -> Self;   // the label names the accesskit node
+    pub fn icon(self, icon: &'a Icon) -> Self;
+    pub fn keystroke(self, keystroke: &'a str) -> Self;
+    pub fn weight(self, weight: Weight) -> Self;
+    pub fn dense(self) -> Self;
+    pub fn unavailable(self, reason: &'a str) -> Self;
+}
+pub struct ButtonResponse { pub response: egui::Response, pub clicked: bool, pub pointed_unavailable: Option<egui::Rect> }
+pub fn button(ui: &mut egui::Ui, button: Button<'_>) -> ButtonResponse;
+
+// 2. text field
+pub struct TextField<'a> { /* text, placeholder, icon, unit, error, help, dense, unavailable */ }
+impl<'a> TextField<'a> {
+    pub fn new(text: &'a mut String) -> Self;
+    pub fn placeholder(self, text: &'a str) -> Self;
+    pub fn icon(self, icon: &'a Icon) -> Self;
+    pub fn unit(self, unit: &'a str) -> Self;
+    pub fn help(self, text: &'a str) -> Self;
+    pub fn error(self, text: &'a str) -> Self;      // replaces help
+    pub fn dense(self) -> Self;
+    pub fn unavailable(self) -> Self;
+}
+pub struct TextFieldResponse { pub response: egui::Response, pub changed: bool, pub submitted: bool }
+pub fn text_field(ui: &mut egui::Ui, field: TextField<'_>) -> TextFieldResponse;
+
+// 3. ribbon tabs
+pub struct RibbonTab<'a> { /* label, keystroke */ }
+impl<'a> RibbonTab<'a> { pub fn new(label: &'a str) -> Self; pub fn keystroke(self, keystroke: &'a str) -> Self; }
+pub enum TabPick { Stage(usize), Contextual }
+pub struct RibbonTabs<'a> { /* stages, contextual, selected, collapsed, key_tips */ }
+impl<'a> RibbonTabs<'a> {
+    pub fn new(stages: &'a [RibbonTab<'a>], selected: Option<TabPick>) -> Self;
+    pub fn contextual(self, tab: RibbonTab<'a>) -> Self;
+    pub fn collapsed(self, collapsed: bool) -> Self;
+    pub fn key_tips(self, shown: bool) -> Self;
+}
+pub struct RibbonTabsResponse {
+    pub response: egui::Response,
+    pub clicked: Option<TabPick>,          // any tab, the selected one included
+    pub double_clicked: Option<TabPick>,
+    pub rects: Vec<(TabPick, egui::Rect)>,
+}
+pub fn ribbon_tabs(ui: &mut egui::Ui, tabs: RibbonTabs<'_>) -> RibbonTabsResponse;
+
+// 4. ribbon row: groups of buttons, drawn in the quiet weight whatever weight they carry
+pub struct CommandAt { pub group: usize, pub index: usize }
+pub struct RibbonRow<'a> { /* groups, key_tips */ }
+impl<'a> RibbonRow<'a> { pub fn new(groups: &'a [&'a [Button<'a>]]) -> Self; pub fn key_tips(self, shown: bool) -> Self; }
+pub struct RibbonRowResponse {
+    pub response: egui::Response,
+    pub clicked: Option<CommandAt>,                           // available commands only
+    pub pointed_unavailable: Option<(CommandAt, egui::Rect)>,
+    pub rects: Vec<(CommandAt, egui::Rect)>,
+    pub icon_only: Vec<CommandAt>,                            // the commands whose label was dropped
+}
+pub fn ribbon_row(ui: &mut egui::Ui, row: RibbonRow<'_>) -> RibbonRowResponse;
+
+// 5. popover
+pub enum Anchor { Below, Beside }     // Below falls back to above, Beside to the other side, when there is no room
+pub struct PopoverResponse<R> { pub inner: R, pub dismissed: bool }
+pub struct Popover;
+impl Popover {
+    pub fn show<R>(ctx: &egui::Context, id_salt: impl Hash + Debug, anchor: egui::Rect, side: Anchor,
+                   body: impl FnOnce(&mut egui::Ui) -> R) -> PopoverResponse<R>;
+    pub fn show_menu<R>(ctx: &egui::Context, id_salt: impl Hash + Debug, anchor: egui::Rect, side: Anchor,
+                        body: impl FnOnce(&mut egui::Ui) -> R) -> PopoverResponse<R>;
+    pub fn show_reason(ctx: &egui::Context, id_salt: impl Hash + Debug, anchor: egui::Rect,
+                       reason: &str, keystroke: Option<&str>) -> egui::Response;    // not dismissable; the caller decides when it shows
+}
+
+// 6. segmented control
+pub struct SegmentedOption<'a> { /* label, keystroke, reason */ }
+impl<'a> SegmentedOption<'a> {
+    pub fn new(label: &'a str) -> Self;
+    pub fn keystroke(self, keystroke: &'a str) -> Self;
+    pub fn unavailable(self, reason: &'a str) -> Self;
+}
+pub struct Segmented<'a> { /* options, selected */ }
+impl<'a> Segmented<'a> { pub fn new(options: &'a [SegmentedOption<'a>], selected: usize) -> Self; }
+pub struct SegmentedResponse { pub response: egui::Response, pub clicked: Option<usize>, pub pointed_unavailable: Option<(usize, egui::Rect)> }
+pub fn segmented(ui: &mut egui::Ui, control: Segmented<'_>) -> SegmentedResponse;   // 24 when any option has a keystroke, else 20
+
+// 7. section
+pub struct Section<'a> { /* title, count, open */ }
+impl<'a> Section<'a> { pub fn new(title: &'a str, open: bool) -> Self; pub fn count(self, count: usize) -> Self; }
+pub struct SectionResponse<R> { pub response: egui::Response, pub toggled: bool, pub inner: Option<R> }
+pub fn section<R>(ui: &mut egui::Ui, section: Section<'_>, body: impl FnOnce(&mut egui::Ui) -> R) -> SectionResponse<R>;
+
+// 8. distribution bar
+pub enum Bars<'a> { Bins(&'a [u64]), Top { values: &'a [(&'a str, u64)], rest: u64 } }
+pub struct DistributionBar<'a> { /* bars, missing, total, dense */ }
+impl<'a> DistributionBar<'a> { pub fn new(bars: Bars<'a>, missing: u64, total: u64) -> Self; pub fn dense(self) -> Self; }
+pub struct DistributionResponse { pub response: egui::Response, pub hovered: Option<usize> }   // rest and missing are the last two indices
+pub fn distribution_bar(ui: &mut egui::Ui, bar: DistributionBar<'_>) -> DistributionResponse;
+
+// 9. menu item
+pub struct MenuItem<'a> { /* label, keystroke, reason, checked, submenu, cursor */ }
+impl<'a> MenuItem<'a> {
+    pub fn new(label: &'a str) -> Self;
+    pub fn keystroke(self, keystroke: &'a str) -> Self;
+    pub fn unavailable(self, reason: &'a str) -> Self;
+    pub fn checked(self, on: bool) -> Self;      // any call reserves the check column
+    pub fn submenu(self) -> Self;
+    pub fn cursor(self, cursor: bool) -> Self;
+}
+pub struct MenuItemResponse { pub response: egui::Response, pub clicked: bool, pub pointed_unavailable: Option<egui::Rect> }
+pub fn menu_item(ui: &mut egui::Ui, item: MenuItem<'_>) -> MenuItemResponse;
+pub fn menu_separator(ui: &mut egui::Ui);
+
+// 10. step row
+pub use meridian_design::marks::StepMark;
+pub struct Gutter<'a> {
+    pub lanes: u8,               // how many lanes the list's widest row uses, so every row's gutter is one width
+    pub node: Option<u8>,        // the lane this row's mark sits on; None for a row with no node
+    pub through: &'a [u8],       // lanes passing this row without stopping
+    pub from_above: &'a [u8],    // lanes arriving at this node
+    pub to_below: &'a [u8],      // lanes leaving this node
+}
+pub struct Timeline { pub start: f32, pub end: f32 }     // 0.0..=1.0 of the run's span
+pub enum Fold { Folded { members: usize }, Unfolded }
+pub enum StepEntry { Step, Table }
+pub struct StepRow<'a> { /* every field above */ }
+impl<'a> StepRow<'a> {
+    pub fn new(entry: StepEntry, gutter: Gutter<'a>, mark: StepMark, label: &'a str) -> Self;
+    pub fn output(self, text: &'a str) -> Self;
+    pub fn timeline(self, timeline: Timeline, duration: &'a str) -> Self;
+    pub fn fold(self, fold: Fold) -> Self;
+    pub fn focused(self, focused: bool) -> Self;
+    pub fn cursor(self, cursor: bool) -> Self;
+}
+pub struct StepRowResponse { pub response: egui::Response, pub clicked: bool, pub fold_clicked: bool }
+pub fn step_row(ui: &mut egui::Ui, row: StepRow<'_>) -> StepRowResponse;
+pub fn step_mark(ui: &mut egui::Ui, mark: StepMark, focused: bool) -> egui::Response;
+
+// 11. vertical tab
+pub struct VerticalTab<'a> { /* node, activity, current, dirty */ }
+impl<'a> VerticalTab<'a> {
+    pub fn new(node: &'a str, activity: &'a str) -> Self;
+    pub fn current(self, current: bool) -> Self;
+    pub fn dirty(self, dirty: bool) -> Self;
+}
+pub struct VerticalTabResponse { pub response: egui::Response, pub clicked: bool, pub close_clicked: bool }
+pub fn vertical_tab(ui: &mut egui::Ui, tab: VerticalTab<'_>) -> VerticalTabResponse;
+
+// 12. run status
+pub enum RunStatus<'a> {
+    Running { step: Option<&'a str>, done: usize, total: usize },
+    Ran { when: &'a str, age: &'a str, mark: StepMark },      // Ok, Stale or Failed
+    NotRun,
+}
+pub fn run_status(ui: &mut egui::Ui, status: RunStatus<'_>) -> egui::Response;
+
+// compositions
+pub fn key_tip(ui: &egui::Ui, target: egui::Rect, keystroke: &str);
+pub fn teaching_message(ui: &mut egui::Ui, command: &str, keystroke: &str) -> egui::Response;
+impl PickerRow { pub fn unavailable(self, reason: impl Into<String>) -> Self; }   // and a public `unavailable: Option<String>` field
+```
+
+Accesskit roles: `button` is `Button`; `text_field` is `TextInput`; `ribbon_tabs` is a `TabList` of `Tab`s with the open one selected; `ribbon_row` is a `Toolbar`; the reason popover is a `Tooltip`; `segmented` is a `RadioGroup` of `RadioButton`s; `section`'s header is a `Button` with its expanded state; `menu_item` is a `MenuItem`; `step_row` is a `Row` labelled with its name and state word; `vertical_tab` is a `Tab` in a vertical `TabList`; `run_status` is a `Status` with a `ProgressBar` child while running; `key_tip` is a `Label`; `teaching_message` is a `Status` labelled with the whole sentence.
