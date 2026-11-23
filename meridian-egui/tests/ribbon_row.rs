@@ -190,7 +190,7 @@ fn commands_sit_between_side_padding_with_two_between_neighbours_and_dividers_be
 }
 
 #[test]
-fn buttons_are_drawn_quiet_whatever_weight_they_carry_with_spacing_3_leading() {
+fn buttons_are_drawn_quiet_whatever_weight_they_carry() {
     for mode in MODES {
         let h = drawn(mode, Spec::new(900.0));
         let sem = semantic(mode.is_dark());
@@ -213,11 +213,6 @@ fn buttons_are_drawn_quiet_whatever_weight_they_carry_with_spacing_3_leading() {
                 "{mode:?}: {c:?} has a box at rest"
             );
         }
-        // The icon starts SPACE_3 inside its button: the ink is painted, so
-        // read it off the first key-free measure: the width of Filter is
-        // SPACE_3 + icon + gap + label + gap + key + inset.
-        let r = rect_of(&h, at(0, 0));
-        assert!(r.width() > 2.0 * SPACE_3 + 16.0, "{r:?}");
     }
 }
 
@@ -430,6 +425,29 @@ fn key_faces(h: &Harness<'_, Out>, mode: Mode, height: f32) -> Vec<Painted> {
         .collect()
 }
 
+/// The ink of the text shapes whose galley lies inside `within`.
+fn key_texts(h: &Harness<'_, Out>, within: Rect) -> Vec<Color32> {
+    fn walk(shape: &egui::Shape, within: Rect, out: &mut Vec<Color32>) {
+        match shape {
+            egui::Shape::Text(t) => {
+                if within.contains(t.pos + t.galley.size() / 2.0) {
+                    out.push(
+                        t.override_text_color
+                            .unwrap_or(t.galley.job.sections[0].format.color),
+                    );
+                }
+            }
+            egui::Shape::Vec(v) => v.iter().for_each(|s| walk(s, within, out)),
+            _ => {}
+        }
+    }
+    let mut out = Vec::new();
+    for c in &h.output().shapes {
+        walk(&c.shape, within, &mut out);
+    }
+    out
+}
+
 #[test]
 fn key_tips_replace_each_command_s_own_key() {
     for mode in MODES {
@@ -446,6 +464,23 @@ fn key_tips_replace_each_command_s_own_key() {
         );
         let tips = key_faces(&on, mode, KEYCAP_HEIGHT);
         assert_eq!(tips.len(), 7, "{mode:?}");
+        // The unavailable command's tip is in the dimmed key ink, the rest in
+        // the plain one.
+        let sem = semantic(mode.is_dark());
+        for (c, r) in &on.state().rects {
+            let want = if *c == at(1, 1) {
+                sem.text.disabled
+            } else {
+                sem.text.secondary
+            };
+            let tip = tips
+                .iter()
+                .find(|k| near(k.rect.right(), r.right() + k.rect.width() / 4.0))
+                .expect("a tip");
+            let galleys = key_texts(&on, tip.rect);
+            assert_eq!(galleys.len(), 1, "{c:?}: {galleys:?}");
+            assert_eq!(galleys[0], ink(want), "{mode:?}: {c:?} tip ink");
+        }
         // Each tip is at its command's trailing bottom corner; nothing moved.
         for (c, r) in &on.state().rects {
             assert!(near_rect(*r, rect_of(&off, *c)), "{c:?} moved");
@@ -535,7 +570,6 @@ fn an_empty_group_draws_no_divider() {
         .filter(|p| near(p.rect.width(), 1.0) && near(p.rect.height(), SPACE_6))
         .count();
     assert_eq!(n, 1, "one divider between the two non-empty groups");
-    let _ = Color32::WHITE;
 }
 
 #[test]

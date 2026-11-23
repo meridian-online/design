@@ -368,6 +368,11 @@ fn paint(
 /// layer above the rest and casting the overlay's hard shadow. It senses
 /// nothing and is read as a label carrying the keystroke.
 pub fn key_tip(ui: &egui::Ui, target: Rect, keystroke: &str) {
+    key_tip_inked(ui, target, keystroke, KeyInk::Plain);
+}
+
+/// [`key_tip`] in `ink`: an unavailable command's tip is dimmed.
+pub(crate) fn key_tip_inked(ui: &egui::Ui, target: Rect, keystroke: &str, ink: KeyInk) {
     let size = key_size(ui, keystroke, KeySize::Row);
     let corner = target.right_bottom() + Vec2::new(size.x / 4.0, size.y / 2.0);
     let at = corner - size;
@@ -395,7 +400,7 @@ pub fn key_tip(ui: &egui::Ui, target: Rect, keystroke: &str) {
     let shadow = tip.visuals().popup_shadow;
     let chip = CornerRadius::same(radius::CHIP.round() as u8);
     tip.painter().add(shadow.as_shape(rect, chip));
-    paint_key(&tip, rect, keystroke, KeySize::Row, KeyInk::Plain);
+    paint_key(&tip, rect, keystroke, KeySize::Row, ink);
 }
 
 /// Which command: its group and its place in it.
@@ -508,7 +513,9 @@ fn lay_out<'a>(
 
 /// Draw the command row and report what was done to it.
 ///
-/// It is as wide as the room `ui` has left, `BAND_HEIGHT` tall. While its
+/// It fills `ui.available_width()`, so it belongs in a bounded layout: in an
+/// unbounded one (a horizontal scroll area) it takes whatever width that
+/// reports. It is `BAND_HEIGHT` tall. While its
 /// commands are wider than that it drops the label of the last command that
 /// still has one (a command with an icon; one without keeps its label), and
 /// what still does not fit is clipped at its trailing edge.
@@ -603,7 +610,12 @@ pub fn ribbon_row(ui: &mut egui::Ui, row: RibbonRow<'_>) -> RibbonRowResponse {
     if row.key_tips && ui.is_rect_visible(band) {
         for c in commands.iter().filter(|c| band.contains_rect(c.rect)) {
             if let Some(k) = c.button.own_key() {
-                key_tip(ui, c.rect, k);
+                let ink = if c.button.reason().is_some() {
+                    KeyInk::Dimmed
+                } else {
+                    KeyInk::Plain
+                };
+                key_tip_inked(ui, c.rect, k, ink);
             }
         }
     }
