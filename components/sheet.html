@@ -851,7 +851,7 @@ const ICONS = {
 };
 
 // ---- state marks: shape and ink per state. variant A round, B shapes, C icons.
-const MARK_INK = { notrun: 'var(--m-border-control)', running: 'var(--m-border-focus)', ok: 'var(--m-status-good)', failed: 'var(--m-status-critical)', stale: 'var(--m-status-warning)' };
+const MARK_INK = { notrun: 'var(--m-mark-not-run)', running: 'var(--m-mark-running)', ok: 'var(--m-mark-ok)', failed: 'var(--m-mark-failed)', stale: 'var(--m-mark-stale)' };
 const MARK_ICON = { notrun: 'circle-dashed', running: 'loader-2', ok: 'circle-check', failed: 'circle-x', stale: 'clock' };
 function markShape(state, variant) {
   const ink = MARK_INK[state];
