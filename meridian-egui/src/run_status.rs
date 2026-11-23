@@ -239,8 +239,8 @@ pub fn run_status(ui: &mut egui::Ui, status: RunStatus<'_>) -> egui::Response {
 /// The sentence's own words, after the command.
 const TEACHING_COPY: &str = " · next time, press";
 
-/// `<command> · next time, press [key]`: the one piece of copy a component
-/// owns. The command is in primary, the sentence's own words in secondary,
+/// `<command> · next time, press [key]`: the component owns the phrase "next
+/// time, press", the caller the command and the key. The command is in primary, the sentence's own words in secondary,
 /// then `SPACE_3` and the keystroke on a 21 key, on one line in a 24 row. Its
 /// accessibility node is a `Status` named by the whole sentence; the key is
 /// drawn into it and is not a second node.
