@@ -13,10 +13,18 @@
 //! known yet, so the card is placed below/beside and egui's own sizing pass
 //! keeps that frame invisible, and the next frame flips and clamps with the
 //! measured size.
+//!
+//! **Dismissal.** Escape and a press outside are read from the pointer's
+//! interact position: with no pointer there is no outside dismissal. A press
+//! on another popover's layer (a submenu over its menu) is not outside. Escape
+//! closes only the topmost dismissable popover, "topmost" being the one shown
+//! last in the previous frame (egui keeps its layer order private); the others
+//! leave it in the input queue. A reason is never dismissable and never reads
+//! the input queue, so Escape reaches whatever is underneath it.
 
 use std::hash::Hash;
 
-use egui::{Id, Key, Modifiers, Order, PointerButton, Pos2, Rect, Vec2};
+use egui::{Id, Key, LayerId, Modifiers, Order, PointerButton, Pos2, Rect, Vec2};
 use meridian_design::semantic;
 
 use crate::key_chip::{chip_width, key_chip_with, KeyInk, KeySize};
@@ -83,12 +91,35 @@ enum Form {
     Reason,
 }
 
+/// The popover layers shown this pass and the last, in the order they were
+/// shown, each with whether it is dismissable.
+#[derive(Clone, Default)]
+struct Registry {
+    pass: u64,
+    prev: Vec<(LayerId, bool)>,
+    cur: Vec<(LayerId, bool)>,
+}
+
+fn registry<T>(ctx: &egui::Context, f: impl FnOnce(&mut Registry) -> T) -> T {
+    let key = Id::new("meridian_popover_registry");
+    let now = ctx.cumulative_pass_nr();
+    ctx.data_mut(|d| {
+        let reg = d.get_temp_mut_or_default::<Registry>(key);
+        if reg.pass != now {
+            reg.prev = std::mem::take(&mut reg.cur);
+            reg.pass = now;
+        }
+        f(reg)
+    })
+}
+
 fn show_card<R>(
     ctx: &egui::Context,
     id_salt: impl Hash + std::fmt::Debug,
     anchor: Rect,
     side: Anchor,
     form: Form,
+    dismissable: bool,
     body: impl FnOnce(&mut egui::Ui) -> R,
 ) -> (egui::Response, R, bool) {
     let t: &Tokens = ctx.tokens();
@@ -130,15 +161,33 @@ fn show_card<R>(
                 .inner
         });
 
-    let card = area.response.rect;
-    let (esc, outside) = ctx.input_mut(|i| {
-        let esc = i.consume_key(Modifiers::NONE, Key::Escape);
-        let outside = i.pointer.button_pressed(PointerButton::Primary)
-            && i.pointer
-                .interact_pos()
-                .is_some_and(|p| !card.contains(p) && !anchor.contains(p));
-        (esc, outside)
+    if !dismissable {
+        registry(ctx, |r| r.cur.push((area.response.layer_id, false)));
+        return (area.response, area.inner, false);
+    }
+    let layer = area.response.layer_id;
+    let topmost = registry(ctx, |r| {
+        r.cur.push((layer, true));
+        r.prev
+            .iter()
+            .rev()
+            .find(|(_, d)| *d)
+            .is_none_or(|(l, _)| *l == layer)
     });
+    let card = area.response.rect;
+    let pressed = ctx.input(|i| {
+        i.pointer
+            .button_pressed(PointerButton::Primary)
+            .then(|| i.pointer.interact_pos())
+            .flatten()
+    });
+    let outside = pressed.is_some_and(|p| {
+        let on_popover = ctx
+            .layer_id_at(p)
+            .is_some_and(|l| registry(ctx, |r| r.prev.iter().chain(&r.cur).any(|(x, _)| *x == l)));
+        !card.contains(p) && !anchor.contains(p) && !on_popover
+    });
+    let esc = topmost && ctx.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape));
     (area.response, area.inner, esc || outside)
 }
 
@@ -151,7 +200,8 @@ impl Popover {
         side: Anchor,
         body: impl FnOnce(&mut egui::Ui) -> R,
     ) -> PopoverResponse<R> {
-        let (_, inner, dismissed) = show_card(ctx, id_salt, anchor, side, Form::General, body);
+        let (_, inner, dismissed) =
+            show_card(ctx, id_salt, anchor, side, Form::General, true, body);
         PopoverResponse { inner, dismissed }
     }
 
@@ -163,7 +213,7 @@ impl Popover {
         side: Anchor,
         body: impl FnOnce(&mut egui::Ui) -> R,
     ) -> PopoverResponse<R> {
-        let (_, inner, dismissed) = show_card(ctx, id_salt, anchor, side, Form::Menu, body);
+        let (_, inner, dismissed) = show_card(ctx, id_salt, anchor, side, Form::Menu, true, body);
         PopoverResponse { inner, dismissed }
     }
 
@@ -177,8 +227,14 @@ impl Popover {
         reason: &str,
         keystroke: Option<&str>,
     ) -> egui::Response {
-        let (response, (), _) =
-            show_card(ctx, id_salt, anchor, Anchor::Below, Form::Reason, |ui| {
+        let (response, (), _) = show_card(
+            ctx,
+            id_salt,
+            anchor,
+            Anchor::Below,
+            Form::Reason,
+            false,
+            |ui| {
                 let t = ui.tokens();
                 let dark = ui.visuals().dark_mode;
                 let ink = to_color32(semantic(dark).text.primary);
@@ -198,7 +254,8 @@ impl Popover {
                         key_chip_with(ui, k, KeySize::Row, KeyInk::Plain);
                     }
                 });
-            });
+            },
+        );
         let reason = reason.to_owned();
         ctx.accesskit_node_builder(response.id, |node| {
             node.set_role(egui::accesskit::Role::Tooltip);

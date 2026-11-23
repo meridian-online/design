@@ -380,3 +380,183 @@ fn a_reason_is_published_as_a_tooltip_labelled_with_it() {
     );
     assert!(h.query_by_role(AccessRole::Tooltip).is_none());
 }
+
+// ─── layering ───────────────────────────────────────────────────────────────
+
+struct Layers {
+    reason_first: bool,
+    popover_first: bool,
+    modal_dismissed: bool,
+}
+
+fn layers_harness(s: Layers) -> Harness<'static, Layers> {
+    let mut h = Harness::builder()
+        .with_size(vec2(500.0, 400.0))
+        .build_ui_state(
+            |ui, s: &mut Layers| {
+                theme::apply(ui.ctx(), Mode::Light);
+                let anchor = rect_at(50.0, 50.0);
+                if s.reason_first {
+                    Popover::show_reason(ui.ctx(), "r", anchor, SHORT, None);
+                }
+                if s.popover_first {
+                    Popover::show(ui.ctx(), "g", anchor, Anchor::Below, |ui| {
+                        ui.label("body");
+                    });
+                }
+                let r = meridian_egui::ModalLayer::show(
+                    ui.ctx(),
+                    "m",
+                    &meridian_egui::ModalChrome::new(),
+                    |ui| ui.label("modal"),
+                );
+                s.modal_dismissed |= r.dismissed;
+            },
+            s,
+        );
+    h.run();
+    h
+}
+
+#[test]
+fn a_reason_leaves_esc_to_the_layer_beneath_it() {
+    let mut h = layers_harness(Layers {
+        reason_first: true,
+        popover_first: false,
+        modal_dismissed: false,
+    });
+    h.key_press(egui::Key::Escape);
+    h.run();
+    assert!(h.state().modal_dismissed, "the modal still gets its Esc");
+
+    // The control: a dismissable popover shown ahead of the modal does take
+    // the Esc, so this harness can tell a swallowed Esc from a free one.
+    let mut h = layers_harness(Layers {
+        reason_first: false,
+        popover_first: true,
+        modal_dismissed: false,
+    });
+    h.key_press(egui::Key::Escape);
+    h.run();
+    assert!(
+        !h.state().modal_dismissed,
+        "control: a popover consumes Esc"
+    );
+}
+
+struct Stack {
+    menu_open: bool,
+    sub_open: bool,
+    menu_dismissed: bool,
+    sub_dismissed: bool,
+    item: Rect,
+    sub_item: Rect,
+    sub_clicked: bool,
+}
+
+fn stack_harness() -> Harness<'static, Stack> {
+    let mut h = Harness::builder()
+        .with_size(vec2(600.0, 400.0))
+        .build_ui_state(
+            |ui, s: &mut Stack| {
+                theme::apply(ui.ctx(), Mode::Light);
+                let ctx = ui.ctx().clone();
+                if s.menu_open {
+                    let r = Popover::show_menu(
+                        &ctx,
+                        "menu",
+                        rect_at(20.0, 20.0),
+                        Anchor::Below,
+                        |ui| {
+                            s.item = ui
+                                .allocate_exact_size(
+                                    vec2(ui.available_width(), 30.0),
+                                    egui::Sense::click(),
+                                )
+                                .0;
+                        },
+                    );
+                    if r.dismissed {
+                        s.menu_dismissed = true;
+                        s.menu_open = false;
+                    }
+                }
+                if s.sub_open {
+                    let anchor = s.item;
+                    let r = Popover::show_menu(&ctx, "sub", anchor, Anchor::Beside, |ui| {
+                        let (rect, resp) = ui.allocate_exact_size(
+                            vec2(ui.available_width(), 30.0),
+                            egui::Sense::click(),
+                        );
+                        s.sub_item = rect;
+                        if resp.clicked() {
+                            s.sub_clicked = true;
+                        }
+                    });
+                    if r.dismissed {
+                        s.sub_dismissed = true;
+                        s.sub_open = false;
+                    }
+                }
+            },
+            Stack {
+                menu_open: true,
+                sub_open: false,
+                menu_dismissed: false,
+                sub_dismissed: false,
+                item: Rect::NOTHING,
+                sub_item: Rect::NOTHING,
+                sub_clicked: false,
+            },
+        );
+    h.run();
+    h.state_mut().sub_open = true;
+    h.run();
+    h.run();
+    h
+}
+
+fn click_stack(h: &mut Harness<'_, Stack>, pos: Pos2) {
+    h.event(egui::Event::PointerMoved(pos));
+    h.run();
+    for pressed in [true, false] {
+        h.event(egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        });
+        h.run();
+    }
+}
+
+#[test]
+fn a_submenu_item_is_clicked_and_its_parent_is_not_dismissed() {
+    let mut h = stack_harness();
+    assert!(h.state().sub_item != Rect::NOTHING, "the submenu is open");
+    let pos = h.state().sub_item.center();
+    click_stack(&mut h, pos);
+    assert!(h.state().sub_clicked, "the submenu item's click arrived");
+    assert!(!h.state().menu_dismissed, "the parent stays open");
+    assert!(!h.state().sub_dismissed);
+}
+
+#[test]
+fn a_press_outside_both_dismisses_both() {
+    let mut h = stack_harness();
+    click_stack(&mut h, pos2(580.0, 380.0));
+    assert!(h.state().menu_dismissed);
+    assert!(h.state().sub_dismissed);
+}
+
+#[test]
+fn esc_with_a_menu_and_its_submenu_open_closes_only_the_submenu() {
+    let mut h = stack_harness();
+    h.key_press(egui::Key::Escape);
+    h.run();
+    assert!(h.state().sub_dismissed, "the submenu takes the Esc");
+    assert!(!h.state().menu_dismissed, "the menu leaves it");
+    h.key_press(egui::Key::Escape);
+    h.run();
+    assert!(h.state().menu_dismissed, "the next Esc closes the menu");
+}
