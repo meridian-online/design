@@ -253,6 +253,8 @@ struct Drawn {
     glyphs: egui::Rect,
     drawn_glyphs: egui::Rect,
     icon: egui::Rect,
+    /// The screen `y` of the text's baseline.
+    baseline: f32,
 }
 
 impl Drawn {
@@ -266,6 +268,17 @@ impl Drawn {
             self.chip.max - egui::vec2(HAIRLINE, KEYCAP_FOOT_WIDTH),
         )
     }
+}
+
+/// The screen `y` of a text run's first baseline: its origin, its first row's
+/// offset, and that row's first glyph's baseline in the row. A run with no
+/// glyph has no baseline, and reads as not a number.
+fn baseline_of(text: &egui::epaint::TextShape) -> f32 {
+    text.galley
+        .rows
+        .first()
+        .and_then(|row| row.row.glyphs.first().map(|g| row.pos.y + g.pos.y))
+        .map_or(f32::NAN, |y| text.pos.y + y)
 }
 
 /// Draw one status pill on its own and measure it.
@@ -286,6 +299,7 @@ fn drawn_pill_at(mode: Mode, label: &'static str, role: Role, density: f32) -> D
         glyphs: p.only_glyphs(),
         drawn_glyphs: tessellated_glyph_box(&harness.ctx, density, p.only_text_shape()),
         icon: p.paths_box(),
+        baseline: baseline_of(p.only_text_shape()),
     }
 }
 
@@ -311,6 +325,7 @@ fn drawn_key_chip_at(mode: Mode, keystroke: &'static str, density: f32) -> Drawn
         glyphs: p.only_glyphs(),
         drawn_glyphs: tessellated_glyph_box(&harness.ctx, density, p.only_text_shape()),
         icon: p.paths_box(),
+        baseline: baseline_of(p.only_text_shape()),
     }
 }
 
@@ -451,7 +466,7 @@ fn the_keycap_spends_the_same_named_chip_padding() {
 ///
 /// This is about the *rungs*, not about where a label sits inside one. Where
 /// the pill's glyphs sit is
-/// [`the_pill_centres_its_label_on_the_glyphs_not_on_the_font_box`], and the
+/// [`the_pill_centres_its_faces_cap_height_and_every_label_shares_one_baseline`], and the
 /// two are independent: moving a label within its chip must leave every figure
 /// below untouched, which is most of what this test is worth.
 #[test]
@@ -518,39 +533,42 @@ fn the_two_modes_draw_the_same_boxes() {
 // The vertical: where the glyphs sit inside the chip.
 // ---------------------------------------------------------------------------
 
-/// The pill centres its label on the glyphs it draws, not on the font box
-/// those glyphs were laid out in.
+/// The pill centres its face's cap height on the capsule, and every label sits
+/// on the one baseline that puts there, descender or not.
 ///
-/// A galley's box is the face's metrics — one ascent above the baseline and
-/// one descent below it, identical for every string set in that face. Centring
-/// it centres the metrics, and the descent is reserved whether the string
-/// spends it or not: `ok` spends none and landed centred, `failing` hangs its
-/// `g` into the reserved room and sat low by half of it. That is why the
-/// defect read as inconsistent rather than as uniformly off — it was a
-/// function of the string.
+/// Two pills side by side are read along one line, so their labels have to
+/// share a baseline. Centring each label on its own glyphs would not: `failing`
+/// hangs its `g` below the baseline and would be lifted above `ok`. The
+/// reference is the face's cap height instead, measured here as the glyphs of a
+/// pill labelled `H`, which ink exactly from cap height to the baseline.
 ///
-/// Both terms here are measured off the painted frame and neither is stated
-/// from a constant: the capsule is the rect the widget filled, and the glyph
-/// box is walked out of the mesh the text tessellated into. The claim is that
-/// those two centres coincide, which is a relation between two drawn things
-/// rather than a restatement of any expression in the widget.
+/// Both terms are measured off the painted frame: the capsule is the rect the
+/// widget filled, the cap box is walked out of the mesh `H` tessellated into,
+/// and each baseline is read off the glyphs of the run that was painted.
 ///
 /// Both densities, because the atlas is rebuilt per density and the room a
 /// face leaves round its glyphs is not the same fraction of a point at each.
 #[test]
-fn the_pill_centres_its_label_on_the_glyphs_not_on_the_font_box() {
+fn the_pill_centres_its_faces_cap_height_and_every_label_shares_one_baseline() {
     for density in DENSITIES {
         for mode in [Mode::Light, Mode::Dark] {
+            let cap = drawn_pill_at(mode, "H", Role::Neutral, density);
+            let off = cap.glyphs.center().y - cap.chip.center().y;
+            assert!(
+                off.abs() < EPS,
+                "{mode:?} {density}x: the cap height is centred {off} off the \
+                 capsule's centreline — `H` runs {:?} and the capsule {:?}",
+                cap.glyphs.y_range(),
+                cap.chip.y_range()
+            );
             for (label, role) in PILL_LABELS {
                 let pill = drawn_pill_at(mode, label, role, density);
-                let off = pill.glyphs.center().y - pill.chip.center().y;
                 assert!(
-                    off.abs() < EPS,
-                    "{mode:?} {density}x {label}: the label's glyphs are centred \
-                     {off} off the capsule's centreline — the glyphs run \
-                     {:?} and the capsule {:?}",
-                    pill.glyphs.y_range(),
-                    pill.chip.y_range()
+                    (pill.baseline - cap.baseline).abs() < EPS,
+                    "{mode:?} {density}x {label}: the baseline is at {} and `H`'s \
+                     at {}",
+                    pill.baseline,
+                    cap.baseline
                 );
             }
         }
@@ -558,15 +576,14 @@ fn the_pill_centres_its_label_on_the_glyphs_not_on_the_font_box() {
 }
 
 /// The icon and the label answer to one vertical reference, which is the whole
-/// of what "the group is centred" means for a chip that carries both.
+/// of what "the group is centred" means for a chip that carries both: the icon
+/// is centred on the box it draws in, and the label's cap height on the same
+/// centreline.
 ///
-/// The icon was never the wrong half — it has always been centred on the box
-/// it draws in — so this reads as a test of the label, and that is exactly
-/// what it is: it pins the *pair*, so neither half can be corrected in
-/// isolation and leave the chip reading crooked. The icon's position is
-/// recovered from the polyline points `Icon::paint` flattens its curves into,
-/// which is a completely different shape kind from the text and shares no
-/// reader with it.
+/// The icon's position is recovered from the polyline points `Icon::paint`
+/// flattens its curves into, which is a completely different shape kind from
+/// the text and shares no reader with it. The cap height is the glyph box of a
+/// pill labelled `H`.
 ///
 /// The bound on the icon's extent is what makes the measurement addressed
 /// rather than lucky: it says the strokes found really are an icon inside this
@@ -574,6 +591,7 @@ fn the_pill_centres_its_label_on_the_glyphs_not_on_the_font_box() {
 #[test]
 fn the_icon_and_the_label_share_the_pills_centreline() {
     for density in DENSITIES {
+        let cap = drawn_pill_at(Mode::Light, "H", Role::Neutral, density);
         for (label, role) in PILL_LABELS {
             let pill = drawn_pill_at(Mode::Light, label, role, density);
 
@@ -588,11 +606,11 @@ fn the_icon_and_the_label_share_the_pills_centreline() {
                 pill.chip
             );
 
-            let apart = pill.glyphs.center().y - pill.icon.center().y;
+            let apart = cap.glyphs.center().y - pill.icon.center().y;
             assert!(
                 apart.abs() < EPS,
-                "{density}x {label}: the label's glyphs and the icon's strokes \
-                 are {apart} apart on the vertical — one group, two references"
+                "{density}x {label}: the cap height and the icon's strokes are \
+                 {apart} apart on the vertical — one group, two references"
             );
         }
     }
@@ -601,15 +619,11 @@ fn the_icon_and_the_label_share_the_pills_centreline() {
 /// A label that spends none of the descent does not move, and this is the cost
 /// of the correction stated as a guard.
 ///
-/// The two boxes coincide for such a string in the proportional face — the
-/// room above its ascenders happens to be the room below its baseline — so
-/// centring on the glyphs returns what centring on the font box returned, to
-/// the bit. That is worth pinning for two reasons. It is the reason the change
-/// is a correction and not a nudge: the labels that already read right are
-/// untouched. And it is what separates centring on the glyphs from lifting
-/// every label by a constant, which would centre the descenders by pushing
-/// everything else up and would pass a test that only ever looked at
-/// `failing`.
+/// In the proportional face the room above its ascenders is the room below
+/// its baseline, so centring the cap height puts such a string where centring
+/// its font box did, to the bit. That is worth pinning because it is what makes
+/// the shared baseline a correction and not a nudge: the labels that already
+/// read right are untouched.
 ///
 /// It says nothing about the mono face, where the two boxes do *not* coincide
 /// and every keystroke moved. That is deliberate: this is a claim about one
@@ -632,13 +646,12 @@ fn a_pill_label_with_no_descender_still_sits_where_its_font_box_put_it() {
 /// A label with nothing to ink falls back to its font box, and the fallback is
 /// a real answer rather than an arithmetic accident.
 ///
-/// `optically_centred_galley_top` has a second branch. A galley whose glyphs
-/// tessellate into no triangles at all — an empty label, or one that is all
-/// whitespace — has mesh bounds of [`egui::Rect::NOTHING`], whose centre is
-/// not a number. There is nothing to centre on the glyphs in that case, so the
-/// only defensible answer is the font box, and the branch has to both take
-/// that answer and take it without letting an infinity or a NaN through into a
-/// paint position.
+/// An empty label has no glyph and so no baseline, and
+/// `cap_centred_galley_top` falls back to centring its font box. An
+/// all-whitespace label has glyphs, inks nothing, and sits on the shared
+/// baseline, which in this face is the same place. Either way the answer has
+/// to be the font box, reached without letting an infinity or a NaN through
+/// into a paint position.
 ///
 /// The first assertion is what makes this a test *of the branch* and not just
 /// another centring test: it establishes that the frame really did draw a text
@@ -856,8 +869,8 @@ fn the_drawn_keystroke_sits_at_one_offset_whatever_the_keystroke_is() {
 /// A keystroke with nothing to ink falls back to its font box, and the fallback
 /// is a real answer rather than an arithmetic accident.
 ///
-/// `optically_centred_galley_top` has a second branch, and `key_chip` is the
-/// second caller to reach it. A galley whose glyphs tessellate into no triangles
+/// `optically_centred_galley_top` has a second branch, and `key_chip` reaches
+/// it. A galley whose glyphs tessellate into no triangles
 /// at all — an empty keystroke, or one that is all whitespace — has mesh bounds
 /// of [`egui::Rect::NOTHING`], whose centre is not a number. There is nothing to
 /// centre on the glyphs in that case, so the only defensible answer is the font

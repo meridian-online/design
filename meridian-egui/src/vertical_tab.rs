@@ -33,7 +33,7 @@ use meridian_design::{semantic, Role};
 use crate::icons::Icon;
 use crate::theme::to_color32;
 use crate::widgets::{
-    focus_ring_corners, medium_family, optically_centred_galley_top, paint_open_cell, OpenSide,
+    cap_centred_galley_top, focus_ring_corners, medium_family, paint_open_cell, OpenSide,
 };
 use crate::MeridianUi;
 
@@ -268,7 +268,7 @@ fn paint(ui: &egui::Ui, rect: Rect, tab: &VerticalTab<'_>, p: &Paint) {
     job.wrap.max_rows = 1;
     job.wrap.break_anywhere = true;
     let galley = ui.painter().layout_job(job);
-    let top = optically_centred_galley_top(&galley, centre_y);
+    let top = cap_centred_galley_top(ui.painter(), &galley, centre_y);
     painter.galley(egui::pos2(left, top), galley, Color32::PLACEHOLDER);
 
     if p.close_focus_ring {

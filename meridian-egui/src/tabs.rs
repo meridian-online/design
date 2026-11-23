@@ -24,7 +24,7 @@ use meridian_design::control::TAB_BAR_WIDTH;
 use meridian_design::{radius, semantic};
 
 use crate::theme::to_color32;
-use crate::widgets::optically_centred_galley_top;
+use crate::widgets::cap_centred_galley_top;
 use crate::MeridianUi;
 
 /// The thickness of the strip's one rule. The bar under the open tab is
@@ -91,9 +91,8 @@ struct Word {
 /// secondary ink, except the open one, which is in the primary ink and has a
 /// [`TAB_BAR_WIDTH`] bar in [`semantic::Tabs::active_bar`] under it, over the
 /// rule — unless the caller passes an ink with [`LineTabs::bar_ink`]. Each word
-/// is padded by the spacing ladder on both sides, and is placed on the glyphs
-/// it inks rather than on the font box they were laid out in
-/// ([`optically_centred_galley_top`]), above the bar.
+/// is padded by the spacing ladder on both sides, and every word sits on one
+/// baseline, cap height centred above the bar ([`cap_centred_galley_top`]).
 ///
 /// Each word is a tab node in the accessibility tree and the strip is the one
 /// tab-list node they sit inside; the open word reads selected.
@@ -160,7 +159,7 @@ pub fn line_tabs(ui: &mut egui::Ui, tabs: LineTabs<'_>) -> LineTabsResponse {
                     .unwrap_or_else(|| to_color32(sem.tabs.active_bar));
                 painter.rect_filled(bar, radius::NONE, ink);
             }
-            let top = optically_centred_galley_top(&word.galley, centre_y);
+            let top = cap_centred_galley_top(ui.painter(), &word.galley, centre_y);
             painter.galley(
                 egui::pos2(word.cell.left() + pad, top),
                 word.galley.clone(),

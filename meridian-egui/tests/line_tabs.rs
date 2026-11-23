@@ -14,6 +14,8 @@
 //!
 //! CPU tessellation only — green on a runner with no GPU, like its siblings.
 
+mod common;
+
 use egui::accesskit::Role as A11yRole;
 use egui::epaint::RectShape;
 use egui::{Color32, CornerRadius, Rect, Stroke};
@@ -494,4 +496,35 @@ fn the_strip_is_called_the_way_a_consumer_calls_it() {
             let _ = line_tabs(ui, LineTabs::new(names, 1).bar_ink(hue));
         });
     harness.run();
+}
+
+// ─── one baseline ───────────────────────────────────────────────────────────
+
+/// Words with a descender ("g", "y") and words without, side by side.
+const MIXED: [&str; 4] = ["Log", "Quality", "Rows", "Editor"];
+
+#[test]
+fn every_word_in_a_strip_sits_on_one_baseline_descender_or_not() {
+    for mode in MODES {
+        for open in [0, 2] {
+            let mut harness = Harness::builder()
+                .with_size(egui::vec2(400.0, 120.0))
+                .build_ui(move |ui| {
+                    theme::apply(ui.ctx(), mode);
+                    line_tabs(ui, LineTabs::new(&MIXED, open));
+                });
+            harness.run();
+            let lines = common::text_baselines(&harness);
+            let texts: Vec<&str> = lines.iter().map(|(t, _)| t.as_str()).collect();
+            assert_eq!(texts, MIXED, "{mode:?}, open {open}: the words painted");
+            let first = lines[0].1;
+            for (text, y) in &lines {
+                assert!(
+                    near(*y, first),
+                    "{mode:?}, open {open}: {text:?} sits on a baseline at {y}, {:?} at {first}",
+                    MIXED[0]
+                );
+            }
+        }
+    }
 }

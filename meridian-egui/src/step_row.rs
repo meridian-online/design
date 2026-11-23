@@ -50,7 +50,7 @@ use crate::button::label_galley;
 use crate::icons::Icon;
 use crate::list_row::{list_row, paint_wash, ListRow, RowHeight};
 use crate::theme::to_color32;
-use crate::widgets::{mode_of, optically_centred_galley_top};
+use crate::widgets::{cap_centred_galley_top, mode_of};
 use crate::{MeridianUi, Mode, Tokens};
 
 /// The graph edges at one row, by lane. Lane `0` is at the leading edge.
@@ -392,7 +392,7 @@ fn paint_row(ui: &egui::Ui, rect: Rect, row: &StepRow<'_>, cols: &Columns) {
         }
         if let Fold::Folded { members } = fold {
             let galley = count_galley(ui, members, muted);
-            let top = optically_centred_galley_top(&galley, centre_y);
+            let top = cap_centred_galley_top(ui.painter(), &galley, centre_y);
             painter.galley(
                 egui::pos2(left + ICON_XS + t.space[1], top),
                 galley,
@@ -413,7 +413,7 @@ fn paint_row(ui: &egui::Ui, rect: Rect, row: &StepRow<'_>, cols: &Columns) {
             (cols.output_right - left).max(0.0),
         );
         output_left = cols.output_right - galley.size().x;
-        let top = optically_centred_galley_top(&galley, centre_y);
+        let top = cap_centred_galley_top(ui.painter(), &galley, centre_y);
         painter.galley(egui::pos2(output_left, top), galley, Color32::PLACEHOLDER);
     }
 
@@ -427,7 +427,7 @@ fn paint_row(ui: &egui::Ui, rect: Rect, row: &StepRow<'_>, cols: &Columns) {
         c(name_ink),
         (output_left - gap - left).max(0.0),
     );
-    let top = optically_centred_galley_top(&galley, centre_y);
+    let top = cap_centred_galley_top(ui.painter(), &galley, centre_y);
     painter.galley(egui::pos2(left, top), galley, Color32::PLACEHOLDER);
 
     // The timeline column: a gridline at the start of each half, on every row so
@@ -471,7 +471,7 @@ fn paint_row(ui: &egui::Ui, rect: Rect, row: &StepRow<'_>, cols: &Columns) {
         );
     }
     let galley = label_galley(ui, duration, c(sem.text.muted), t.duration_width);
-    let top = optically_centred_galley_top(&galley, centre_y);
+    let top = cap_centred_galley_top(ui.painter(), &galley, centre_y);
     painter.galley(
         egui::pos2(cols.duration_right - galley.size().x, top),
         galley,

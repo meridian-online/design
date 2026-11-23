@@ -920,3 +920,34 @@ fn a_right_to_left_control_paints_nothing_left_of_its_room() {
         }
     }
 }
+
+// ─── one baseline ───────────────────────────────────────────────────────────
+
+#[test]
+fn every_option_label_sits_on_one_baseline_descender_or_not() {
+    const MIXED: [&str; 3] = ["Log", "Quality", "Rows"];
+    for mode in MODES {
+        let mut harness = Harness::builder()
+            .with_size(egui::vec2(440.0, 120.0))
+            .build_ui(move |ui| {
+                theme::apply(ui.ctx(), mode);
+                ui.allocate_ui(egui::vec2(400.0, 40.0), |ui| {
+                    let opts: Vec<SegmentedOption<'static>> =
+                        MIXED.iter().map(|l| SegmentedOption::new(l)).collect();
+                    segmented(ui, Segmented::new(&opts, 1));
+                });
+            });
+        harness.run();
+        let lines = common::text_baselines(&harness);
+        let texts: Vec<&str> = lines.iter().map(|(t, _)| t.as_str()).collect();
+        assert_eq!(texts, MIXED, "{mode:?}: the labels painted");
+        let first = lines[0].1;
+        for (text, y) in &lines {
+            assert!(
+                near(*y, first),
+                "{mode:?}: {text:?} sits on a baseline at {y}, {:?} at {first}",
+                MIXED[0]
+            );
+        }
+    }
+}

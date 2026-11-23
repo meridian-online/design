@@ -43,7 +43,7 @@ use crate::button::{button_size, mark_unavailable, paint_button, Button, ButtonP
 use crate::key_chip::{key_size, paint_key, KeyInk, KeySize};
 use crate::theme::to_color32;
 use crate::widgets::{
-    focus_ring_corners, medium_family, optically_centred_galley_top, paint_open_cell, OpenSide,
+    cap_centred_galley_top, focus_ring_corners, medium_family, paint_open_cell, OpenSide,
 };
 use crate::MeridianUi;
 
@@ -351,7 +351,7 @@ fn paint(
         };
         // The label sits in the box inside the 1px rule on the top.
         let centre_y = rect.top() + (rect.height() + 1.0) / 2.0;
-        let top = optically_centred_galley_top(&cell.galley, centre_y);
+        let top = cap_centred_galley_top(ui.painter(), &cell.galley, centre_y);
         painter.galley_with_override_text_color(
             egui::pos2(rect.left() + t.space[5], top),
             cell.galley.clone(),

@@ -44,7 +44,7 @@ pub use meridian_design::marks::StepMark;
 use crate::key_chip::{key_size, paint_key, KeyInk, KeySize};
 use crate::step_row::paint_mark;
 use crate::theme::to_color32;
-use crate::widgets::{focus_ring, medium_family, mode_of, optically_centred_galley_top};
+use crate::widgets::{cap_centred_galley_top, focus_ring, medium_family, mode_of};
 use crate::MeridianUi;
 use meridian_design::marks::word;
 
@@ -205,7 +205,7 @@ pub fn run_status(ui: &mut egui::Ui, status: RunStatus<'_>) -> egui::Response {
         );
         let mut x = rect.left() + t.space[4] + ICON_SM + gap;
         for galley in galleys {
-            let top = optically_centred_galley_top(&galley, centre_y);
+            let top = cap_centred_galley_top(ui.painter(), &galley, centre_y);
             let w = galley.size().x;
             painter.galley(egui::pos2(x, top), galley, Color32::PLACEHOLDER);
             x += w + gap;
@@ -273,7 +273,7 @@ pub fn teaching_message(ui: &mut egui::Ui, command: &str, keystroke: &str) -> eg
         let painter = ui.painter_at(rect);
         let mut x = rect.left();
         for galley in [first, second] {
-            let top = optically_centred_galley_top(&galley, centre_y);
+            let top = cap_centred_galley_top(ui.painter(), &galley, centre_y);
             let w = galley.size().x;
             painter.galley(egui::pos2(x, top), galley, Color32::PLACEHOLDER);
             x += w;

@@ -30,7 +30,7 @@ use meridian_design::typography::UI_SIZE;
 
 use crate::icons::Icon;
 use crate::theme::to_color32;
-use crate::widgets::{focus_ring, optically_centred_galley_top};
+use crate::widgets::{cap_centred_galley_top, focus_ring};
 use crate::MeridianUi;
 
 /// One section's configuration. Built with [`Section::new`] and
@@ -180,7 +180,7 @@ fn paint_header(ui: &egui::Ui, rect: Rect, response: &egui::Response, section: &
             FontId::proportional(UI_SIZE),
             c(sem.text.secondary),
         );
-        let top = optically_centred_galley_top(&galley, centre_y);
+        let top = cap_centred_galley_top(ui.painter(), &galley, centre_y);
         let x = right - galley.size().x;
         right = x - gap;
         painter.galley(egui::pos2(x, top), galley, Color32::PLACEHOLDER);
@@ -204,7 +204,7 @@ fn paint_header(ui: &egui::Ui, rect: Rect, response: &egui::Response, section: &
     job.wrap.max_rows = 1;
     job.wrap.break_anywhere = true;
     let galley = painter.layout_job(job);
-    let top = optically_centred_galley_top(&galley, centre_y);
+    let top = cap_centred_galley_top(ui.painter(), &galley, centre_y);
     painter.galley(egui::pos2(title_left, top), galley, Color32::PLACEHOLDER);
 
     // The sheet's focus is an inset ring on a header with no radius: square.

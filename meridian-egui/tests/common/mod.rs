@@ -129,3 +129,34 @@ pub fn assert_corner(rects: &[Painted], radius: f32, what: &str) {
 pub fn assert_square(rects: &[Painted], what: &str) {
     assert_corner(rects, meridian_design::radius::NONE, what);
 }
+
+// ─── reading the text ───────────────────────────────────────────────────────
+
+/// Every string a frame painted, with the screen `y` of its first row's
+/// baseline, in paint order.
+///
+/// The baseline is the text shape's origin, plus its first row's offset in the
+/// galley, plus that row's first glyph's baseline offset in the row — what
+/// epaint records for every glyph ([`egui::epaint::text::Glyph::pos`]). Empty
+/// galleys, which have no glyph to read, are left out.
+pub fn text_baselines<S>(harness: &Harness<'_, S>) -> Vec<(String, f32)> {
+    fn walk(shape: &egui::Shape, out: &mut Vec<(String, f32)>) {
+        match shape {
+            egui::Shape::Vec(shapes) => shapes.iter().for_each(|s| walk(s, out)),
+            egui::Shape::Text(t) => {
+                if let Some(row) = t.galley.rows.first() {
+                    if let Some(glyph) = row.row.glyphs.first() {
+                        let y = t.pos.y + row.pos.y + glyph.pos.y;
+                        out.push((t.galley.text().to_owned(), y));
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    let mut out = Vec::new();
+    for clipped in &harness.output().shapes {
+        walk(&clipped.shape, &mut out);
+    }
+    out
+}

@@ -41,7 +41,8 @@ The callers were searched in Brightfield at revision 7b6ddba1 (`crates/`, tests 
 | slider_colours, SliderColours | helper | n/a | Slider colours for the host's own sliders |
 | align_scope, LayoutInfo | helper | n/a | Aligns label and value columns inside a scope |
 | tooltip_for_action | helper | n/a | A tooltip that shows an action's keystroke through the key chip |
-| optically_centred_galley_top | helper | n/a | Centres a line of text on its row |
+| cap_centred_galley_top | helper | n/a | Puts every label of one face and size on one baseline, cap height centred on its row |
+| optically_centred_galley_top | helper | n/a | Centres a keystroke's glyphs in its keycap |
 | overlay_frame | helper | n/a | The frame a modal or an overlay draws inside |
 | mode_of, Mode | helper | n/a | Light or dark chrome, the argument every token accessor takes |
 | Tokens, TOKENS, MeridianUi | helper | n/a | The geometry tokens, reached as `ui.tokens()` |

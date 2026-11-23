@@ -35,7 +35,7 @@ use meridian_design::{semantic, Role};
 use crate::button::label_galley;
 use crate::key_chip::{control_key_rect, key_size, paint_key, KeyInk, KeySize};
 use crate::theme::to_color32;
-use crate::widgets::{focus_ring_corners, optically_centred_galley_top};
+use crate::widgets::{cap_centred_galley_top, focus_ring_corners};
 use crate::MeridianUi;
 
 /// One option: a label, an optional keystroke, an optional reason it is
@@ -341,7 +341,7 @@ fn paint(
         }
         let x = r.left() + lead(ui);
         let galley = label_galley(ui, o.label, label_ink, (right - x).max(0.0));
-        let top = optically_centred_galley_top(&galley, r.center().y);
+        let top = cap_centred_galley_top(ui.painter(), &galley, r.center().y);
         painter.galley(egui::pos2(x, top), galley, label_ink);
     }
 }

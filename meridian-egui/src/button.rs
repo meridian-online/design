@@ -30,7 +30,7 @@ use meridian_design::{semantic, Role};
 use crate::icons::Icon;
 use crate::key_chip::{control_key_rect, key_size, paint_key, KeyInk, KeySize};
 use crate::theme::to_color32;
-use crate::widgets::{focus_ring, focus_ring_on_solid, optically_centred_galley_top};
+use crate::widgets::{cap_centred_galley_top, focus_ring, focus_ring_on_solid};
 use crate::MeridianUi;
 
 /// How loud a button is.
@@ -437,7 +437,7 @@ pub(crate) fn paint_button(ui: &egui::Ui, rect: Rect, button: &Button<'_>, p: Bu
     }
     if draw_label {
         let galley = label_galley(ui, button.label, ink.label, (right - x).max(0.0));
-        let top = optically_centred_galley_top(&galley, rect.center().y);
+        let top = cap_centred_galley_top(ui.painter(), &galley, rect.center().y);
         painter.galley(egui::pos2(x, top), galley, ink.label);
     }
 }

@@ -29,7 +29,7 @@ use crate::icons::Icon;
 use crate::key_chip::{key_size, paint_key, KeyInk, KeySize};
 use crate::list_row::{list_row, ListRow, RowHeight};
 use crate::theme::to_color32;
-use crate::widgets::optically_centred_galley_top;
+use crate::widgets::cap_centred_galley_top;
 use crate::MeridianUi;
 
 /// One menu item's configuration. Built with [`MenuItem::new`] and the
@@ -192,7 +192,7 @@ fn paint_item(ui: &mut egui::Ui, item: &MenuItem<'_>, lead: f32) {
         left += ICON_SM + gap;
     }
     let galley = label_galley(ui, item.label, label_ink, (right - left).max(0.0));
-    let top = optically_centred_galley_top(&galley, centre_y);
+    let top = cap_centred_galley_top(ui.painter(), &galley, centre_y);
     painter.galley(egui::pos2(left, top), galley, Color32::PLACEHOLDER);
 }
 
