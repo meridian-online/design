@@ -62,6 +62,25 @@ fn the_gallery_draws_every_section_in_both_modes() {
 }
 
 #[test]
+fn esc_closes_the_open_modal_and_no_popover_under_it_takes_the_key() {
+    for mode in MODES {
+        let mut harness = gallery(mode, false);
+        harness.get_by_label("Open a modal").click();
+        harness.run();
+        assert!(
+            harness.query_by_label("A modal").is_some(),
+            "{mode:?}: the modal did not open"
+        );
+        harness.key_press(egui::Key::Escape);
+        harness.run();
+        assert!(
+            harness.query_by_label("A modal").is_none(),
+            "{mode:?}: Esc did not close the modal"
+        );
+    }
+}
+
+#[test]
 #[ignore = "renders through wgpu and writes PNGs to GALLERY_PNG_DIR; run by hand"]
 fn render_the_gallery_to_png() {
     let dir = std::env::var_os("GALLERY_PNG_DIR")

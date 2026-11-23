@@ -276,7 +276,7 @@ pub fn show(ui: &mut egui::Ui, state: &mut GalleryState) {
     buttons(ui);
     text_fields(ui, state);
     ribbon(ui, state);
-    popovers(ui);
+    popovers(ui, state.modal);
     segmented_controls(ui, state);
     sections_and_bars(ui, state);
     menus(ui, state);
@@ -721,8 +721,9 @@ fn on_screen(ui: &egui::Ui, anchor: Rect) -> bool {
     ui.clip_rect().intersects(anchor)
 }
 
-/// 5 · Popover.
-fn popovers(ui: &mut egui::Ui) {
+/// 5 · Popover. Every popover here steps aside while the modal is open, so
+/// the modal is the topmost layer and gets its Esc.
+fn popovers(ui: &mut egui::Ui, modal: bool) {
     heading(
         ui,
         "5 · Popover",
@@ -739,7 +740,7 @@ fn popovers(ui: &mut egui::Ui) {
                     .weight(Weight::Quiet)
                     .unavailable("Join needs a second table."),
             );
-            if on_screen(ui, r.response.rect) {
+            if on_screen(ui, r.response.rect) && !modal {
                 Popover::show_reason(
                     ui.ctx(),
                     "gallery-reason-key",
@@ -759,7 +760,7 @@ fn popovers(ui: &mut egui::Ui) {
                     .weight(Weight::Quiet)
                     .unavailable("Nothing has run yet."),
             );
-            if on_screen(ui, r.response.rect) {
+            if on_screen(ui, r.response.rect) && !modal {
                 Popover::show_reason(
                     ui.ctx(),
                     "gallery-reason-plain",
@@ -776,7 +777,7 @@ fn popovers(ui: &mut egui::Ui) {
             "any body: the collapsed ribbon's row, dropped from its tab",
             |ui| {
                 let r = button(ui, Button::new("Shape").weight(Weight::Quiet));
-                if on_screen(ui, r.response.rect) {
+                if on_screen(ui, r.response.rect) && !modal {
                     Popover::show(
                         ui.ctx(),
                         "gallery-general",
