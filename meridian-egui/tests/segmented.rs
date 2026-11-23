@@ -582,6 +582,43 @@ fn the_group_is_a_radio_group_of_radio_buttons_and_the_selected_one_is_checked()
 }
 
 #[test]
+fn the_radio_group_carries_the_accessible_name_and_draws_none() {
+    let named = |name: Option<&'static str>| {
+        let mut harness = Harness::builder()
+            .with_size(egui::vec2(440.0, 120.0))
+            .build_ui(move |ui| {
+                theme::apply(ui.ctx(), Mode::Light);
+                let opts = options(Spec::new(0));
+                let mut control = Segmented::new(&opts, 0);
+                if let Some(name) = name {
+                    control = control.accessible_name(name);
+                }
+                segmented(ui, control);
+            });
+        harness.run();
+        harness
+    };
+    let harness = named(Some("View"));
+    let group = harness
+        .query_by_role(AccessRole::RadioGroup)
+        .expect("a radio group");
+    assert_eq!(group.accesskit_node().label().as_deref(), Some("View"));
+    let words: Vec<String> = common::text_baselines(&harness)
+        .into_iter()
+        .map(|(w, _)| w)
+        .collect();
+    assert!(
+        !words.iter().any(|w| w.contains("View")),
+        "the accessible name was drawn: {words:?}"
+    );
+    let unnamed = named(None);
+    let group = unnamed
+        .query_by_role(AccessRole::RadioGroup)
+        .expect("a radio group");
+    assert_eq!(group.accesskit_node().label(), None);
+}
+
+#[test]
 fn no_options_draws_nothing_and_does_not_panic() {
     let mut harness = Harness::builder()
         .with_size(egui::vec2(200.0, 80.0))

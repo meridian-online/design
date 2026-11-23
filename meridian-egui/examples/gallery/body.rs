@@ -826,24 +826,32 @@ fn segmented_controls(ui: &mut egui::Ui, state: &mut GalleryState) {
 
     figures(ui, |ui| {
         figure(ui, 220.0, "live: click to select", |ui| {
-            if let Some(i) = segmented(ui, Segmented::new(&keyed, state.activity)).clicked {
+            if let Some(i) = segmented(
+                ui,
+                Segmented::new(&keyed, state.activity).accessible_name("View"),
+            )
+            .clicked
+            {
                 state.activity = i;
             }
         });
         figure(ui, 220.0, "Grid selected", |ui| {
-            segmented(ui, Segmented::new(&keyed, 0));
+            segmented(ui, Segmented::new(&keyed, 0).accessible_name("View"));
         });
         figure(ui, 220.0, "Model unavailable", |ui| {
-            segmented(ui, Segmented::new(&with_unavailable, 0));
+            segmented(
+                ui,
+                Segmented::new(&with_unavailable, 0).accessible_name("View"),
+            );
         });
         figure(ui, 160.0, "20 rung, no keycaps", |ui| {
-            segmented(ui, Segmented::new(&plain, 0));
+            segmented(ui, Segmented::new(&plain, 0).accessible_name("View"));
         });
     });
     figures(ui, |ui| {
         figure(ui, 520.0, "in a pane header", |ui| {
             widgets::pane_header_with(ui, Some(&icons::TABLE), "ranking", |right| {
-                segmented(right, Segmented::new(&pair, 0));
+                segmented(right, Segmented::new(&pair, 0).accessible_name("View"));
                 right.label(RichText::new("19,028 rows").color(muted(right)));
             });
         });
@@ -1487,7 +1495,7 @@ fn together(ui: &mut egui::Ui, state: &mut GalleryState) {
                     SegmentedOption::new("Grid").keystroke("G"),
                     SegmentedOption::new("Chart").keystroke("C"),
                 ];
-                segmented(ui, Segmented::new(&options, 0));
+                segmented(ui, Segmented::new(&options, 0).accessible_name("View"));
             },
         );
         figure(

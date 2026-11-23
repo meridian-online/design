@@ -18,8 +18,9 @@
 //! accessibility node is disabled with the reason as its description. An
 //! available option takes focus: it is a radio button in a radio group.
 //!
-//! The text is the caller's: labels, keystrokes (`"G"`) and reasons are strings
-//! it passes. Nothing here animates.
+//! The text is the caller's: labels, keystrokes (`"G"`), reasons and the
+//! group's accessible name ([`Segmented::accessible_name`], read out and not
+//! drawn) are strings it passes. Nothing here animates.
 //!
 //! Too narrow for its options, a control gives up label width first: each
 //! option keeps its padding and keycap and only the labels shrink, the longest
@@ -78,13 +79,27 @@ impl<'a> SegmentedOption<'a> {
 pub struct Segmented<'a> {
     options: &'a [SegmentedOption<'a>],
     selected: usize,
+    accessible_name: Option<&'a str>,
 }
 
 impl<'a> Segmented<'a> {
     /// `options`, with the one at index `selected` selected. An index past the
     /// end selects nothing.
     pub fn new(options: &'a [SegmentedOption<'a>], selected: usize) -> Self {
-        Self { options, selected }
+        Self {
+            options,
+            selected,
+            accessible_name: None,
+        }
+    }
+
+    /// What the options choose between (`"View"`), the caller's string, given
+    /// to the radio group's accessibility node and not drawn. A screen reader
+    /// reads it when the keys enter the group; without it the group is
+    /// announced by its role alone.
+    pub fn accessible_name(mut self, name: &'a str) -> Self {
+        self.accessible_name = Some(name);
+        self
     }
 
     /// 24 when any option has a keystroke, else 20.
@@ -222,6 +237,9 @@ pub fn segmented(ui: &mut egui::Ui, control: Segmented<'_>) -> SegmentedResponse
         .ctx()
         .accesskit_node_builder(child.unique_id(), |node| {
             node.set_role(egui::accesskit::Role::RadioGroup);
+            if let Some(name) = control.accessible_name {
+                node.set_label(name);
+            }
         });
     let mut clicked = None;
     let mut pointed = None;
