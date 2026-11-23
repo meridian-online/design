@@ -138,6 +138,7 @@ The semantic layer: what a colour is *for*, framework-neutral. Reach for these b
 | `--m-border-control` | `#8a847f` | `#7e7a75` |
 | `--m-border-focus` | `#4b7a9b` | `#8fc1e4` |
 | `--m-border-divider` | `#ebeae9` | `#232221` |
+| `--m-border-divider-overlay` | `#ebeae9` | `#32302f` |
 | `--m-text-primary` | `#231f1c` | `#efeeec` |
 | `--m-text-secondary` | `#605c58` | `#b7b2ae` |
 | `--m-text-muted` | `#7f7a75` | `#7e7a75` |

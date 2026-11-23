@@ -126,6 +126,18 @@ pub struct Borders {
     /// chrome edit that moved the gridline off the band would redden rather
     /// than silently drag every table rule with it.
     pub divider: Rgba,
+    /// The divider drawn **on an overlay** — a menu's group separator, a rule
+    /// inside a popover. It exists because the dark overlay is gray step 3,
+    /// the divider's own step, so [`Self::divider`] drawn there paints nothing.
+    ///
+    /// The divider sits two steps above its ground (step 3 over the step-1
+    /// app plane), so this one takes the same two-step lift over the overlay:
+    /// step 5 in dark. In light the overlay is the near-white surface and the
+    /// divider already reads on it, so the two are one value. Gated in
+    /// `tests/chrome_gate.rs`: on the overlay it must hold at least the
+    /// contrast the divider holds on the raised plane, the chart surface the
+    /// gridline was approved on.
+    pub divider_overlay: Rgba,
 }
 
 /// Ink slots.
@@ -496,6 +508,9 @@ pub const LIGHT: Semantic = {
         focus: m[8],
         // One definition with the chart layer's gridline — see the field doc.
         divider: INK_LIGHT.gridline,
+        // The light overlay is the surface, which the divider already reads
+        // on — see the field doc.
+        divider_overlay: INK_LIGHT.gridline,
     };
 
     let text = Text {
@@ -717,6 +732,8 @@ pub const DARK: Semantic = {
         focus: m[10],
         // One definition with the chart layer's gridline — see the field doc.
         divider: INK_DARK.gridline,
+        // Step 5: the overlay is step 3, the divider's own — see the field doc.
+        divider_overlay: g[4],
     };
 
     let text = Text {

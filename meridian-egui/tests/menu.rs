@@ -578,7 +578,7 @@ fn a_separator_is_a_one_pixel_divider_with_space_2_above_and_below() {
         );
         let rules: Vec<Painted> = painted(&harness, mode)
             .into_iter()
-            .filter(|r| r.fill == ink(sem.borders.divider))
+            .filter(|r| r.fill == ink(sem.borders.divider_overlay))
             .collect();
         assert_eq!(rules.len(), 1, "{mode:?}: {rules:?}");
         let rule = rules[0].rect;
@@ -587,4 +587,30 @@ fn a_separator_is_a_one_pixel_divider_with_space_2_above_and_below() {
         assert!(near(slot.bottom() - rule.bottom(), SPACE_2), "{mode:?}");
         assert!(near(rule.width(), 240.0), "{mode:?}: {rule:?}");
     }
+}
+
+/// A menu sits on the overlay, and in dark the overlay is the plain divider's
+/// own step, so a separator in that ink would paint nothing. It takes the
+/// overlay divider instead: a different value from the overlay it lands on.
+#[test]
+fn in_dark_the_separator_draws_the_overlay_divider_not_the_overlay_surface() {
+    let mode = Mode::Dark;
+    let sem = semantic(true);
+    assert_ne!(sem.borders.divider_overlay, sem.surfaces.overlay);
+    let mut harness = Harness::builder()
+        .with_size(egui::vec2(280.0, 40.0))
+        .build_ui(move |ui| {
+            theme::apply(ui.ctx(), mode);
+            ui.allocate_ui(egui::vec2(240.0, 20.0), |ui| {
+                menu_separator(ui);
+            });
+        });
+    harness.run();
+    let fills: Vec<Color32> = painted(&harness, mode)
+        .into_iter()
+        .filter(|r| near(r.rect.height(), 1.0) && near(r.rect.width(), 240.0))
+        .map(|r| r.fill)
+        .collect();
+    assert_eq!(fills, vec![ink(sem.borders.divider_overlay)], "{fills:?}");
+    assert_ne!(fills[0], ink(sem.surfaces.overlay));
 }

@@ -160,6 +160,8 @@ fn tokens_css_carries_the_semantic_layer_in_both_modes() {
             "--m-border-subtle",
             "--m-border-control",
             "--m-border-focus",
+            "--m-border-divider",
+            "--m-border-divider-overlay",
             "--m-text-primary",
             "--m-text-on-solid",
             "--m-accent-bg",

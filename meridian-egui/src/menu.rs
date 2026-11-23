@@ -196,8 +196,10 @@ fn paint_item(ui: &mut egui::Ui, item: &MenuItem<'_>, lead: f32) {
     painter.galley(egui::pos2(left, top), galley, Color32::PLACEHOLDER);
 }
 
-/// The hairline between a menu's groups: a 1px `borders.divider` rule across the
-/// width `ui` has left, with `SPACE_2` above and below.
+/// The hairline between a menu's groups: a 1px `borders.divider_overlay` rule
+/// across the width `ui` has left, with `SPACE_2` above and below. The overlay
+/// variant because a menu sits on the overlay, where the plain divider vanishes
+/// in dark.
 pub fn menu_separator(ui: &mut egui::Ui) {
     let t = ui.tokens();
     let sem = semantic(ui.visuals().dark_mode);
@@ -214,7 +216,7 @@ pub fn menu_separator(ui: &mut egui::Ui) {
         ui.painter().rect_filled(
             rule,
             meridian_design::radius::NONE,
-            to_color32(sem.borders.divider),
+            to_color32(sem.borders.divider_overlay),
         );
     }
 }

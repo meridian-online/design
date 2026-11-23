@@ -237,6 +237,11 @@ fn semantic_block(css: &mut String, dark: bool) {
     decl(css, "border-control", &s.borders.control.hex());
     decl(css, "border-focus", &s.borders.focus.hex());
     decl(css, "border-divider", &s.borders.divider.hex());
+    decl(
+        css,
+        "border-divider-overlay",
+        &s.borders.divider_overlay.hex(),
+    );
 
     decl(css, "text-primary", &s.text.primary.hex());
     decl(css, "text-secondary", &s.text.secondary.hex());

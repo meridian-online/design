@@ -104,6 +104,7 @@
   --m-border-control: #8a847f;
   --m-border-focus: #4b7a9b;
   --m-border-divider: #ebeae9;
+  --m-border-divider-overlay: #ebeae9;
   --m-text-primary: #231f1c;
   --m-text-secondary: #605c58;
   --m-text-muted: #7f7a75;
@@ -479,6 +480,7 @@
   --m-border-control: #7e7a75;
   --m-border-focus: #8fc1e4;
   --m-border-divider: #232221;
+  --m-border-divider-overlay: #32302f;
   --m-text-primary: #efeeec;
   --m-text-secondary: #b7b2ae;
   --m-text-muted: #7e7a75;
