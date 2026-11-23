@@ -321,6 +321,18 @@ pub fn focus_ring(ui: &egui::Ui, rect: egui::Rect, control_radius: f32) {
     );
 }
 
+/// The focus ring with a corner of its own on each corner, for a control that
+/// is one part of a ruled box: only the box's outer corners round.
+pub(crate) fn focus_ring_corners(ui: &egui::Ui, rect: egui::Rect, corners: egui::CornerRadius) {
+    let colour = semantic(mode_of(ui).is_dark()).borders.focus;
+    ui.painter().rect_stroke(
+        rect,
+        corners,
+        egui::Stroke::new(focus::RING_WIDTH, to_color32(colour)),
+        StrokeKind::Inside,
+    );
+}
+
 /// Draw the focus ring around a widget iff it has keyboard focus — the call a
 /// widget adds after `interact`. Uses the control corner radius.
 pub fn focus_ring_for(ui: &egui::Ui, response: &Response) {
