@@ -142,13 +142,19 @@ impl ModalChrome {
 /// the rule and shadow are the *only* separation an overlay has from the plane
 /// below (the surfaces are deliberately equal), so both are always painted.
 fn card_frame(style: &egui::Style, tokens: &Tokens) -> egui::Frame {
+    overlay_surface(style, tokens)
+        .inner_margin(egui::Margin::same(tokens.modal_padding as i8))
+        .shadow(style.visuals.window_shadow)
+}
+
+/// The overlay card's surface, rule and corner with no padding and no shadow:
+/// what a modal card and a popover share, so the two cannot drift.
+pub(crate) fn overlay_surface(style: &egui::Style, tokens: &Tokens) -> egui::Frame {
     let sem = semantic(style.visuals.dark_mode);
     egui::Frame::new()
         .fill(to_color32(sem.surfaces.overlay))
         .stroke(egui::Stroke::new(1.0, to_color32(sem.borders.default_)))
         .corner_radius(tokens.radius_panel)
-        .inner_margin(egui::Margin::same(tokens.modal_padding as i8))
-        .shadow(style.visuals.window_shadow)
 }
 
 /// One keystroke affordance: keycap chip, then its verb in muted small ink.

@@ -52,6 +52,7 @@ pub mod list_row;
 pub mod notify;
 pub mod overlay;
 pub mod picker;
+pub mod popover;
 pub mod query;
 pub mod tabs;
 pub mod text_field;
@@ -64,6 +65,7 @@ pub use overlay::{overlay_frame, ModalChrome, ModalLayer, ModalLayerResponse, Mo
 pub use picker::{
     Picker, PickerDelegate, PickerEvent, PickerHint, PickerOutcome, PickerResponse, PickerRow,
 };
+pub use popover::{Anchor, Popover, PopoverResponse};
 pub use query::{query_line, QueryLineResponse, PROMPT_GLYPH};
 pub use tabs::{line_tabs, LineTabs, LineTabsResponse};
 pub use text_field::{text_field, TextField, TextFieldResponse};
