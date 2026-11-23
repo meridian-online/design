@@ -29,10 +29,12 @@
 //!
 //! The row's accessibility node is a `Row` named `"<name>, <state word>"`,
 //! selected while focused. The fold control is a `Button` named by the row's
-//! name, expanded while unfolded.
+//! name, expanded while unfolded. While it has keyboard focus it carries the
+//! focus ring at the chip radius, as a vertical tab's close control does.
 //!
 //! [`step_mark`] is the thin form: the mark alone in a `STEP_MARK_CELL` square,
-//! with the focused treatment and the hover fill.
+//! with the focused treatment and the hover fill, and a square focus ring on
+//! its cell while it has keyboard focus.
 //!
 //! Not drawn: the sheet's output, count and duration use tabular figures, but
 //! egui 0.35's `TextFormat` has no OpenType feature switch, so their digits
@@ -43,6 +45,7 @@ use egui::{Color32, FontId, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Vec2};
 use meridian_design::chrome::{INK_DARK, INK_LIGHT};
 // The fold chevron's size is not in `Tokens`, so it is read from `control`.
 use meridian_design::control::ICON_XS;
+use meridian_design::focus;
 use meridian_design::marks::{glyph, word, MarkShape};
 use meridian_design::typography::UI_SIZE;
 use meridian_design::viz::STATUS;
@@ -54,7 +57,7 @@ use crate::button::label_galley;
 use crate::icons::Icon;
 use crate::list_row::{list_row, paint_wash, ListRow, RowHeight};
 use crate::theme::to_color32;
-use crate::widgets::{cap_centred_galley_top, mode_of};
+use crate::widgets::{cap_centred_galley_top, focus_ring, focus_ring_corners, mode_of};
 use crate::{MeridianUi, Mode, Tokens};
 
 /// The graph edges at one row, by lane. Lane `0` is at the leading edge.
@@ -204,6 +207,7 @@ pub fn step_row(ui: &mut egui::Ui, row: StepRow<'_>) -> StepRowResponse {
     let cols = Columns::of(ui, rect, &row);
 
     let mut fold_clicked = false;
+    let mut fold_focus = None;
     if let (Some(fold), Some((left, right))) = (row.fold, cols.fold) {
         let fold_rect =
             Rect::from_x_y_ranges(left..=right.max(left), rect.y_range()).intersect(rect);
@@ -215,10 +219,17 @@ pub fn step_row(ui: &mut egui::Ui, row: StepRow<'_>) -> StepRowResponse {
             node.set_expanded(fold == Fold::Unfolded);
         });
         fold_clicked = fold_response.clicked();
+        fold_focus = fold_response.has_focus().then_some(fold_rect);
     }
 
     if ui.is_rect_visible(rect) {
         paint_row(ui, rect, &row, &cols);
+        // The chevron reads as a control, so its ring takes the chip's corner,
+        // as a vertical tab's close control does.
+        if let Some(fold_rect) = fold_focus {
+            let r = focus::ring_radius(ui.tokens().radius_chip).round() as u8;
+            focus_ring_corners(ui, fold_rect, egui::CornerRadius::same(r));
+        }
     }
 
     StepRowResponse {
@@ -230,8 +241,9 @@ pub fn step_row(ui: &mut egui::Ui, row: StepRow<'_>) -> StepRowResponse {
 
 /// The thin form: `mark` alone in a `STEP_MARK_CELL` square cell, in the
 /// selection wash with its rule while `focused`, and in the hover fill under the
-/// pointer otherwise. Its accessibility node is named by the state word and
-/// selected while focused.
+/// pointer otherwise. While it has keyboard focus its cell carries a square
+/// focus ring. Its accessibility node is named by the state word and selected
+/// while focused.
 pub fn step_mark(ui: &mut egui::Ui, mark: StepMark, focused: bool) -> egui::Response {
     let t = ui.tokens();
     let (rect, response) = ui.allocate_exact_size(Vec2::splat(t.step_mark_cell), Sense::click());
@@ -252,6 +264,9 @@ pub fn step_mark(ui: &mut egui::Ui, mark: StepMark, focused: bool) -> egui::Resp
             painter.rect_filled(rect, radius::NONE, to_color32(rows.hover_background));
         }
         paint_mark(painter, t, rect.center(), mark, mode);
+        if response.has_focus() {
+            focus_ring(ui, rect, radius::NONE);
+        }
     }
     response
 }

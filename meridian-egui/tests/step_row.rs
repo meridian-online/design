@@ -1160,3 +1160,72 @@ fn a_step_mark_s_node_is_selected_while_focused() {
         );
     }
 }
+
+// ─── keyboard focus ─────────────────────────────────────────────────────────
+
+/// The rects stroked in the focus ink.
+fn focus_rings(rects: &[Painted], mode: Mode) -> Vec<Painted> {
+    let focus = ink(semantic(mode.is_dark()).borders.focus);
+    rects
+        .iter()
+        .filter(|p| p.is_stroked() && p.stroke.color == focus)
+        .copied()
+        .collect()
+}
+
+#[test]
+fn a_fold_control_with_keyboard_focus_is_ringed_at_the_chip_corner_and_not_without() {
+    for mode in MODES {
+        for fold in [Fold::Unfolded, Fold::Folded { members: 3 }] {
+            let mut spec = Spec::new();
+            spec.fold = Some(fold);
+            let mut h = drawn(mode, spec);
+            assert!(
+                focus_rings(&painted(&h, mode), mode).is_empty(),
+                "{mode:?} {fold:?}: a ring without focus"
+            );
+
+            h.get_by_role_and_label(AccessRole::Button, NAME).focus();
+            h.run();
+            let row = row_rect(&h);
+            let fold_left = row.left() + gutter_width(2) + SPACE_3;
+            let fold_right = match fold {
+                Fold::Unfolded => fold_left + 12.0,
+                Fold::Folded { .. } => text(&h, "3").1.right(),
+            };
+            let rings = focus_rings(&painted(&h, mode), mode);
+            assert_eq!(rings.len(), 1, "{mode:?} {fold:?}: {rings:?}");
+            let ring = rings[0];
+            assert!(near(ring.rect.left(), fold_left), "{ring:?}");
+            assert!(near(ring.rect.right(), fold_right), "{ring:?}");
+            assert!(near(ring.rect.top(), row.top()), "{ring:?}");
+            assert!(near(ring.rect.bottom(), row.bottom()), "{ring:?}");
+            let r = meridian_design::focus::ring_radius(radius::CHIP).round() as u8;
+            assert_eq!(ring.radius, egui::CornerRadius::same(r));
+            assert_eq!(ring.stroke.width, meridian_design::focus::RING_WIDTH);
+            assert_eq!(ring.kind, StrokeKind::Inside);
+        }
+    }
+}
+
+#[test]
+fn a_step_mark_with_keyboard_focus_is_ringed_square_on_its_cell_and_not_without() {
+    for mode in MODES {
+        for focused in [false, true] {
+            let mut h = mark_drawn(mode, StepMark::Failed, focused);
+            let cell = h.state().rect.unwrap();
+            assert!(
+                focus_rings(&painted(&h, mode), mode).is_empty(),
+                "{mode:?} focused {focused}: a ring without keyboard focus"
+            );
+
+            h.get_by_label(word(StepMark::Failed)).focus();
+            h.run();
+            let rings = focus_rings(&painted(&h, mode), mode);
+            assert_eq!(rings.len(), 1, "{mode:?} focused {focused}: {rings:?}");
+            assert!(near_rect(rings[0].rect, cell), "{:?} {cell:?}", rings[0]);
+            assert_eq!(rings[0].radius, egui::CornerRadius::ZERO);
+            assert_eq!(rings[0].stroke.width, meridian_design::focus::RING_WIDTH);
+        }
+    }
+}
