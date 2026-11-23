@@ -32,7 +32,7 @@ The Masonry/Xilem watch is **retired** (ADR 0003 update, 2026-07-20): Brightfiel
 
 ## Phase 6 — Desktop components ✅
 
-Brightfield's move off GPUI left no host widget library to defer to, so a capped set of egui primitives and the egui adapter landed here as a second crate, `meridian-egui`, alongside the geometry/state token layer they consume (ADR 0011). The token crate's contract is unchanged.
+Brightfield's move off GPUI left no host widget library to defer to, so an inventoried set of egui components (`meridian-egui/INVENTORY.md`) and the egui adapter landed here as a second crate, `meridian-egui`, alongside the geometry/state token layer they consume (ADR 0011). The token crate's contract is unchanged.
 
 With the desktop app on egui, the gpui-component `ThemeConfig` emitter that Phase 4 introduced has been **retired** — it had no remaining consumer once the shell cut over. `tokens.css` for the web is the crate's only *consumer* artefact (pinned by `tests/conformance.rs`); the desktop is themed through `meridian-egui`. A second emitter has since joined it with no consumer at all: `reference/tokens.md`, the browsable sheet, generated from `tokens.css` rather than from the token modules so the two cannot disagree.
 

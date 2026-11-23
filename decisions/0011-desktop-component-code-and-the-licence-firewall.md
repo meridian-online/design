@@ -1,7 +1,7 @@
 ---
 status: accepted
 date-created: 2026-07-20
-date-modified: 2026-07-20
+date-modified: 2026-11-23
 ---
 # 0011. Desktop component code lives here; the licence firewall holds
 
@@ -65,3 +65,30 @@ Anything that is **pure data**, or that the web `tokens.css` emitter needs, live
 - Good, because the boundary is enforced by the build rather than by review attention.
 - Neutral, because this repo comes to ship two crates rather than one, and the release ritual, CI matrix and README have to account for both.
 - Bad, because a component layer is a standing maintenance cost that ADR 0002 was right to fear. The cap is the whole answer to that, and it only works if it is enforced against a proposal someone wants.
+
+### Update (2026-11-22 — the cap becomes an inventory)
+
+The cap counted components and could not say which ones existed or why. A reviewed list can, so the cap is replaced by one.
+
+**Narrows:** "Cap: 15 primitives" is removed. There is no number.
+
+**Still stands:**
+
+- The two doors: three independent call sites, or a named product requirement that provably cannot be composed from existing components.
+- A component that needs a third variant parameter was the wrong abstraction: it is inlined back to its call sites and deleted in the same pull request that finds the third.
+- The licence firewall and the crate-boundary test, untouched.
+
+**Added:**
+
+- A component admitted by a product requirement is a general shape, named for what it is, not for the one surface that asked for it.
+- `meridian-egui/INVENTORY.md` lists every component and every composed piece, one row each, with its door and its call sites or its requirement. A test fails when the crate's public surface and the inventory disagree in either direction, so a public item cannot arrive or leave without its row.
+
+**Defined:** a variant parameter is an argument that selects among looks of one component, such as a weight or a rung. Content (an icon, a keycap, a count) and state (unavailable, selected, open) are not variants. By that reading `button` has two, its weight and its rung, and no component here has three.
+
+The inventory has three kinds of row, so that the test covers the crate's whole public surface:
+
+- **component**: its door, and its call sites or its requirement in plain words. The components that existed before the inventory are entered as admitted under this ADR, each with the Brightfield surfaces that call it.
+- **composition**: what it is composed from.
+- **helper**: a public function or type that draws no component of its own, such as `focus_ring`, `slider_colours`, `align_scope`, `tooltip_for_action`, `optically_centred_galley_top` and `overlay_frame`.
+
+ADR 0002's update mentions "a capped set of ~15 primitives"; it is left as written, and this update governs.
