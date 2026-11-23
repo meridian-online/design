@@ -394,6 +394,40 @@ pub fn slider_colours(mode: Mode) -> SliderColours {
     }
 }
 
+/// The side an open cell opens onto: the one its rule does not run along.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum OpenSide {
+    /// The cell joins what lies below it (a ribbon tab).
+    Bottom,
+    /// The cell joins what lies beyond its trailing edge (a vertical tab).
+    Trailing,
+}
+
+/// An open cell: `fill`, and a 1px `rule` along the sides but `open`. The rule
+/// box is drawn one pixel past the open side, so that run falls outside
+/// `painter`'s clip, which the caller sets to end at the cell's open side.
+pub(crate) fn paint_open_cell(
+    painter: &egui::Painter,
+    cell: egui::Rect,
+    corners: egui::CornerRadius,
+    fill: egui::Color32,
+    rule: egui::Color32,
+    open: OpenSide,
+) {
+    painter.rect_filled(cell, corners, fill);
+    let mut ruled = cell;
+    match open {
+        OpenSide::Bottom => ruled.max.y += 1.0,
+        OpenSide::Trailing => ruled.max.x += 1.0,
+    }
+    painter.rect_stroke(
+        ruled,
+        corners,
+        egui::Stroke::new(1.0, rule),
+        StrokeKind::Inside,
+    );
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -428,38 +462,4 @@ mod tests {
             });
         }
     }
-}
-
-/// The side an open cell opens onto: the one its rule does not run along.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum OpenSide {
-    /// The cell joins what lies below it (a ribbon tab).
-    Bottom,
-    /// The cell joins what lies beyond its trailing edge (a vertical tab).
-    Trailing,
-}
-
-/// An open cell: `fill`, and a 1px `rule` along the sides but `open`. The rule
-/// box is drawn one pixel past the open side, so that run falls outside
-/// `painter`'s clip, which the caller sets to end at the cell's open side.
-pub(crate) fn paint_open_cell(
-    painter: &egui::Painter,
-    cell: egui::Rect,
-    corners: egui::CornerRadius,
-    fill: egui::Color32,
-    rule: egui::Color32,
-    open: OpenSide,
-) {
-    painter.rect_filled(cell, corners, fill);
-    let mut ruled = cell;
-    match open {
-        OpenSide::Bottom => ruled.max.y += 1.0,
-        OpenSide::Trailing => ruled.max.x += 1.0,
-    }
-    painter.rect_stroke(
-        ruled,
-        corners,
-        egui::Stroke::new(1.0, rule),
-        StrokeKind::Inside,
-    );
 }

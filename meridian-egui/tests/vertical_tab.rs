@@ -761,3 +761,34 @@ fn the_cell_reaches_past_the_edge_when_the_parent_clip_ends_at_the_row() {
         );
     }
 }
+
+#[test]
+fn a_close_control_that_took_focus_from_a_non_current_tab_stays_shown_and_closes() {
+    for mode in MODES {
+        let sem = semantic(mode.is_dark());
+        let mut h = drawn(mode, Spec::new());
+        h.get_by_role_and_label(AccessRole::Tab, LABEL).focus();
+        h.run();
+        // Focus moves from the row to the close control, which leaves the row
+        // unfocused with the pointer nowhere near.
+        h.get_by_role_and_label(AccessRole::Button, "Close").focus();
+        h.run();
+        for _ in 0..3 {
+            h.run();
+        }
+        let close = h.get_by_role_and_label(AccessRole::Button, "Close");
+        assert!(close.accesskit_node().is_focused(), "{mode:?}");
+        let area = close_rect(row_rect(&h));
+        let rects = painted(&h, mode);
+        let rings: Vec<_> = rects
+            .iter()
+            .filter(|p| p.stroke.color == ink(sem.borders.focus))
+            .collect();
+        assert_eq!(rings.len(), 1, "{mode:?}: {rects:?}");
+        assert!(near_rect(rings[0].rect, area));
+        assert!(!glyph_in(&h, area).is_empty());
+        press(&mut h, egui::Key::Enter);
+        assert!(h.state().close_clicked, "{mode:?}");
+        assert!(!h.state().clicked, "{mode:?}");
+    }
+}

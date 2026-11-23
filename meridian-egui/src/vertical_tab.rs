@@ -7,8 +7,10 @@
 //! rest and the primary one under the pointer. A dot (`DOT` across, secondary)
 //! stands before the close control while the place holds an unsaved draft. The
 //! close control is an 18 square holding a 12 "x" in the muted ink; it is drawn
-//! only under the pointer or on the current place, and takes the active wash and
-//! the primary ink when the pointer is on it.
+//! only under the pointer, on the current place, or while the row or the control
+//! has keyboard focus (so a keyboard or screen-reader user can close any place),
+//! and takes the active wash and the primary ink when the pointer is on it or it
+//! has focus, with a focus ring at the chip radius while it has focus.
 //!
 //! The current place is a cell joined to the canvas: the raised surface with a
 //! 1px rule on its top, bottom and leading side, the leading corners at the
