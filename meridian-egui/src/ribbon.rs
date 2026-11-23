@@ -42,7 +42,9 @@ use meridian_design::{semantic, Role};
 use crate::button::{button_size, mark_unavailable, paint_button, Button, ButtonPaint, Weight};
 use crate::key_chip::{key_size, paint_key, KeyInk, KeySize};
 use crate::theme::to_color32;
-use crate::widgets::{focus_ring_corners, medium_family, optically_centred_galley_top};
+use crate::widgets::{
+    focus_ring_corners, medium_family, optically_centred_galley_top, paint_open_cell, OpenSide,
+};
 use crate::MeridianUi;
 
 /// One tab: a label and, optionally, the keystroke that opens it.
@@ -311,15 +313,16 @@ fn paint(
         let rect = cell.rect;
         let pressed = r.is_pointer_button_down_on();
         if cell.open {
-            painter.rect_filled(rect, top_corners(corner), c(sem.surfaces.raised));
             // The rule on the top and sides only: the box is drawn one pixel
             // taller than the cell, so its bottom run falls under the strip's
             // clip.
-            painter.rect_stroke(
-                Rect::from_min_max(rect.min, egui::pos2(rect.right(), rect.bottom() + 1.0)),
+            paint_open_cell(
+                &painter,
+                rect,
                 top_corners(corner),
-                egui::Stroke::new(1.0, c(sem.borders.subtle)),
-                egui::StrokeKind::Inside,
+                c(sem.surfaces.raised),
+                c(sem.borders.subtle),
+                OpenSide::Bottom,
             );
             if cell.contextual {
                 let top = rect.top() + 1.0;

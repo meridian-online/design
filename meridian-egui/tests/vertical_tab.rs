@@ -641,3 +641,123 @@ fn an_empty_activity_shows_the_node_alone() {
     assert_eq!(t.sections.len(), 1);
     let _ = h.get_by_role_and_label(AccessRole::Tab, NODE);
 }
+
+// ─── keyboard, assistive technology and clipping ───────────────────────────
+
+fn focus_close(h: &mut Harness<'_, Out>) {
+    h.get_by_role_and_label(AccessRole::Button, "Close").focus();
+    h.run();
+}
+
+fn press(h: &mut Harness<'_, Out>, key: egui::Key) {
+    for pressed in [true, false] {
+        h.event(egui::Event::Key {
+            key,
+            physical_key: Some(key),
+            pressed,
+            repeat: false,
+            modifiers: egui::Modifiers::NONE,
+        });
+        h.run();
+    }
+}
+
+#[test]
+fn a_tab_row_is_focusable() {
+    let h = drawn(Mode::Light, Spec::new());
+    h.get_by_role_and_label(AccessRole::Tab, LABEL).focus();
+}
+
+#[test]
+fn a_non_current_tab_with_keyboard_focus_exposes_close_and_draws_the_x() {
+    for mode in MODES {
+        let (_, h) = frame(mode, Spec::new(), Interact::Focus);
+        let _ = h.get_by_role_and_label(AccessRole::Button, "Close");
+        let area = close_rect(row_rect(&h));
+        assert!(!glyph_in(&h, area).is_empty(), "{mode:?}");
+    }
+}
+
+#[test]
+fn enter_and_space_on_a_focused_tab_click_it_and_do_not_close() {
+    for key in [egui::Key::Enter, egui::Key::Space] {
+        let mut h = drawn(Mode::Light, Spec::new());
+        h.get_by_role_and_label(AccessRole::Tab, LABEL).focus();
+        h.run();
+        press(&mut h, key);
+        assert!(h.state().clicked, "{key:?}");
+        assert!(!h.state().close_clicked, "{key:?}");
+    }
+}
+
+#[test]
+fn an_accessibility_click_on_close_closes_and_does_not_click_the_tab() {
+    let mut h = drawn(Mode::Light, Spec::new().current());
+    h.get_by_role_and_label(AccessRole::Button, "Close").click();
+    h.run();
+    assert!(h.state().close_clicked);
+    assert!(!h.state().clicked);
+}
+
+#[test]
+fn a_focused_close_control_takes_the_wash_the_primary_ink_and_a_ring() {
+    for mode in MODES {
+        let sem = semantic(mode.is_dark());
+        let neutral = sem.role(Role::Neutral);
+        let mut h = drawn(mode, Spec::new().current());
+        focus_close(&mut h);
+        let area = close_rect(row_rect(&h));
+        let rects = painted(&h, mode);
+        let ring = rects
+            .iter()
+            .find(|p| p.stroke.color == ink(sem.borders.focus))
+            .unwrap_or_else(|| panic!("{mode:?}: no ring in {rects:?}"));
+        assert!(near_rect(ring.rect, area), "{ring:?}");
+        let r = meridian_design::focus::ring_radius(CHIP).round() as u8;
+        assert_eq!(ring.radius, CornerRadius::same(r));
+        assert_eq!(filled(&rects, ink(neutral.background.active)).len(), 1);
+        for (_, c) in glyph_in(&h, area) {
+            assert_eq!(c, ink(sem.text.primary), "{mode:?}");
+        }
+        // The row itself is not ringed.
+        assert_eq!(
+            rects
+                .iter()
+                .filter(|p| p.stroke.color == ink(sem.borders.focus))
+                .count(),
+            1
+        );
+    }
+}
+
+#[test]
+fn the_cell_reaches_past_the_edge_when_the_parent_clip_ends_at_the_row() {
+    for mode in MODES {
+        let sem = semantic(mode.is_dark());
+        let mut h = Harness::builder()
+            .with_size(egui::vec2(WIDTH + 40.0, 80.0))
+            .build_ui_state(
+                move |ui, out: &mut Out| {
+                    theme::apply(ui.ctx(), mode);
+                    ui.allocate_ui(egui::vec2(WIDTH, 40.0), |ui| {
+                        let mut clip = ui.clip_rect();
+                        clip.max.x = ui.max_rect().right();
+                        ui.set_clip_rect(clip);
+                        let r = vertical_tab(ui, VerticalTab::new(NODE, ACTIVITY).current(true));
+                        out.rect = Some(r.response.rect);
+                    });
+                },
+                Out::default(),
+            );
+        h.run();
+        let row = row_rect(&h);
+        let fills = filled(&painted(&h, mode), ink(sem.surfaces.raised));
+        assert_eq!(fills.len(), 1, "{mode:?}");
+        assert!(near(fills[0].rect.right(), row.right() + 1.0));
+        assert!(
+            fills[0].clip.right() >= row.right() + 1.0 - 0.01,
+            "{mode:?}: {:?}",
+            fills[0]
+        );
+    }
+}

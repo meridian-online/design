@@ -30,7 +30,9 @@ use meridian_design::{semantic, Role};
 
 use crate::icons::Icon;
 use crate::theme::to_color32;
-use crate::widgets::{focus_ring_corners, medium_family, optically_centred_galley_top};
+use crate::widgets::{
+    focus_ring_corners, medium_family, optically_centred_galley_top, paint_open_cell, OpenSide,
+};
 use crate::MeridianUi;
 
 /// One open place: the node it shows and the activity it is in.
@@ -112,21 +114,26 @@ pub fn vertical_tab(ui: &mut egui::Ui, tab: VerticalTab<'_>) -> VerticalTabRespo
     });
 
     // The control is shown, and takes the pointer, only under the pointer or
-    // on the current place. What is hidden is not sensed, so a click on its
-    // place goes to the row.
+    // on the current place, and while the row or the control has keyboard
+    // focus, so that a keyboard or screen-reader user can close any place.
+    // What is hidden is not sensed, so a click on its place goes to the row.
     let hovered = response.contains_pointer();
-    let close_shown = hovered || tab.current;
+    let close_id = response.id.with("close");
+    let close_focused = row.memory(|m| m.has_focus(close_id));
+    let close_shown = hovered || tab.current || response.has_focus() || close_focused;
     let close_rect = Rect::from_center_size(
         egui::pos2(rect.right() - t.space[2] - HEIGHT_XS / 2.0, rect.center().y),
         Vec2::splat(HEIGHT_XS),
     );
     let mut close_clicked = false;
     let mut close_hovered = false;
+    let mut close_focus_ring = false;
     if close_shown {
-        let close = row.interact(close_rect, response.id.with("close"), Sense::click());
+        let close = row.interact(close_rect, close_id, Sense::click());
         close.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, "Close"));
         close_clicked = close.clicked();
-        close_hovered = close.hovered();
+        close_hovered = close.hovered() || close.has_focus();
+        close_focus_ring = close.has_focus();
     }
 
     if row.is_rect_visible(rect) {
@@ -139,6 +146,7 @@ pub fn vertical_tab(ui: &mut egui::Ui, tab: VerticalTab<'_>) -> VerticalTabRespo
                 focused: response.has_focus(),
                 close_shown,
                 close_hovered,
+                close_focus_ring,
                 close_rect,
             },
         );
@@ -156,6 +164,7 @@ struct Paint {
     focused: bool,
     close_shown: bool,
     close_hovered: bool,
+    close_focus_ring: bool,
     close_rect: Rect,
 }
 
@@ -174,14 +183,22 @@ fn paint(ui: &egui::Ui, rect: Rect, tab: &VerticalTab<'_>, p: &Paint) {
         // pixel further on the trailing side and clipped away, leaving the
         // top, bottom and leading runs.
         let cell = Rect::from_min_max(rect.min, egui::pos2(rect.right() + 1.0, rect.bottom()));
-        let painter = ui.painter().with_clip_rect(cell);
-        let corners = leading_corners(corner);
-        painter.rect_filled(cell, corners, c(sem.surfaces.raised));
-        painter.rect_stroke(
-            Rect::from_min_max(cell.min, egui::pos2(cell.right() + 1.0, cell.bottom())),
-            corners,
-            egui::Stroke::new(1.0, c(sem.borders.subtle)),
-            egui::StrokeKind::Inside,
+        // A clip that ends at the row (a scroll area, a side panel) would cut
+        // the cell's extra column: widen the parent's clip by that column and
+        // no more, and hold the cell to it.
+        let mut painter = ui.painter().clone();
+        let parent = painter.clip_rect();
+        painter.set_clip_rect(
+            Rect::from_min_max(parent.min, egui::pos2(parent.max.x + 1.0, parent.max.y))
+                .intersect(cell),
+        );
+        paint_open_cell(
+            &painter,
+            cell,
+            leading_corners(corner),
+            c(sem.surfaces.raised),
+            c(sem.borders.subtle),
+            OpenSide::Trailing,
         );
     } else if p.hovered {
         ui.painter()
@@ -252,6 +269,10 @@ fn paint(ui: &egui::Ui, rect: Rect, tab: &VerticalTab<'_>, p: &Paint) {
     let top = optically_centred_galley_top(&galley, centre_y);
     painter.galley(egui::pos2(left, top), galley, Color32::PLACEHOLDER);
 
+    if p.close_focus_ring {
+        let r = focus::ring_radius(t.radius_chip).round() as u8;
+        focus_ring_corners(ui, p.close_rect, CornerRadius::same(r));
+    }
     if p.focused {
         let ring = if tab.current {
             leading_corners(focus::ring_radius(t.radius_control).round() as u8)
