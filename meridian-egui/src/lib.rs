@@ -62,6 +62,7 @@ pub mod segmented;
 pub mod step_row;
 pub mod tabs;
 pub mod text_field;
+pub mod vertical_tab;
 
 pub use button::{button, Button, ButtonResponse, Weight};
 pub use distribution::{distribution_bar, Bars, DistributionBar, DistributionResponse};
@@ -86,3 +87,4 @@ pub use step_row::{
 };
 pub use tabs::{line_tabs, LineTabs, LineTabsResponse};
 pub use text_field::{text_field, TextField, TextFieldResponse};
+pub use vertical_tab::{vertical_tab, VerticalTab, VerticalTabResponse};
