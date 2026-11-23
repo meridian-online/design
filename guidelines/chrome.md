@@ -15,6 +15,7 @@ The chrome takes a small corner, and rules and bars still do the work of a wash 
 - **Tabs are line tabs.** Words in a row over one rule, and a 2px bar (`--m-tab-bar-width`) in `--m-tabs-active-bar` under the open one.
 - **A bar's ink is the focus ink unless the caller passes one.** The row and the tab strip each take the bar's ink from the caller.
 - **A field is a sunken fill over a 1px rule.** While it has the keys, the rule is 2px in the focus ink.
+- **Labels in a row share one baseline.** Place text with its face's cap height centred on the band, so "Log" sits level with "Rows"; centring each word on its own ink lifts a word with a descender. Only a keystroke alone in its keycap is centred on its own glyphs (`cap_centred_galley_top`, `optically_centred_galley_top`).
 - **A card on the plane casts nothing.** A hairline separates it (`elevation.rs`).
 - **A card that floats casts a hard shadow.** A 1px rule and a shadow with no blur: an overlay's offset 3 by 3 (`--m-shadow-overlay`), a modal's 6 by 6 and darker (`--m-shadow-modal`). Only overlays and modals cast.
 

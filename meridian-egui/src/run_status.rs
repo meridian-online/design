@@ -19,8 +19,8 @@
 //! it takes the neutral hover fill at the control corner, and with keyboard
 //! focus the ring at the same corner. Its accessibility node is a `Status`
 //! named by its words and the mark's state word, holding a `ProgressIndicator`
-//! child while running (accesskit's name for what the spec calls a
-//! `ProgressBar`).
+//! child while running (accesskit's name for what ARIA calls a
+//! progress bar).
 //!
 //! [`teaching_message`] is the one piece of copy a component owns: the command
 //! in primary, `" · next time, press"` in secondary, `SPACE_3`, and the

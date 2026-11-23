@@ -65,6 +65,39 @@ Rules:
 
 Run the crate's gates from `meridian-design/`: `cargo build` and `cargo test`.
 
+## Components
+
+`meridian-egui` draws twelve components and four compositions that Brightfield's chrome is assembled from, so that each shape is drawn by one function, its look is decided once, and a change to it is one edit here and a version bump in the consumer. The owner ruled that the components come first and the chrome is assembled from them, because the last time an application drew its own chrome it grew a private palette, five focus treatments and four copies of one modal (ADR 0011).
+
+- **Components:** `button`, `text_field`, `Popover`, `menu_item`, `segmented`, `section`, `distribution_bar`, `ribbon_tabs`, `ribbon_row`, `step_row`, `vertical_tab`, `run_status`. Named for what they are, not where Brightfield puts them: `segmented`, not an activity switcher.
+- **Compositions:** `key_tip`, `step_mark`, `teaching_message`, `menu_separator`, and `PickerRow::unavailable`. A menu is a `Popover` of `menu_item`s; there is no menu component.
+- **Left out until a surface asks:** stat tiles, an object header, a hover card. Checkbox, radio, combo box and date picker stay egui's own, themed by `theme::apply`. The data grid stays in Brightfield; web takes token values only.
+
+**`components/sheet.html` is the look's reference.** It draws every component in every state in both themes, reads `tokens.css` alone, and keeps the lettered candidates the owner ruled between. Where code and sheet disagree about a look, the sheet is right, and a change of look is made on the sheet first. `cargo run --example gallery -p meridian-egui` draws the components in the sheet's order for comparing the two.
+
+How each component is built:
+
+- A free function taking a builder config and returning a response that carries `egui::Response` and what was acted on; a floating layer is a struct with `show`, as `ModalLayer` is. The caller holds every state (open, selected, cursor, whether a popover is up); a component holds nothing between frames, and every state appears on the next frame.
+- No component takes a colour, width, height or radius. A rung (`.dense()`) and a bar's ink are the only exceptions. Text is the caller's; the one phrase a component owns is `teaching_message`'s "next time, press".
+- An unavailable button, segmented option or ribbon command is disabled: it takes no keyboard focus, senses hover, reports no click, reports its rect so the caller can anchor the reason popover, and carries its reason as its accesskit description. An unavailable menu item or picker row still takes the cursor, because a list is walked with the keys.
+- Tests read the paint list and accesskit nodes (`tests/common/mod.rs`). There are no image goldens.
+- Every public item has a row in `meridian-egui/INVENTORY.md` with its door, and `tests/inventory.rs` fails when the crate and the list disagree. ADR 0011's figure of 15 was removed because it was a forecast made before the chrome existed, and a figure revised the first time a real requirement meets it limits nothing. Both doors stand (three independent call sites, or a named product requirement that cannot be composed), and one admitted by a requirement must be a general shape under a general name. A third variant parameter still means the component is inlined back and deleted.
+
+The rulings behind the look, with their reasons:
+
+- **Corners are 2 for chips, 3 for controls and 3 for cards** (ADR 0013's update), the amounts MotherDuck's app measures. The owner relaxed the square chrome after looking closely at Palantir's Quiver. Rows and their fills, bars, rules, data marks and edge-to-edge bands stay square; joined cells round only their outer corners.
+- **The keycap has two sizes.** 21 in a row; 16 inside a control, 4 from its top, bottom and trailing edge, because the 21 cap ran through a 24 control's 2px-inset focus ring. 16 rather than the first candidate's 17 makes the inset even on all three sides.
+- **On a solid accent fill**, the keycap's rule is the on-solid ink at 70% and its foot at full strength, so both clear 3:1 against every accent state in both modes.
+- **Every state mark clears 3:1 on every row ground in both modes.** A mark below it moves the smallest step along its own scale: light not-run takes grey step 10, light stale amber step 11, dark failed red step 11. `tests/chrome_gate.rs` holds it. This keeps status as chrome ink separate from status as chart ink.
+- **A text field with an error** shows a 2px danger foot at rest, and while it has the keys the same danger ink closes into a 2px ring on all four sides. Focus blue and danger red on one field contradicted each other.
+- **A vertical tab's close control** shows under the pointer, on the current place, and while the tab or the control has keyboard focus, so a keyboard or screen-reader user can close any place.
+- **Labels in a row share one baseline.** Text is placed with the face's cap height centred on its band (`cap_centred_galley_top`), so a word with a descender sits level with one without; a row of line tabs showed the step when each word was centred on its own ink. Per-glyph centring stays only for a keystroke alone in its keycap.
+- **Calls made on the owner's behalf**, shown on the sheet and not objected to: the contextual ribbon tab takes the Maritime wash; a key tip sits at its target's trailing bottom corner and may cover a neighbour; the state mark sits on its lane in the graph gutter, as MotherDuck's Flight Explainer draws it; state marks carry an ink per state as well as a shape, so shape alone still tells them apart; a text field draws its own message line and leaves its label to the caller's form; the query line stays square.
+- **Taken during the build**, each undoable: an unavailable primary button dims its icon with its label; a press on one popover never dismisses another, Esc closes only the topmost, and a reason popover takes no input; a segmented control too narrow for its labels shrinks the longest first and clips to its room; ribbon tabs are their label plus 12 each side; a pressed contextual tab shows the pressed fill over its tint; key tips are drawn only for targets wholly on screen; the run status bar stays square; rules are 1px (`control::HAIRLINE`, `--m-hairline`).
+- **A divider on an overlay has its own ink** (`borders.divider_overlay`, `--m-border-divider-overlay`). In dark mode the overlay surface sits on the divider's own grey step, so a menu's separator vanished; dark takes grey step 5, light keeps the divider. `tests/chrome_gate.rs` holds it to the divider's contrast on the raised plane, where the gridline was approved.
+- **Where the gallery differs from the sheet, and why it stands:** ribbon key tips replace each command's keycap in place, and nothing moves, so the target stays where the eye is (the sheet closes the row up; open for the owner); a reason popover's wrapped lines are about 4px tighter, egui's line height against the page's; picker rows keep the settled picker's 4px gap.
+- **Known limit:** counts do not use tabular figures, because egui 0.35 has no switch for OpenType features.
+
 ## ADR conventions
 
 - Numbered `NNNN-kebab-title.md`, sequential, never renumbered. Frontmatter: `status` (`proposed` | `accepted` | `superseded`), `date-created`, `date-modified`. Body follows `_template.md`: context → considered options → decision outcome → consequences.

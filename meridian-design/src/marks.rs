@@ -29,7 +29,7 @@ pub enum StepMark {
     Stale,
 }
 
-/// Every state, in the order the spec lists them.
+/// Every state, in the order [`StepMark`] declares them.
 pub const STEP_MARKS: [StepMark; 5] = [
     StepMark::NotRun,
     StepMark::Running,
