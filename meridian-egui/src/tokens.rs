@@ -14,7 +14,7 @@
 //! straight from a `meridian-design` constant, never a literal, so the two
 //! cannot drift.
 
-use meridian_design::{control, radius, spacing};
+use meridian_design::{control, radius, spacing, typography};
 
 /// The Meridian box-model tokens a UI surface reaches for, in logical pixels.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -53,6 +53,40 @@ pub struct Tokens {
     pub modal_width_narrow: f32,
     /// Modal card width — the default rung (forms, pickers, detail cards).
     pub modal_width_default: f32,
+    /// Popover width.
+    pub popover_width: f32,
+    /// Height of a band: a section header or column-header strip.
+    pub band_height: f32,
+
+    /// Height of a keycap standing alone.
+    pub keycap_height: f32,
+    /// Height of a keycap inside a control.
+    pub keycap_height_in_control: f32,
+    /// Gap between a keycap inside a control and the control's edge.
+    pub keycap_inset_in_control: f32,
+    /// Width of the gutter lane at a row's leading edge.
+    pub gutter_lane: f32,
+    /// The cell a step mark sits in.
+    pub step_mark_cell: f32,
+    /// The drawn size of a step mark.
+    pub step_mark: f32,
+    /// Line weight of an outlined step mark.
+    pub step_mark_stroke: f32,
+    /// Width of the timeline column in a step row.
+    pub timeline_width: f32,
+    /// Height of a bar in the timeline column.
+    pub timeline_bar_height: f32,
+    /// Width of the duration column in a step row.
+    pub duration_width: f32,
+    /// Diameter of a status dot.
+    pub dot: f32,
+
+    /// Size of a section label.
+    pub label_size: f32,
+    /// Letter-spacing of a section label, in em.
+    pub label_tracking_em: f32,
+    /// Whether a section label is set in capitals.
+    pub label_uppercase: bool,
 }
 
 /// The single shared token instance. Every field is a `meridian-design`
@@ -82,6 +116,24 @@ pub static TOKENS: Tokens = Tokens {
 
     modal_width_narrow: spacing::MODAL_WIDTH_NARROW,
     modal_width_default: spacing::MODAL_WIDTH_DEFAULT,
+    popover_width: spacing::POPOVER_WIDTH,
+    band_height: spacing::BAND_HEIGHT,
+
+    keycap_height: control::KEYCAP_HEIGHT,
+    keycap_height_in_control: control::KEYCAP_HEIGHT_IN_CONTROL,
+    keycap_inset_in_control: control::KEYCAP_INSET_IN_CONTROL,
+    gutter_lane: control::GUTTER_LANE,
+    step_mark_cell: control::STEP_MARK_CELL,
+    step_mark: control::STEP_MARK,
+    step_mark_stroke: control::STEP_MARK_STROKE,
+    timeline_width: control::TIMELINE_WIDTH,
+    timeline_bar_height: control::TIMELINE_BAR_HEIGHT,
+    duration_width: control::DURATION_WIDTH,
+    dot: control::DOT,
+
+    label_size: typography::LABEL_SIZE,
+    label_tracking_em: typography::LABEL_TRACKING_EM,
+    label_uppercase: typography::LABEL_UPPERCASE,
 };
 
 impl Tokens {
@@ -110,6 +162,14 @@ mod tests {
         assert_eq!(TOKENS.radius_control, radius::CONTROL);
         assert_eq!(TOKENS.radius_panel, radius::PANEL);
         assert_eq!(TOKENS.modal_width_default, spacing::MODAL_WIDTH_DEFAULT);
+        assert_eq!(TOKENS.band_height, spacing::BAND_HEIGHT);
+        assert_eq!(TOKENS.popover_width, spacing::POPOVER_WIDTH);
+        assert_eq!(TOKENS.keycap_height, control::KEYCAP_HEIGHT);
+        assert_eq!(TOKENS.step_mark_stroke, control::STEP_MARK_STROKE);
+        assert_eq!(TOKENS.dot, control::DOT);
+        assert_eq!(TOKENS.label_size, typography::LABEL_SIZE);
+        assert_eq!(TOKENS.label_tracking_em, typography::LABEL_TRACKING_EM);
+        assert_eq!(TOKENS.label_uppercase, typography::LABEL_UPPERCASE);
     }
 
     #[test]

@@ -301,6 +301,8 @@ Stated once, in logical pixels, and mode-invariant throughout. The spacing ladde
 | `--m-modal-padding` | `16px` |
 | `--m-modal-width-narrow` | `480px` |
 | `--m-modal-width-default` | `560px` |
+| `--m-popover-width` | `240px` |
+| `--m-band-height` | `32px` |
 | `--m-row-dense` | `20px` |
 | `--m-row-grid` | `24px` |
 | `--m-row-preview` | `36px` |
@@ -322,6 +324,17 @@ Stated once, in logical pixels, and mode-invariant throughout. The spacing ladde
 | `--m-row-bar-width` | `3px` |
 | `--m-tab-bar-width` | `2px` |
 | `--m-keycap-foot-width` | `2px` |
+| `--m-keycap-height` | `21px` |
+| `--m-keycap-height-in-control` | `16px` |
+| `--m-keycap-inset-in-control` | `4px` |
+| `--m-gutter-lane` | `12px` |
+| `--m-step-mark-cell` | `24px` |
+| `--m-step-mark` | `7px` |
+| `--m-step-mark-stroke` | `1.5px` |
+| `--m-timeline-width` | `72px` |
+| `--m-timeline-bar-height` | `12px` |
+| `--m-duration-width` | `40px` |
+| `--m-dot` | `6px` |
 
 ## Type and motion
 
@@ -333,6 +346,8 @@ Two faces and two sizes: this is a dense data system, not a marketing site, and 
 | `--m-font-mono` | `"JetBrains Mono"` |
 | `--m-font-size-ui` | `12px` |
 | `--m-font-size-chart` | `11px` |
+| `--m-label-size` | `11px` |
+| `--m-label-tracking` | `0.06em` |
 | `--m-motion-spatial` | `150ms` |
 | `--m-motion-animation-time` | `0.12s` |
 

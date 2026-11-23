@@ -119,12 +119,16 @@ fn geometry(css: &mut String) {
     use crate::motion;
     use crate::radius;
     use crate::spacing::*;
-    use crate::typography::{CHART_LABEL_SIZE, MONO_FAMILY, SANS_FAMILY, UI_SIZE};
+    use crate::typography::{
+        CHART_LABEL_SIZE, LABEL_SIZE, LABEL_TRACKING_EM, MONO_FAMILY, SANS_FAMILY, UI_SIZE,
+    };
 
     decl(css, "font-sans", &format!("\"{SANS_FAMILY}\""));
     decl(css, "font-mono", &format!("\"{MONO_FAMILY}\""));
     decl(css, "font-size-ui", &px(UI_SIZE));
     decl(css, "font-size-chart", &px(CHART_LABEL_SIZE));
+    decl(css, "label-size", &px(LABEL_SIZE));
+    decl(css, "label-tracking", &format!("{LABEL_TRACKING_EM}em"));
 
     decl(css, "radius-none", &px(radius::NONE));
     decl(css, "radius-chip", &px(radius::CHIP));
@@ -143,6 +147,8 @@ fn geometry(css: &mut String) {
     decl(css, "modal-padding", &px(MODAL_PADDING));
     decl(css, "modal-width-narrow", &px(MODAL_WIDTH_NARROW));
     decl(css, "modal-width-default", &px(MODAL_WIDTH_DEFAULT));
+    decl(css, "popover-width", &px(POPOVER_WIDTH));
+    decl(css, "band-height", &px(BAND_HEIGHT));
 
     decl(css, "row-dense", &px(ROW_DENSE));
     decl(css, "row-grid", &px(ROW_GRID));
@@ -173,6 +179,21 @@ fn geometry(css: &mut String) {
     decl(css, "row-bar-width", &px(ROW_BAR_WIDTH));
     decl(css, "tab-bar-width", &px(TAB_BAR_WIDTH));
     decl(css, "keycap-foot-width", &px(KEYCAP_FOOT_WIDTH));
+    decl(css, "keycap-height", &px(KEYCAP_HEIGHT));
+    decl(
+        css,
+        "keycap-height-in-control",
+        &px(KEYCAP_HEIGHT_IN_CONTROL),
+    );
+    decl(css, "keycap-inset-in-control", &px(KEYCAP_INSET_IN_CONTROL));
+    decl(css, "gutter-lane", &px(GUTTER_LANE));
+    decl(css, "step-mark-cell", &px(STEP_MARK_CELL));
+    decl(css, "step-mark", &px(STEP_MARK));
+    decl(css, "step-mark-stroke", &px(STEP_MARK_STROKE));
+    decl(css, "timeline-width", &px(TIMELINE_WIDTH));
+    decl(css, "timeline-bar-height", &px(TIMELINE_BAR_HEIGHT));
+    decl(css, "duration-width", &px(DURATION_WIDTH));
+    decl(css, "dot", &px(DOT));
 
     decl(css, "motion-spatial", &format!("{}ms", motion::SPATIAL_MS));
     decl(

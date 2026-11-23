@@ -46,7 +46,7 @@
 //! anywhere a row carries its own inline controls or must meet 2.5.8 on its
 //! own.
 
-use crate::spacing::{ROW_COMFORTABLE, ROW_DENSE, ROW_GRID, ROW_PREVIEW};
+use crate::spacing::{ROW_COMFORTABLE, ROW_DENSE, ROW_GRID, ROW_PREVIEW, SPACE_2};
 use crate::typography::UI_SIZE;
 
 /// `18` — controls inside a dense row. Also, coincidentally, the stock
@@ -97,6 +97,44 @@ pub const TAB_BAR_WIDTH: f32 = 2.0;
 /// than by a corner. Its ink is `semantic::Borders::default_`, its sides
 /// `semantic::Borders::subtle`.
 pub const KEYCAP_FOOT_WIDTH: f32 = 2.0;
+
+/// `21` — the height of a keycap standing alone, as a key hint in a row or a
+/// footer.
+pub const KEYCAP_HEIGHT: f32 = 21.0;
+
+/// `16` — the height of a keycap inside a control, small enough to leave the
+/// control's own edge and focus ring clear.
+pub const KEYCAP_HEIGHT_IN_CONTROL: f32 = 16.0;
+
+/// `4` — the gap between a keycap inside a control and that control's edge.
+/// With [`KEYCAP_HEIGHT_IN_CONTROL`] it centres the keycap in a
+/// [`HEIGHT_MD`] control, and it leaves the focus ring two pixels clear.
+pub const KEYCAP_INSET_IN_CONTROL: f32 = SPACE_2;
+
+/// `12` — the width of the narrow lane at a row's leading edge that holds a
+/// gutter mark.
+pub const GUTTER_LANE: f32 = 12.0;
+
+/// `24` — the cell a step mark sits in, at the start of a step row.
+pub const STEP_MARK_CELL: f32 = 24.0;
+
+/// `7` — the drawn size of a step mark inside its cell.
+pub const STEP_MARK: f32 = 7.0;
+
+/// `1.5` — the line weight of a step mark that is drawn as an outline.
+pub const STEP_MARK_STROKE: f32 = 1.5;
+
+/// `72` — the width of the timeline column in a step row.
+pub const TIMELINE_WIDTH: f32 = 72.0;
+
+/// `12` — the height of a bar drawn in the timeline column.
+pub const TIMELINE_BAR_HEIGHT: f32 = 12.0;
+
+/// `40` — the width of the duration column in a step row.
+pub const DURATION_WIDTH: f32 = 40.0;
+
+/// `6` — the diameter of a status dot.
+pub const DOT: f32 = 6.0;
 
 /// Every dimension a row and its contents must agree on.
 ///

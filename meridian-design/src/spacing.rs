@@ -132,6 +132,13 @@ pub const MODAL_WIDTH_NARROW: f32 = 480.0;
 /// Modal card width — the default rung (forms, pickers, detail cards).
 pub const MODAL_WIDTH_DEFAULT: f32 = 560.0;
 
+/// `32` — the height of a band: one grid row with [`SPACE_2`] above and below
+/// it, as a section header or a column-header strip.
+pub const BAND_HEIGHT: f32 = ROW_GRID + 2.0 * SPACE_2;
+
+/// `240` — the width of a popover.
+pub const POPOVER_WIDTH: f32 = 240.0;
+
 #[cfg(test)]
 mod tests {
     use super::*;

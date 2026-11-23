@@ -32,6 +32,21 @@ fn tokens_css_carries_the_geometry_layer() {
             "--m-font-size-ui",
             format!("{}px", typography::UI_SIZE as u32),
         ),
+        ("--m-keycap-height", "21px".to_string()),
+        ("--m-keycap-height-in-control", "16px".to_string()),
+        ("--m-keycap-inset-in-control", "4px".to_string()),
+        ("--m-gutter-lane", "12px".to_string()),
+        ("--m-step-mark-cell", "24px".to_string()),
+        ("--m-step-mark", "7px".to_string()),
+        ("--m-step-mark-stroke", "1.5px".to_string()),
+        ("--m-timeline-width", "72px".to_string()),
+        ("--m-timeline-bar-height", "12px".to_string()),
+        ("--m-duration-width", "40px".to_string()),
+        ("--m-dot", "6px".to_string()),
+        ("--m-band-height", "32px".to_string()),
+        ("--m-popover-width", "240px".to_string()),
+        ("--m-label-size", "11px".to_string()),
+        ("--m-label-tracking", "0.06em".to_string()),
     ] {
         assert!(
             css.contains(&format!("{name}: {value};")),
@@ -43,6 +58,20 @@ fn tokens_css_carries_the_geometry_layer() {
     assert!(css.contains("--m-shadow-modal:"));
     assert!(!css.contains("--m-shadow-raised"));
     assert!(!css.contains("--m-shadow-flat"));
+}
+
+/// A keycap inside a control sits at an even inset, and that inset leaves the
+/// focus ring a clear two pixels.
+#[test]
+fn the_keycap_in_a_control_clears_the_focus_ring_evenly() {
+    use meridian_design::control::{HEIGHT_MD, KEYCAP_HEIGHT_IN_CONTROL, KEYCAP_INSET_IN_CONTROL};
+    use meridian_design::focus;
+
+    assert_eq!(
+        (HEIGHT_MD - KEYCAP_HEIGHT_IN_CONTROL) / 2.0,
+        KEYCAP_INSET_IN_CONTROL
+    );
+    assert_eq!(KEYCAP_INSET_IN_CONTROL - focus::RING_WIDTH, 2.0);
 }
 
 /// The chrome look, as the web receives it. The values are the ruling's,

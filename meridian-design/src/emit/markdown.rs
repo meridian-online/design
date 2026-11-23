@@ -699,6 +699,19 @@ pub fn tokens_md() -> String {
         "--m-pane-gap",
         "--m-tab-bar-width",
         "--m-keycap-foot-width",
+        "--m-keycap-height",
+        "--m-keycap-height-in-control",
+        "--m-keycap-inset-in-control",
+        "--m-gutter-lane",
+        "--m-step-mark-cell",
+        "--m-step-mark",
+        "--m-step-mark-stroke",
+        "--m-timeline-width",
+        "--m-timeline-bar-height",
+        "--m-duration-width",
+        "--m-dot",
+        "--m-band-height",
+        "--m-popover-width",
     ]));
     rows.sort_unstable();
     sheet.table(&rows);
@@ -712,7 +725,7 @@ pub fn tokens_md() -> String {
          move and a state change — and nothing decorative.",
     );
     sheet.line("");
-    let rows = sheet.prefix(&["--m-font-", "--m-motion-"]);
+    let rows = sheet.prefix(&["--m-font-", "--m-label-", "--m-motion-"]);
     sheet.table(&rows);
 
     // Anything nobody filed. Empty in a healthy tree, and gated that way.
