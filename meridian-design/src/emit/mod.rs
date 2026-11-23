@@ -198,6 +198,9 @@ fn geometry(css: &mut String) {
     decl(css, "step-mark-cell", &px(STEP_MARK_CELL));
     decl(css, "step-mark", &px(STEP_MARK));
     decl(css, "step-mark-stroke", &px(STEP_MARK_STROKE));
+    decl(css, "step-mark-disc-radius", &px(STEP_MARK_DISC_RADIUS));
+    decl(css, "step-mark-diamond-reach", &px(STEP_MARK_DIAMOND_REACH));
+    decl(css, "step-mark-dot-radius", &px(STEP_MARK_DOT_RADIUS));
     decl(css, "timeline-width", &px(TIMELINE_WIDTH));
     decl(css, "timeline-bar-height", &px(TIMELINE_BAR_HEIGHT));
     decl(css, "duration-width", &px(DURATION_WIDTH));

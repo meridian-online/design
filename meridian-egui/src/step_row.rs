@@ -35,7 +35,10 @@
 use egui::epaint::CubicBezierShape;
 use egui::{Color32, FontId, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Vec2};
 use meridian_design::chrome::{INK_DARK, INK_LIGHT};
-use meridian_design::control::{ICON_XS, STEP_MARK, STEP_MARK_STROKE};
+use meridian_design::control::{
+    ICON_XS, STEP_MARK, STEP_MARK_DIAMOND_REACH, STEP_MARK_DISC_RADIUS, STEP_MARK_DOT_RADIUS,
+    STEP_MARK_STROKE,
+};
 use meridian_design::marks::{glyph, word, MarkShape};
 use meridian_design::typography::UI_SIZE;
 use meridian_design::viz::STATUS;
@@ -45,7 +48,7 @@ pub use meridian_design::marks::StepMark;
 
 use crate::button::label_galley;
 use crate::icons::Icon;
-use crate::list_row::{list_row, ListRow, RowHeight};
+use crate::list_row::{list_row, paint_wash, ListRow, RowHeight};
 use crate::theme::to_color32;
 use crate::widgets::{mode_of, optically_centred_galley_top};
 use crate::{MeridianUi, Mode, Tokens};
@@ -241,13 +244,7 @@ pub fn step_mark(ui: &mut egui::Ui, mark: StepMark, focused: bool) -> egui::Resp
         let rows = &semantic(mode.is_dark()).rows;
         let painter = ui.painter();
         if focused {
-            painter.rect(
-                rect,
-                radius::NONE,
-                to_color32(rows.selected_background),
-                Stroke::new(1.0, to_color32(rows.selected_border)),
-                StrokeKind::Inside,
-            );
+            paint_wash(painter, rect, mode.is_dark());
         } else if response.hovered() {
             painter.rect_filled(rect, radius::NONE, to_color32(rows.hover_background));
         }
@@ -260,10 +257,9 @@ pub fn step_mark(ui: &mut egui::Ui, mark: StepMark, focused: bool) -> egui::Resp
 ///
 /// An outline (the ring, and the rings under the half disc and the centre dot)
 /// is `STEP_MARK` across at its stroke's centre, with a `STEP_MARK_STROKE`
-/// stroke. A solid shape fills to the ring's outer edge: the disc's radius is
-/// half of `STEP_MARK + STEP_MARK_STROKE`, and the diamond, which reads smaller
-/// than a disc of the same reach, reaches `STEP_MARK_STROKE` past the ring's
-/// radius. The centre dot's radius is `STEP_MARK_STROKE`.
+/// stroke. The solid shapes and the centre dot take their own sizes:
+/// `STEP_MARK_DISC_RADIUS`, `STEP_MARK_DIAMOND_REACH` (the diamond's
+/// half-diagonal) and `STEP_MARK_DOT_RADIUS`.
 pub(crate) fn paint_mark(painter: &egui::Painter, centre: Pos2, mark: StepMark, mode: Mode) {
     let g = glyph(mark, mode.is_dark());
     let ink = to_color32(g.ink);
@@ -288,10 +284,10 @@ pub(crate) fn paint_mark(painter: &egui::Painter, centre: Pos2, mark: StepMark, 
             painter.add(Shape::convex_polygon(points, ink, Stroke::NONE));
         }
         MarkShape::Disc => {
-            painter.circle_filled(centre, mark_reach(), fill);
+            painter.circle_filled(centre, STEP_MARK_DISC_RADIUS, fill);
         }
         MarkShape::Diamond => {
-            let d = r + STEP_MARK_STROKE;
+            let d = STEP_MARK_DIAMOND_REACH;
             let points = vec![
                 centre - Vec2::new(0.0, d),
                 centre + Vec2::new(d, 0.0),
@@ -302,7 +298,7 @@ pub(crate) fn paint_mark(painter: &egui::Painter, centre: Pos2, mark: StepMark, 
         }
         MarkShape::RingWithCentre => {
             ring();
-            painter.circle_filled(centre, STEP_MARK_STROKE, ink);
+            painter.circle_filled(centre, STEP_MARK_DOT_RADIUS, ink);
         }
     }
 }
@@ -452,6 +448,7 @@ fn paint_row(ui: &egui::Ui, rect: Rect, row: &StepRow<'_>, cols: &Columns) {
     };
     if let Some((a, b)) = timeline.span() {
         let right_edge = cols.timeline_left + t.timeline_width;
+        // The sheet's `min-width: var(--m-space-1)` on the bar.
         let min = t.space[1];
         let mut x0 = cols.timeline_left + a * t.timeline_width;
         let mut x1 = cols.timeline_left + b * t.timeline_width;

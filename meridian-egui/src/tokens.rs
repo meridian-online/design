@@ -76,6 +76,12 @@ pub struct Tokens {
     pub step_mark: f32,
     /// Line weight of an outlined step mark.
     pub step_mark_stroke: f32,
+    /// Radius of a solid disc step mark.
+    pub step_mark_disc_radius: f32,
+    /// Half-diagonal of a solid diamond step mark.
+    pub step_mark_diamond_reach: f32,
+    /// Radius of the dot at the centre of a ring step mark.
+    pub step_mark_dot_radius: f32,
     /// Width of the timeline column in a step row.
     pub timeline_width: f32,
     /// Height of a bar in the timeline column.
@@ -132,6 +138,9 @@ pub static TOKENS: Tokens = Tokens {
     step_mark_cell: control::STEP_MARK_CELL,
     step_mark: control::STEP_MARK,
     step_mark_stroke: control::STEP_MARK_STROKE,
+    step_mark_disc_radius: control::STEP_MARK_DISC_RADIUS,
+    step_mark_diamond_reach: control::STEP_MARK_DIAMOND_REACH,
+    step_mark_dot_radius: control::STEP_MARK_DOT_RADIUS,
     timeline_width: control::TIMELINE_WIDTH,
     timeline_bar_height: control::TIMELINE_BAR_HEIGHT,
     duration_width: control::DURATION_WIDTH,
@@ -191,6 +200,12 @@ mod tests {
         assert_eq!(TOKENS.step_mark_cell, control::STEP_MARK_CELL);
         assert_eq!(TOKENS.step_mark, control::STEP_MARK);
         assert_eq!(TOKENS.step_mark_stroke, control::STEP_MARK_STROKE);
+        assert_eq!(TOKENS.step_mark_disc_radius, control::STEP_MARK_DISC_RADIUS);
+        assert_eq!(
+            TOKENS.step_mark_diamond_reach,
+            control::STEP_MARK_DIAMOND_REACH
+        );
+        assert_eq!(TOKENS.step_mark_dot_radius, control::STEP_MARK_DOT_RADIUS);
         assert_eq!(TOKENS.timeline_width, control::TIMELINE_WIDTH);
         assert_eq!(TOKENS.timeline_bar_height, control::TIMELINE_BAR_HEIGHT);
         assert_eq!(TOKENS.duration_width, control::DURATION_WIDTH);

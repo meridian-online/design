@@ -10,12 +10,13 @@ use common::{ink, near, near_rect, painted, Painted};
 use egui::accesskit::Role as AccessRole;
 use egui::epaint::{CircleShape, PathShape};
 use egui::{Color32, Pos2, Rect, Stroke, StrokeKind};
-use egui_kittest::kittest::Queryable;
+use egui_kittest::kittest::{NodeT, Queryable};
 use egui_kittest::Harness;
 use meridian_design::chrome::{INK_DARK, INK_LIGHT};
 use meridian_design::control::{
-    DURATION_WIDTH, HEIGHT_MD, ROW_BAR_WIDTH, STEP_MARK, STEP_MARK_CELL, STEP_MARK_STROKE,
-    TIMELINE_BAR_HEIGHT, TIMELINE_WIDTH,
+    DURATION_WIDTH, HEIGHT_MD, ROW_BAR_WIDTH, STEP_MARK, STEP_MARK_CELL, STEP_MARK_DIAMOND_REACH,
+    STEP_MARK_DISC_RADIUS, STEP_MARK_DOT_RADIUS, STEP_MARK_STROKE, TIMELINE_BAR_HEIGHT,
+    TIMELINE_WIDTH,
 };
 use meridian_design::marks::{glyph, word, STEP_MARKS};
 use meridian_design::radius;
@@ -306,8 +307,16 @@ fn mark_drawn(mode: Mode, mark: StepMark, focused: bool) -> Harness<'static, Mar
 #[test]
 fn each_state_draws_its_shape_in_its_ink() {
     let ring_r = STEP_MARK / 2.0;
-    let disc_r = (STEP_MARK + STEP_MARK_STROKE) / 2.0;
-    let diamond_r = STEP_MARK / 2.0 + STEP_MARK_STROKE;
+    // The sheet's sizes, as the tokens hold them.
+    let (disc_r, diamond_r, dot_r) = (4.0, 4.8, 1.4);
+    assert_eq!(
+        (
+            STEP_MARK_DISC_RADIUS,
+            STEP_MARK_DIAMOND_REACH,
+            STEP_MARK_DOT_RADIUS
+        ),
+        (disc_r, diamond_r, dot_r)
+    );
     for mode in MODES {
         for mark in STEP_MARKS {
             let g = glyph(mark, mode.is_dark());
@@ -375,7 +384,7 @@ fn each_state_draws_its_shape_in_its_ink() {
                     assert_eq!(cs.len(), 2, "{what}: {cs:?}");
                     let dot = cs.iter().find(|k| k.fill != Color32::TRANSPARENT).unwrap();
                     assert_eq!(dot.fill, ink(g.ink), "{what}");
-                    assert!(near(dot.radius, STEP_MARK_STROKE), "{what}");
+                    assert!(near(dot.radius, dot_r), "{what}: {}", dot.radius);
                     assert!(near(dot.center.x, c.x) && near(dot.center.y, c.y));
                 }
             }
@@ -945,5 +954,49 @@ fn a_step_row_is_a_row_named_by_its_name_and_state_word() {
         let h = drawn(Mode::Light, spec);
         let label = format!("{NAME}, {}", word(mark));
         let _ = h.get_by_role_and_label(AccessRole::Row, &label);
+    }
+}
+
+#[test]
+fn a_focused_row_s_node_is_selected_and_an_unfocused_one_is_not() {
+    let label = format!("{NAME}, {}", word(StepMark::Ok));
+    for focused in [false, true] {
+        let mut spec = Spec::new();
+        spec.focused = focused;
+        let h = drawn(Mode::Light, spec);
+        let node = h.get_by_role_and_label(AccessRole::Row, &label);
+        assert_eq!(
+            node.accesskit_node().data().is_selected() == Some(true),
+            focused,
+            "focused {focused}"
+        );
+    }
+}
+
+#[test]
+fn the_fold_control_is_a_button_expanded_only_while_unfolded() {
+    for (fold, expanded) in [(Fold::Unfolded, true), (Fold::Folded { members: 3 }, false)] {
+        let mut spec = Spec::new();
+        spec.fold = Some(fold);
+        let h = drawn(Mode::Light, spec);
+        let node = h.get_by_role_and_label(AccessRole::Button, NAME);
+        assert_eq!(
+            node.accesskit_node().data().is_expanded(),
+            Some(expanded),
+            "{fold:?}"
+        );
+    }
+}
+
+#[test]
+fn a_step_mark_s_node_is_selected_while_focused() {
+    for focused in [false, true] {
+        let h = mark_drawn(Mode::Light, StepMark::Failed, focused);
+        let node = h.get_by_label(word(StepMark::Failed));
+        assert_eq!(
+            node.accesskit_node().data().is_selected() == Some(true),
+            focused,
+            "focused {focused}"
+        );
     }
 }

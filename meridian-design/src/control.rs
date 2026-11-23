@@ -134,6 +134,17 @@ pub const STEP_MARK: f32 = 7.0;
 /// `1.5` — the line weight of a step mark that is drawn as an outline.
 pub const STEP_MARK_STROKE: f32 = 1.5;
 
+/// `4` — the radius of a step mark drawn as a solid disc (ok): a little past
+/// the outlined ring's stroke centre, so the disc and the ring read one size.
+pub const STEP_MARK_DISC_RADIUS: f32 = 4.0;
+
+/// `4.8` — the half-diagonal of a step mark drawn as a solid diamond (failed),
+/// which reads smaller than a disc of the same reach.
+pub const STEP_MARK_DIAMOND_REACH: f32 = 4.8;
+
+/// `1.4` — the radius of the dot at the centre of the stale mark's ring.
+pub const STEP_MARK_DOT_RADIUS: f32 = 1.4;
+
 /// `72` — the width of the timeline column in a step row.
 pub const TIMELINE_WIDTH: f32 = 72.0;
 

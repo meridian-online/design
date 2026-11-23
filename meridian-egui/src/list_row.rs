@@ -208,7 +208,7 @@ pub fn list_row<R>(
     if ui.is_rect_visible(rect) {
         let rows = &sem.rows;
         let fill = if row.wash {
-            Some(rows.selected_background)
+            None
         } else if state.selected {
             Some(rows.cursor_background)
         } else if state.pressed {
@@ -220,20 +220,11 @@ pub fn list_row<R>(
         } else {
             None
         };
-        if let Some(fill) = fill {
-            if row.wash {
-                // The wash and its rule are one shape, the rule inside the row.
-                ui.painter().rect(
-                    rect,
-                    radius::NONE,
-                    to_color32(fill),
-                    egui::Stroke::new(1.0, to_color32(rows.selected_border)),
-                    egui::StrokeKind::Inside,
-                );
-            } else {
-                ui.painter()
-                    .rect_filled(rect, radius::NONE, to_color32(fill));
-            }
+        if row.wash {
+            paint_wash(ui.painter(), rect, dark);
+        } else if let Some(fill) = fill {
+            ui.painter()
+                .rect_filled(rect, radius::NONE, to_color32(fill));
         }
         if state.selected {
             let bar = Rect::from_min_size(rect.min, egui::vec2(ROW_BAR_WIDTH, rect.height()));
@@ -255,6 +246,20 @@ pub fn list_row<R>(
         state,
         inner,
     }
+}
+
+/// The selection wash on `rect`: `rows.selected_background` with a 1px inside
+/// rule in `rows.selected_border`, as one square shape. The thing that is
+/// selected — a focused step row, a focused thin step mark — wears it.
+pub(crate) fn paint_wash(painter: &egui::Painter, rect: Rect, dark: bool) {
+    let rows = &semantic(dark).rows;
+    painter.rect(
+        rect,
+        radius::NONE,
+        to_color32(rows.selected_background),
+        egui::Stroke::new(1.0, to_color32(rows.selected_border)),
+        egui::StrokeKind::Inside,
+    );
 }
 
 #[cfg(test)]

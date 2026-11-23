@@ -340,6 +340,9 @@ Stated once, in logical pixels, and mode-invariant throughout. The spacing ladde
 | `--m-step-mark-cell` | `24px` |
 | `--m-step-mark` | `7px` |
 | `--m-step-mark-stroke` | `1.5px` |
+| `--m-step-mark-disc-radius` | `4px` |
+| `--m-step-mark-diamond-reach` | `4.8px` |
+| `--m-step-mark-dot-radius` | `1.4px` |
 | `--m-timeline-width` | `72px` |
 | `--m-timeline-bar-height` | `12px` |
 | `--m-duration-width` | `40px` |
