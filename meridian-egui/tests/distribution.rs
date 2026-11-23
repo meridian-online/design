@@ -294,3 +294,111 @@ fn dense_is_twenty_tall() {
         assert!(near(bars(&p, mode)[0].rect.height(), ROW_DENSE), "{mode:?}");
     }
 }
+
+fn hover_over(mode: Mode, s: Spec, x: f32) -> Option<usize> {
+    let (_, out) = drawn(mode, s, None);
+    let at = egui::pos2(x, out.rect.center().y);
+    drawn(mode, s, Some(at)).1.hovered
+}
+
+#[test]
+fn every_x_inside_the_box_hovers_exactly_one_slot_and_a_gap_splits_between_its_neighbours() {
+    for mode in MODES {
+        let top = Bars::Top {
+            values: &[("a", 100), ("b", 60)],
+            rest: 30,
+        };
+        let s = spec(top, 20);
+        let (p, out) = drawn(mode, s, None);
+        let b = bars(&p, mode);
+        let mut last = 0;
+        let mut x = out.rect.left() + 0.25;
+        while x < out.rect.right() {
+            let h = hover_over(mode, s, x).unwrap_or_else(|| panic!("{mode:?}: no slot at {x}"));
+            assert!(h >= last, "{mode:?}: slots out of order at {x}");
+            last = h;
+            x += 2.0;
+        }
+        // Midpoint of the gap before the rest bar: just left goes to the value
+        // before it, just right to the rest bar.
+        let mid = (b[1].rect.right() + b[2].rect.left()) / 2.0;
+        assert_eq!(hover_over(mode, s, mid - 0.5), Some(1), "{mode:?}");
+        assert_eq!(hover_over(mode, s, mid + 0.5), Some(2), "{mode:?}");
+        // The box's own edges belong to the first and last slots.
+        assert_eq!(hover_over(mode, s, out.rect.left() + 0.1), Some(0));
+        assert_eq!(hover_over(mode, s, out.rect.right() - 0.1), Some(3));
+    }
+}
+
+#[test]
+fn top_with_no_values_draws_the_rest_and_missing_alone() {
+    for mode in MODES {
+        let s = spec(
+            Bars::Top {
+                values: &[],
+                rest: 30,
+            },
+            15,
+        );
+        let (p, out) = drawn(mode, s, None);
+        let b = bars(&p, mode);
+        assert_eq!(b.len(), 2, "{mode:?}");
+        assert_eq!(b[0].fill, muted(mode));
+        assert_eq!(b[1].fill, null(mode));
+        assert!(
+            near(b[0].rect.left(), out.rect.left()),
+            "{mode:?}: no leading gap"
+        );
+        assert!(
+            near(b[1].rect.left() - b[0].rect.right(), SPACE_2),
+            "{mode:?}"
+        );
+        assert!(near(b[0].rect.height(), ROW_PREVIEW), "{mode:?}");
+        assert!(near(b[1].rect.height(), ROW_PREVIEW * 0.5), "{mode:?}");
+    }
+}
+
+#[test]
+fn no_bins_with_a_missing_count_draws_the_null_bar_across_the_box() {
+    for mode in MODES {
+        let (p, out) = drawn(mode, spec(Bars::Bins(&[]), 7), None);
+        let b = bars(&p, mode);
+        assert_eq!(b.len(), 1, "{mode:?}");
+        assert_eq!(b[0].fill, null(mode));
+        assert!(near(b[0].rect.left(), out.rect.left()), "{mode:?}");
+        assert!(near(b[0].rect.width(), WIDTH), "{mode:?}");
+        assert_eq!(
+            hover_over(mode, spec(Bars::Bins(&[]), 7), 10.0 + out.rect.left()),
+            Some(0)
+        );
+    }
+}
+
+#[test]
+fn hovering_a_zero_count_slot_reports_its_index_and_lights_nothing() {
+    for mode in MODES {
+        let s = spec(Bars::Bins(&[10, 0, 10]), 0);
+        let (p, out) = drawn(mode, s, None);
+        let b = bars(&p, mode);
+        let x = (b[0].rect.right() + b[1].rect.left()) / 2.0 + 20.0;
+        let (p, o) = drawn(mode, s, Some(egui::pos2(x, out.rect.center().y)));
+        assert_eq!(o.hovered, Some(1), "{mode:?}");
+        assert!(common::filled(&p, seq600()).is_empty(), "{mode:?}");
+    }
+}
+
+#[test]
+fn hovering_works_in_dense_mode() {
+    for mode in MODES {
+        let mut s = spec(Bars::Bins(&[8, 4, 2]), 1);
+        s.dense = true;
+        let (p, out) = drawn(mode, s, None);
+        let b = bars(&p, mode);
+        let at = egui::pos2(b[2].rect.center().x, out.rect.bottom() - 1.0);
+        let (p, o) = drawn(mode, s, Some(at));
+        assert_eq!(o.hovered, Some(2), "{mode:?}");
+        let lit = common::filled(&p, seq600());
+        assert_eq!(lit.len(), 1, "{mode:?}");
+        assert!(near(lit[0].rect.left(), b[2].rect.left()), "{mode:?}");
+    }
+}

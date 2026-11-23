@@ -128,7 +128,21 @@ fn slots(bar: &DistributionBar<'_>) -> Vec<Slot> {
     out
 }
 
-/// Draw a distribution bar across the width `ui` has left.
+/// The slot a pointer at `x` is over: each slot owns half of the gap on either
+/// side of it, so every x inside the box belongs to exactly one slot.
+fn slot_at(columns: &[(f32, f32)], x: f32) -> usize {
+    columns
+        .iter()
+        .enumerate()
+        .position(|(i, c)| {
+            let gap = columns.get(i + 1).map_or(f32::INFINITY, |n| n.0 - c.1);
+            x < c.1 + gap / 2.0
+        })
+        .unwrap_or(columns.len() - 1)
+}
+
+/// Draw a distribution bar across the width `ui` has left. Heights scale
+/// against the largest count shown, the rest and the missing counts included.
 pub fn distribution_bar(ui: &mut egui::Ui, bar: DistributionBar<'_>) -> DistributionResponse {
     let height = if bar.dense { ROW_DENSE } else { ROW_PREVIEW };
     let width = ui.available_width();
@@ -136,14 +150,7 @@ pub fn distribution_bar(ui: &mut egui::Ui, bar: DistributionBar<'_>) -> Distribu
 
     let slots = slots(&bar);
     let columns = columns(rect, &slots);
-    let hovered = response.hover_pos().and_then(|p| {
-        // The slot whose column, plus the half gap either side of it, holds the
-        // pointer.
-        columns
-            .iter()
-            .position(|c| p.x >= c.0 - HAIRLINE / 2.0 && p.x < c.1 + HAIRLINE / 2.0)
-            .filter(|_| rect.contains(p))
-    });
+    let hovered = response.hover_pos().map(|p| slot_at(&columns, p.x));
 
     if ui.is_rect_visible(rect) {
         paint(ui, rect, &slots, &columns, hovered);
