@@ -974,3 +974,36 @@ fn choosing_an_unavailable_row_does_not_pick_it() {
     assert_eq!(harness.state().1, Some(PickerEvent::Confirmed));
     assert_eq!(harness.state().0.delegate.confirmed, vec![Some(2)]);
 }
+
+#[test]
+fn the_pointer_draws_no_fill_on_an_unavailable_row_and_does_on_an_available_one() {
+    let sem = meridian_design::semantic::semantic(false);
+    let hover = theme::to_color32(sem.rows.hover_background);
+    let pressed = theme::to_color32(sem.role(meridian_design::Role::Neutral).background.active);
+    // Only the row asked about: the cursor sits on the first row, and its fill
+    // can share the pressed ink.
+    let fills = |h: &Harness<'_, _>, label: &str| {
+        let y = h.get_by_label(label).rect().center().y;
+        [hover, pressed]
+            .into_iter()
+            .flat_map(|f| boxes_of(h, f, 0.0))
+            .filter(|r| r.width() > 100.0 && r.y_range().contains(y))
+            .count()
+    };
+
+    for (label, want) in [(OFF_LABEL, 0), ("Close", 1)] {
+        let mut harness = unavailable_harness();
+        harness.get_by_label(label).hover();
+        harness.run();
+        assert_eq!(fills(&harness, label), want, "{label}: hovered");
+        let pos = harness.get_by_label(label).rect().center();
+        harness.event(egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed: true,
+            modifiers: egui::Modifiers::NONE,
+        });
+        harness.run();
+        assert_eq!(fills(&harness, label), want, "{label}: pressed");
+    }
+}

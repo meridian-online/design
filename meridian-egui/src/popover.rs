@@ -211,6 +211,7 @@ impl Popover {
     }
 
     /// Show a menu card: 240 wide, `SPACE_2` above and below, no side padding.
+    /// The body's vertical item spacing is zero, so rows and separators abut.
     pub fn show_menu<R>(
         ctx: &egui::Context,
         id_salt: impl Hash + std::fmt::Debug,

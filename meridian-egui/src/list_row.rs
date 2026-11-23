@@ -67,6 +67,7 @@ pub struct ListRow {
     selected: bool,
     bar_ink: Option<Color32>,
     inert: bool,
+    no_pointer_fill: bool,
 }
 
 impl ListRow {
@@ -78,7 +79,16 @@ impl ListRow {
             selected: false,
             bar_ink: None,
             inert: false,
+            no_pointer_fill: false,
         }
+    }
+
+    /// The pointer draws no fill on the row (hover or pressed) but the row still
+    /// takes its click. For an unavailable row whose click moves the cursor.
+    #[must_use]
+    pub(crate) fn no_pointer_fill(mut self) -> Self {
+        self.no_pointer_fill = true;
+        self
     }
 
     /// The row takes the cursor but not the pointer: no click, no hover fill, no
@@ -86,6 +96,7 @@ impl ListRow {
     /// unavailable and still walked with the keys.
     #[must_use]
     pub(crate) fn inert(mut self) -> Self {
+        self.no_pointer_fill = true;
         self.inert = true;
         self
     }
@@ -175,9 +186,9 @@ pub fn list_row<R>(
     let (rect, response) = ui.allocate_exact_size(desired, sense);
 
     let state = RowState {
-        hovered: !row.inert && response.contains_pointer(),
+        hovered: !row.no_pointer_fill && response.contains_pointer(),
         selected: row.selected,
-        pressed: !row.inert && response.is_pointer_button_down_on(),
+        pressed: !row.no_pointer_fill && response.is_pointer_button_down_on(),
     };
 
     if ui.is_rect_visible(rect) {

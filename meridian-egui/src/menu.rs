@@ -144,7 +144,9 @@ fn paint_item(ui: &mut egui::Ui, item: &MenuItem<'_>, lead: f32) {
     let c = to_color32;
     let (label_ink, check_ink, chevron_ink, key_ink) = if off {
         let d = c(sem.text.disabled);
-        (d, d, d, KeyInk::Dimmed)
+        // The chevron keeps its muted ink: the sheet's `.mi > .ic.sub` outranks
+        // `.mi.is-off`, which lists only the check and the detail.
+        (d, d, c(sem.text.muted), KeyInk::Dimmed)
     } else {
         (
             c(sem.text.primary),

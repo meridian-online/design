@@ -333,6 +333,23 @@ fn an_unavailable_item_with_the_cursor_takes_the_cursor_fill_and_bar_and_stays_g
 }
 
 #[test]
+fn an_unavailable_submenu_keeps_its_chevron_muted() {
+    for mode in MODES {
+        let sem = semantic(mode.is_dark());
+        let mut spec = Spec::new();
+        spec.submenu = true;
+        spec.unavailable = true;
+        let icons = icon_paths(&drawn(mode, spec));
+        assert!(!icons.is_empty(), "{mode:?}: no chevron");
+        assert!(
+            icons.iter().all(|(c, _)| *c == ink(sem.text.muted)),
+            "{mode:?}"
+        );
+        assert_ne!(ink(sem.text.muted), ink(sem.text.disabled));
+    }
+}
+
+#[test]
 fn the_label_sits_space_4_from_the_leading_edge() {
     let harness = drawn(Mode::Light, Spec::new());
     let (_, label) = texts(&harness)

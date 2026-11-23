@@ -452,62 +452,62 @@ impl<D: PickerDelegate> Picker<D> {
                     let row = self.delegate.row(index);
                     let off = row.unavailable.is_some();
                     let selected = index == self.selected;
-                    let r = list_row(
-                        ui,
-                        ListRow::new(self.row_height).selected(selected),
-                        |ui, _state| {
-                            // The keycap's column is claimed BEFORE anything is
-                            // laid out against it. Both labels below read
-                            // `ui.available_width()` at the moment they are
-                            // added, so a chip added afterwards is drawn over
-                            // text that was handed the whole row — and
-                            // `key_chip` paints an opaque fill, which means the
-                            // last characters and the elision marker were drawn
-                            // and then covered rather than never drawn.
-                            // `chip_width` is the horizontal twin of
-                            // `chip_height`, and it exists so this row can know
-                            // the column without drawing the chip first.
-                            let row_rect = ui.max_rect();
-                            let chip_column = row
-                                .keystroke
-                                .as_deref()
-                                .map_or(0.0, |k| chip_width(ui, k) + t.icon_label_gap);
-                            let text_rect = row_rect.with_max_x(row_rect.right() - chip_column);
+                    let mut list = ListRow::new(self.row_height).selected(selected);
+                    if off {
+                        list = list.no_pointer_fill();
+                    }
+                    let r = list_row(ui, list, |ui, _state| {
+                        // The keycap's column is claimed BEFORE anything is
+                        // laid out against it. Both labels below read
+                        // `ui.available_width()` at the moment they are
+                        // added, so a chip added afterwards is drawn over
+                        // text that was handed the whole row — and
+                        // `key_chip` paints an opaque fill, which means the
+                        // last characters and the elision marker were drawn
+                        // and then covered rather than never drawn.
+                        // `chip_width` is the horizontal twin of
+                        // `chip_height`, and it exists so this row can know
+                        // the column without drawing the chip first.
+                        let row_rect = ui.max_rect();
+                        let chip_column = row
+                            .keystroke
+                            .as_deref()
+                            .map_or(0.0, |k| chip_width(ui, k) + t.icon_label_gap);
+                        let text_rect = row_rect.with_max_x(row_rect.right() - chip_column);
 
+                        ui.scope_builder(
+                            UiBuilder::new()
+                                .max_rect(text_rect)
+                                .layout(Layout::left_to_right(Align::Center)),
+                            |ui| {
+                                let label = if off {
+                                    RichText::new(row.label.as_str()).color(disabled)
+                                } else {
+                                    RichText::new(row.label.as_str())
+                                };
+                                ui.add(egui::Label::new(label).selectable(false).truncate());
+                                if let Some(reason) = &row.unavailable {
+                                    ui.add_space(t.icon_label_gap);
+                                    detail_label(ui, reason, disabled);
+                                } else if let Some(detail) = &row.detail {
+                                    ui.add_space(t.icon_label_gap);
+                                    detail_label(ui, detail, muted);
+                                }
+                            },
+                        );
+
+                        if let Some(keystroke) = &row.keystroke {
                             ui.scope_builder(
                                 UiBuilder::new()
-                                    .max_rect(text_rect)
-                                    .layout(Layout::left_to_right(Align::Center)),
+                                    .max_rect(row_rect)
+                                    .layout(Layout::right_to_left(Align::Center)),
                                 |ui| {
-                                    let label = if off {
-                                        RichText::new(row.label.as_str()).color(disabled)
-                                    } else {
-                                        RichText::new(row.label.as_str())
-                                    };
-                                    ui.add(egui::Label::new(label).selectable(false).truncate());
-                                    if let Some(reason) = &row.unavailable {
-                                        ui.add_space(t.icon_label_gap);
-                                        detail_label(ui, reason, disabled);
-                                    } else if let Some(detail) = &row.detail {
-                                        ui.add_space(t.icon_label_gap);
-                                        detail_label(ui, detail, muted);
-                                    }
+                                    let ink = if off { KeyInk::Dimmed } else { KeyInk::Plain };
+                                    key_chip_with(ui, keystroke, KeySize::Row, ink);
                                 },
                             );
-
-                            if let Some(keystroke) = &row.keystroke {
-                                ui.scope_builder(
-                                    UiBuilder::new()
-                                        .max_rect(row_rect)
-                                        .layout(Layout::right_to_left(Align::Center)),
-                                    |ui| {
-                                        let ink = if off { KeyInk::Dimmed } else { KeyInk::Plain };
-                                        key_chip_with(ui, keystroke, KeySize::Row, ink);
-                                    },
-                                );
-                            }
-                        },
-                    );
+                        }
+                    });
                     if selected && self.scroll_to_selected {
                         r.response.scroll_to_me(None);
                     }
