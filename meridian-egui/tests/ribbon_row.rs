@@ -429,13 +429,11 @@ fn key_faces(h: &Harness<'_, Out>, mode: Mode, height: f32) -> Vec<Painted> {
 fn key_texts(h: &Harness<'_, Out>, within: Rect) -> Vec<Color32> {
     fn walk(shape: &egui::Shape, within: Rect, out: &mut Vec<Color32>) {
         match shape {
-            egui::Shape::Text(t) => {
-                if within.contains(t.pos + t.galley.size() / 2.0) {
-                    out.push(
-                        t.override_text_color
-                            .unwrap_or(t.galley.job.sections[0].format.color),
-                    );
-                }
+            egui::Shape::Text(t) if within.contains(t.pos + t.galley.size() / 2.0) => {
+                out.push(
+                    t.override_text_color
+                        .unwrap_or(t.galley.job.sections[0].format.color),
+                );
             }
             egui::Shape::Vec(v) => v.iter().for_each(|s| walk(s, within, out)),
             _ => {}
