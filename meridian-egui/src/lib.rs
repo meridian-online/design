@@ -46,6 +46,7 @@ pub use icons::Icon;
 // N delegates, one line-tab strip, and the notification/toast layers. Each is a
 // shape the tokens alone cannot supply; all of them draw exclusively through
 // the token system.
+pub mod button;
 pub mod key_chip;
 pub mod list_row;
 pub mod notify;
@@ -54,6 +55,7 @@ pub mod picker;
 pub mod query;
 pub mod tabs;
 
+pub use button::{button, Button, ButtonResponse, Weight};
 pub use key_chip::{key_chip, key_chip_with, tooltip_for_action, KeyInk, KeySize};
 pub use list_row::{list_row, ListRow, ListRowResponse, RowHeight, RowState};
 pub use notify::{Notification, NotificationId, NotificationLayer, Severity, Toast, ToastLayer};
