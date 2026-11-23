@@ -985,7 +985,9 @@ fn menus(ui: &mut egui::Ui, state: &mut GalleryState) {
                 )
                 .response
                 .rect;
-                if on_screen(ui, anchor) {
+                // While the modal is up its Esc is the modal's, so the fixed
+                // menus, which would take Esc as the topmost popover, step aside.
+                if on_screen(ui, anchor) && !state.modal {
                     let encode = Popover::show_menu(
                         ui.ctx(),
                         "gallery-menu",
@@ -1053,9 +1055,12 @@ fn menus(ui: &mut egui::Ui, state: &mut GalleryState) {
         figure(
             ui,
             360.0,
-            "the picker row's unavailable state: the reason is its detail (live)",
+            "the picker row's unavailable state: the reason is its detail (live; like any picker it takes the arrows, Enter and Esc for the window)",
             |ui| {
-                state.picker.show(ui);
+                // Hidden while the modal is up, so the modal gets its Esc and Enter.
+                if !state.modal {
+                    state.picker.show(ui);
+                }
             },
         );
     });
