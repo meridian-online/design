@@ -13,8 +13,8 @@
 //! The `bin/` generator is not the library's surface.
 //!
 //! A top-level `pub` line the reader does not recognise fails the test, and so
-//! does a `pub mod` nested inside an inline module, so a new form cannot slip
-//! past. What it cannot see: an item produced by a macro; a `pub use` of an
+//! does a module (`mod`, `pub mod`) or a `pub use` nested inside an inline
+//! module, so neither can slip past. What it cannot see: an item produced by a macro; a `pub use` of an
 //! item from outside this crate; a `pub use crate::x::..` written in a module
 //! other than `lib.rs`; a re-export reached through more than one module
 //! (`pub use a::b::C`); and an attribute on a line of its own above a form the
@@ -170,11 +170,14 @@ fn collect(file: &Path, dir: &Path, out: &mut BTreeSet<String>) {
                     private.push((name.clone(), items));
                 }
                 inline_mod = None;
-            } else if let Some(rest) = line.strip_prefix("    pub ") {
-                assert!(
-                    !rest.starts_with("mod "),
-                    "a module nested in an inline module is not read: {line:?}"
-                );
+                continue;
+            }
+            let t = line.trim_start();
+            assert!(
+                !(t.starts_with("mod ") || t.starts_with("pub mod ") || t.starts_with("pub use ")),
+                "a module or re-export nested in an inline module is not read: {line:?}"
+            );
+            if let Some(rest) = line.strip_prefix("    pub ") {
                 if let Some(name) = declared(rest, line) {
                     match items {
                         Some(items) => add(name, items),
@@ -334,4 +337,44 @@ fn the_reader_follows_the_forms_it_claims_to() {
     .map(String::from)
     .into();
     assert_eq!(out, want);
+}
+
+/// Reads a one-file crate whose `lib.rs` is `source`.
+fn read_lib(source: &str, tag: &str) -> BTreeSet<String> {
+    let dir = std::env::temp_dir().join(format!("inventory-{tag}-{}", std::process::id()));
+    fs::create_dir_all(&dir).unwrap();
+    fs::write(dir.join("lib.rs"), source).unwrap();
+    let mut out = BTreeSet::new();
+    let read = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        collect(&dir.join("lib.rs"), &dir, &mut out);
+    }));
+    fs::remove_dir_all(&dir).ok();
+    if let Err(e) = read {
+        std::panic::resume_unwind(e);
+    }
+    out
+}
+
+#[test]
+#[should_panic(expected = "nested in an inline module")]
+fn a_pub_mod_nested_in_an_inline_module_fails_the_reader() {
+    read_lib(
+        "pub mod open {\n    pub mod inner {}\n}\n",
+        "nested-pub-mod",
+    );
+}
+
+#[test]
+#[should_panic(expected = "nested in an inline module")]
+fn a_private_mod_nested_in_an_inline_module_fails_the_reader() {
+    read_lib("pub mod open {\n    mod inner {\n    }\n}\n", "nested-mod");
+}
+
+#[test]
+#[should_panic(expected = "nested in an inline module")]
+fn a_pub_use_nested_in_an_inline_module_fails_the_reader() {
+    read_lib(
+        "pub mod open {\n    pub use std::fmt::Debug;\n}\n",
+        "nested-use",
+    );
 }
