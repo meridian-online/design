@@ -4,15 +4,22 @@
 //! top-level public `fn` (with any of `const`, `async`, `unsafe`, `extern`),
 //! `struct`, `enum`, `union`, `trait`, `type` and `static` in `src/lib.rs`
 //! needs a row, and so does the same in each `pub mod` it declares, followed
-//! recursively, in an inline `pub mod x { .. }`, and in a private `mod x;`
-//! whose items are re-exported with `pub use x::*` or `pub use x::{A, B}`.
-//! Methods (indented inside an `impl`) belong to their type's row, and `pub
-//! const`s are data with no row. The `bin/` generator is not the library's
-//! surface.
+//! recursively, in an inline `pub mod x { .. }`, and in a private module (`mod
+//! x;` or an inline `mod x { .. }`) whose items are re-exported with `pub use
+//! x::*` or `pub use x::{A, B}`, the path optionally starting `self::` (or
+//! `crate::` in `lib.rs`, where the two agree). An item line may start with one
+//! attribute on the same line (`#[inline] pub fn`). Methods (indented inside an
+//! `impl`) belong to their type's row, and `pub const`s are data with no row.
+//! The `bin/` generator is not the library's surface.
 //!
-//! A top-level `pub` line the reader does not recognise fails the test, so a
-//! new form cannot slip past. What it cannot see: an item produced by a macro,
-//! and a `pub use` of an item from outside this crate.
+//! A top-level `pub` line the reader does not recognise fails the test, and so
+//! does a `pub mod` nested inside an inline module, so a new form cannot slip
+//! past. What it cannot see: an item produced by a macro; a `pub use` of an
+//! item from outside this crate; a `pub use crate::x::..` written in a module
+//! other than `lib.rs`; a re-export reached through more than one module
+//! (`pub use a::b::C`); and an attribute on a line of its own above a form the
+//! reader skips (it reads each line alone, so a multi-line attribute is
+//! ignored and the item under it is read as usual).
 
 use std::collections::BTreeSet;
 use std::fs;
@@ -36,6 +43,34 @@ fn module_file(dir: &Path, name: &str) -> (PathBuf, PathBuf) {
     } else {
         (child_dir.join("mod.rs"), child_dir)
     }
+}
+
+/// `line` with one leading same-line attribute (`#[inline] pub fn`) removed,
+/// its indentation kept.
+fn without_attribute(line: &str) -> std::borrow::Cow<'_, str> {
+    let body = line.trim_start();
+    let indent = &line[..line.len() - body.len()];
+    if body.starts_with("#[") {
+        // The attribute ends at the `]` that balances its `[`.
+        let mut depth = 0;
+        for (i, c) in body.char_indices() {
+            match c {
+                '[' => depth += 1,
+                ']' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        let rest = body[i + 1..].trim_start();
+                        if !rest.is_empty() {
+                            return format!("{indent}{rest}").into();
+                        }
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    line.into()
 }
 
 fn ident(s: &str) -> String {
@@ -81,10 +116,14 @@ fn declared(rest: &str, line: &str) -> Option<String> {
 
 /// Names a `pub use name::...;` statement re-exports from `name`, or `None`
 /// for a glob.
-fn reexported(statement: &str, module: &str) -> Option<Option<BTreeSet<String>>> {
-    let tail = statement
-        .strip_prefix("pub use ")?
-        .trim_start()
+fn reexported(statement: &str, module: &str, root: bool) -> Option<Option<BTreeSet<String>>> {
+    let path = statement.strip_prefix("pub use ")?.trim_start();
+    let path = path.strip_prefix("self::").unwrap_or(path);
+    let path = match path.strip_prefix("crate::") {
+        Some(p) if root => p,
+        _ => path,
+    };
+    let tail = path
         .strip_prefix(module)?
         .strip_prefix("::")?
         .trim_end_matches(';');
@@ -108,11 +147,15 @@ fn collect(file: &Path, dir: &Path, out: &mut BTreeSet<String>) {
     let mut private: Vec<(String, BTreeSet<String>)> = Vec::new();
     let mut uses: Vec<String> = Vec::new();
     let mut pending_use = String::new();
-    let mut inline_mod = false;
+    // The inline module being read: its name, and its items when it is private
+    // (a public one's go straight into `out`).
+    let mut inline_mod: Option<(String, Option<BTreeSet<String>>)> = None;
+    let root = file.file_name().is_some_and(|f| f == "lib.rs");
     let add = |name: String, out: &mut BTreeSet<String>| {
         assert!(out.insert(name.clone()), "{name} is public twice");
     };
     for line in text.lines() {
+        let line = &*without_attribute(line);
         if !pending_use.is_empty() {
             pending_use.push(' ');
             pending_use.push_str(line.trim());
@@ -121,18 +164,30 @@ fn collect(file: &Path, dir: &Path, out: &mut BTreeSet<String>) {
             }
             continue;
         }
-        if inline_mod {
+        if let Some((name, items)) = &mut inline_mod {
             if line.starts_with('}') {
-                inline_mod = false;
+                if let Some(items) = items.take() {
+                    private.push((name.clone(), items));
+                }
+                inline_mod = None;
             } else if let Some(rest) = line.strip_prefix("    pub ") {
+                assert!(
+                    !rest.starts_with("mod "),
+                    "a module nested in an inline module is not read: {line:?}"
+                );
                 if let Some(name) = declared(rest, line) {
-                    add(name, out);
+                    match items {
+                        Some(items) => add(name, items),
+                        None => add(name, out),
+                    }
                 }
             }
             continue;
         }
         if let Some(rest) = line.strip_prefix("mod ") {
-            if let Some(name) = rest.strip_suffix(';') {
+            if let Some(name) = rest.trim_end().strip_suffix('{') {
+                inline_mod = Some((name.trim().to_string(), Some(BTreeSet::new())));
+            } else if let Some(name) = rest.strip_suffix(';') {
                 let (child, child_dir) = module_file(dir, name.trim());
                 let mut items = BTreeSet::new();
                 collect(&child, &child_dir, &mut items);
@@ -147,8 +202,8 @@ fn collect(file: &Path, dir: &Path, out: &mut BTreeSet<String>) {
             if let Some(name) = r.strip_suffix(';') {
                 let (child, child_dir) = module_file(dir, name.trim());
                 collect(&child, &child_dir, out);
-            } else if r.trim_end().ends_with('{') {
-                inline_mod = true;
+            } else if let Some(name) = r.trim_end().strip_suffix('{') {
+                inline_mod = Some((name.trim().to_string(), None));
             } else {
                 panic!("the inventory test does not know this module form: {line:?}");
             }
@@ -164,7 +219,7 @@ fn collect(file: &Path, dir: &Path, out: &mut BTreeSet<String>) {
     }
     for (module, items) in &private {
         for statement in &uses {
-            match reexported(statement, module) {
+            match reexported(statement, module, root) {
                 Some(None) => items.iter().for_each(|i| {
                     out.insert(i.clone());
                 }),
@@ -244,4 +299,39 @@ fn every_component_row_states_a_door() {
         }
     }
     assert!(components > 0, "no component rows were read");
+}
+
+#[test]
+fn the_reader_follows_the_forms_it_claims_to() {
+    let dir = std::env::temp_dir().join(format!("inventory-reader-{}", std::process::id()));
+    fs::create_dir_all(&dir).unwrap();
+    fs::write(
+        dir.join("hidden.rs"),
+        "pub fn from_file() {}\npub struct Kept;\n",
+    )
+    .unwrap();
+    fs::write(
+        dir.join("lib.rs"),
+        "#[inline] pub fn attributed() {}\n\
+         mod hidden;\n\
+         pub use self::hidden::from_file;\n\
+         pub use crate::hidden::Kept;\n\
+         mod inline {\n    pub fn inline_private() {}\n    pub fn not_exported() {}\n}\n\
+         pub use inline::inline_private;\n\
+         pub mod open {\n    #[must_use] pub fn inline_public() {}\n}\n",
+    )
+    .unwrap();
+    let mut out = BTreeSet::new();
+    collect(&dir.join("lib.rs"), &dir, &mut out);
+    fs::remove_dir_all(&dir).ok();
+    let want: BTreeSet<String> = [
+        "attributed",
+        "from_file",
+        "Kept",
+        "inline_private",
+        "inline_public",
+    ]
+    .map(String::from)
+    .into();
+    assert_eq!(out, want);
 }
