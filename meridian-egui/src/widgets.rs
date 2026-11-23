@@ -236,7 +236,7 @@ fn first_baseline(galley: &egui::Galley) -> Option<f32> {
 /// `centre_y`: centring on the string's own ink box
 /// ([`egui::Galley::mesh_bounds`]) rather than on its font box.
 ///
-/// Its one use is a keycap ([`crate::key_chip`]), where a short run of glyphs
+/// Its one use is a keycap ([`crate::key_chip`](mod@crate::key_chip)), where a short run of glyphs
 /// stands alone in a box of its own and is read as a shape, not along a line.
 /// Labels do not use it: each word would get its own baseline, and a word with
 /// a descender would sit higher than its neighbours. They use

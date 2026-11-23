@@ -86,7 +86,7 @@ struct Word {
 /// height, lay the names out left to right, and paint them from the semantic
 /// tokens.
 ///
-/// A strip has one rule and one bar and no corner. The rule is [`STRIP_RULE`]
+/// A strip has one rule and one bar and no corner. The rule is `STRIP_RULE`
 /// thick in the divider ink along the bottom of the strip. Each word is in the
 /// secondary ink, except the open one, which is in the primary ink and has a
 /// [`TAB_BAR_WIDTH`] bar in [`semantic::Tabs::active_bar`] under it, over the

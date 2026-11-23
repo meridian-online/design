@@ -5,7 +5,7 @@
 //! paints hover/selected/pressed state **from the semantic row tokens only**.
 //! The function takes no fill colour and no height in pixels: the height is a
 //! rung of the row ladder ([`RowHeight`]) and the state fills come from
-//! [`meridian_design::semantic`], so a hand-rolled row background cannot be
+//! [`meridian_design::semantic()`], so a hand-rolled row background cannot be
 //! expressed through this API at all. That is deliberate — the audit behind
 //! ADR 0011 found rows re-inventing their own accent at the call site, and the
 //! durable fix is an API with no fill parameter to misuse. The one ink a caller

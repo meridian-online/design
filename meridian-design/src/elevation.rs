@@ -67,9 +67,9 @@ impl Elevation {
     ///
     /// Shadow paint is never its own colour. In light it is the primary ink
     /// read from [`crate::chrome`] at low alpha — a shadow is the page's own
-    /// ink, so a chrome re-anchor moves it too. In dark it is [`BLACK`], for
+    /// ink, so a chrome re-anchor moves it too. In dark it is `BLACK`, for
     /// the reason given at that constant. The two anchors are asserted in
-    /// [`tests`] below, so neither can quietly become a fifth grey.
+    /// `tests` below, so neither can quietly become a fifth grey.
     pub const fn shadow(self, dark: bool) -> Option<Shadow> {
         match self {
             Self::Flat | Self::Raised => None,

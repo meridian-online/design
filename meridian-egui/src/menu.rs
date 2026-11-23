@@ -2,7 +2,7 @@
 //!
 //! A menu is a [`crate::Popover::show_menu`] whose body is [`menu_item`]s with a
 //! [`menu_separator`] between groups; there is no menu component. An item is
-//! the list row at 24 ([`crate::list_row`]) and takes its three states and the
+//! the list row at 24 ([`crate::list_row()`]) and takes its three states and the
 //! cursor's bar from it: a check column when [`MenuItem::checked`] was called,
 //! the label, a right-aligned 21 keycap and, for a submenu, a chevron. It fills
 //! the width it is given, and a label too long for it is cut with an ellipsis

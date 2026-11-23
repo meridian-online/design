@@ -11,7 +11,7 @@
 //! around reading such patterns).
 //!
 //! The delegate hands back row *content* ([`PickerRow`]), never row
-//! *treatment*: the picker draws every row through [`crate::list_row`], so a
+//! *treatment*: the picker draws every row through [`crate::list_row()`], so a
 //! delegate cannot introduce its own row colours or heights even on purpose.
 //!
 //! The trait is deliberately wide enough for the delegate shapes an
@@ -42,7 +42,7 @@ use crate::theme::to_color32;
 use crate::MeridianUi;
 
 /// One row's content, as data. The picker turns this into a themed
-/// [`crate::list_row`]; a delegate never draws.
+/// [`crate::list_row()`]; a delegate never draws.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PickerRow {
     /// Primary text.

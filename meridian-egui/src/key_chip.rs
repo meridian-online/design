@@ -172,7 +172,7 @@ pub(crate) fn chip_width(ui: &egui::Ui, keystroke: &str) -> f32 {
 
 /// A keystroke rendered as a keycap chip: monospace label on the sunken
 /// surface, a 1px hairline on its top and sides and a heavier foot under it —
-/// see [`paint_keycap`] — with spacing-ladder padding and the chip corner. Every
+/// see `paint_keycap` — with spacing-ladder padding and the chip corner. Every
 /// geometry and colour comes from a token — there is nothing to tune at the
 /// call site, which is the point.
 ///

@@ -1,6 +1,6 @@
 //! The step row and the thin step mark: the spine's list and its thin form.
 //!
-//! A step row is the list row at 24 ([`crate::list_row`]), filling the width it
+//! A step row is the list row at 24 ([`crate::list_row()`]), filling the width it
 //! is given. At its leading edge is a graph gutter, `GUTTER_PAD + lanes ×
 //! GUTTER_LANE + GUTTER_PAD` wide, where the row's state mark sits on its lane
 //! as a commit graph draws it, over the lanes that pass, arrive and leave. Then,

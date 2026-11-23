@@ -1,8 +1,8 @@
 //! The geometry a UI surface reaches for, aggregated behind `ui.tokens()`.
 //!
 //! `meridian-design` exposes its box model as modules of named constants —
-//! [`spacing`](meridian_design::spacing), [`radius`](meridian_design::radius),
-//! [`control`](meridian_design::control). That is the right shape for the source
+//! [`spacing`], [`radius`],
+//! [`control`]. That is the right shape for the source
 //! of truth, but a call site that wants "the control gap" should not have to
 //! remember which module it lives in or thread a bundle through its signature.
 //! [`Tokens`] gathers the values a surface actually reaches for into one plain

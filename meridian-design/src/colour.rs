@@ -93,7 +93,7 @@ impl Rgba {
 /// supply: `selected` (persistent, unlike `active`, which is the transient
 /// press) and `focus` (keyboard, which the immediate-mode desktop framework
 /// has no bucket for at all — see [`crate::focus`]). A `StateSet` is
-/// instantiated per role in [`crate::semantic`]; nothing else should build one
+/// instantiated per role in [`crate::semantic`](mod@crate::semantic); nothing else should build one
 /// ad hoc.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct StateSet {

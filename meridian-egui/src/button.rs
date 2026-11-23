@@ -17,7 +17,7 @@
 //! holding the reason. It takes no keyboard focus, and its accessibility node is
 //! disabled with the reason as its description.
 //!
-//! [`paint_button`] and [`button_size`] are the drawing and the measure, kept
+//! `paint_button` and `button_size` are the drawing and the measure, kept
 //! apart from the interaction so a component that lays buttons out itself (the
 //! ribbon row) draws the same button.
 
@@ -454,7 +454,7 @@ pub(crate) fn mark_unavailable(ctx: &egui::Context, id: egui::Id, reason: &str) 
 /// Draw a button and report what was done to it.
 ///
 /// The button is as wide as its contents and no wider than the width `ui` has
-/// left; [`paint_button`] cuts a label that does not fit.
+/// left; `paint_button` cuts a label that does not fit.
 pub fn button(ui: &mut egui::Ui, button: Button<'_>) -> ButtonResponse {
     debug_assert!(
         !(button.dense && button.keystroke.is_some()),
