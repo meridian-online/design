@@ -9,9 +9,10 @@ use egui::accesskit::Role as AccessRole;
 use egui::{Color32, Rect};
 use egui_kittest::kittest::{NodeT, Queryable};
 use egui_kittest::Harness;
-use meridian_design::control::{ICON_SM, KEYCAP_HEIGHT_IN_CONTROL, KEYCAP_INSET_IN_CONTROL};
+use meridian_design::control::{KEYCAP_HEIGHT_IN_CONTROL, KEYCAP_INSET_IN_CONTROL};
 use meridian_design::radius::{CHIP, CONTROL};
 use meridian_design::semantic::{semantic, Role};
+use meridian_design::spacing::{SPACE_3, SPACE_4};
 use meridian_egui::{button, icons, theme, Button, ButtonResponse, Mode, Weight};
 
 const MODES: [Mode; 2] = [Mode::Light, Mode::Dark];
@@ -49,6 +50,7 @@ struct Out {
     rect: Rect,
     clicked: bool,
     pointed: Option<Rect>,
+    focused: bool,
 }
 
 fn build(spec: Spec) -> Button<'static> {
@@ -83,6 +85,7 @@ fn drawn(mode: Mode, spec: Spec) -> Harness<'static, Out> {
                     let r: ButtonResponse = button(ui, build(spec));
                     out.rect = r.response.rect;
                     out.clicked |= r.clicked;
+                    out.focused = r.response.has_focus();
                     if r.pointed_unavailable.is_some() {
                         out.pointed = r.pointed_unavailable;
                     }
@@ -92,6 +95,7 @@ fn drawn(mode: Mode, spec: Spec) -> Harness<'static, Out> {
                 rect: Rect::NOTHING,
                 clicked: false,
                 pointed: None,
+                focused: false,
             },
         );
     harness.run();
@@ -159,13 +163,17 @@ fn assert_box(mode: Mode, spec: Spec, how: Interact, fill: Color32, stroke: Opti
         .collect();
     let what = format!("{:?} {mode:?} {how:?}", spec.weight);
     if fill == Color32::TRANSPARENT && stroke.is_none() {
-        // Nothing drawn on the box is also an answer.
+        // Nothing drawn on the box is also an answer. The focus ring is the
+        // one unfilled stroke allowed, and only the ring's own ink.
+        let ring = ink(semantic(mode.is_dark()).borders.focus);
+        let rest: Vec<_> = boxes
+            .iter()
+            .filter(|r| !(r.fill == Color32::TRANSPARENT && r.stroke.color == ring))
+            .collect();
         assert!(
-            boxes
-                .iter()
-                .all(|r| !r.is_stroked() || r.stroke.color != Color32::TRANSPARENT)
-                && boxes.iter().all(|r| r.fill == Color32::TRANSPARENT),
-            "{what}: painted {boxes:?}"
+            rest.iter()
+                .all(|r| !r.is_stroked() && r.fill == Color32::TRANSPARENT),
+            "{what}: painted {rest:?}"
         );
         return;
     }
@@ -471,6 +479,14 @@ fn an_unavailable_button_is_disabled_with_its_reason_as_its_description() {
 
 #[test]
 fn an_unavailable_button_takes_no_keyboard_focus() {
+    // The harness can focus an available button, so a button that stays
+    // unfocused below is the button's doing.
+    let mut live = drawn(Mode::Light, Spec::new(Weight::Default));
+    live.get_by_role_and_label(AccessRole::Button, LABEL)
+        .focus();
+    live.run();
+    assert!(live.state().focused, "the harness cannot focus a button");
+
     let mut spec = Spec::new(Weight::Default);
     spec.unavailable = true;
     let mut harness = drawn(Mode::Light, spec);
@@ -478,23 +494,26 @@ fn an_unavailable_button_takes_no_keyboard_focus() {
         .get_by_role_and_label(AccessRole::Button, LABEL)
         .focus();
     harness.run();
-    let (rects, b) = (painted(&harness, Mode::Light), harness.state().rect);
     assert!(
-        !has_ring(&rects, b, ink(semantic(false).borders.focus), 0.0),
-        "an unavailable button took a focus ring"
+        !harness.state().focused,
+        "an accessibility focus request focused it"
+    );
+    harness.key_press(egui::Key::Tab);
+    harness.run();
+    assert!(
+        !harness.state().focused,
+        "Tab focused an unavailable button"
     );
 }
 
 #[test]
 fn a_dense_button_is_twenty_tall_and_draws_no_key() {
     for mode in MODES {
-        let sem = semantic(mode.is_dark());
         let mut spec = Spec::new(Weight::Default);
         spec.dense = true;
         let (rects, b) = interacted(mode, spec, Interact::Rest);
         assert!(near(b.height(), 20.0), "{mode:?}: {b:?}");
         assert!(key_boxes(&rects).is_empty(), "{mode:?}: a key");
-        let _ = sem;
         let full = {
             let (_, full) = interacted(mode, Spec::new(Weight::Default), Interact::Rest);
             full
@@ -537,7 +556,6 @@ fn texts(harness: &Harness<'_, Out>) -> Vec<(String, Rect)> {
 #[test]
 fn a_long_label_is_cut_with_an_ellipsis_and_the_key_keeps_its_place() {
     for mode in MODES {
-        let sem = semantic(mode.is_dark());
         let mut spec = Spec::new(Weight::Default);
         spec.label = "Export the whole of the filtered table to a file";
         spec.key = Some(KEY);
@@ -552,7 +570,6 @@ fn a_long_label_is_cut_with_an_ellipsis_and_the_key_keeps_its_place() {
 
         let rects = painted(&harness, mode);
         let cap = key_boxes(&rects)[0].rect;
-        let _ = sem;
         assert!(
             near(b.right() - cap.right(), KEYCAP_INSET_IN_CONTROL),
             "{mode:?}: key moved"
@@ -573,7 +590,6 @@ fn a_long_label_is_cut_with_an_ellipsis_and_the_key_keeps_its_place() {
             label.1
         );
         assert!(label.1.left() >= b.left());
-        let _ = ICON_SM;
     }
 }
 
@@ -623,5 +639,109 @@ fn an_unavailable_default_button_inks_its_label_in_the_disabled_text() {
         };
         assert_eq!(ink_of(true), ink(sem.text.disabled), "{mode:?}");
         assert_ne!(ink_of(false), ink(sem.text.disabled), "{mode:?}");
+    }
+}
+
+/// Every colour an icon's strokes were painted in (the glyph is drawn as
+/// stroked paths, which is all that is stroked and not a rect or text).
+fn icon_inks(harness: &Harness<'_, Out>) -> Vec<Color32> {
+    fn walk(shape: &egui::Shape, out: &mut Vec<Color32>) {
+        match shape {
+            egui::Shape::Path(p) => {
+                if let egui::epaint::ColorMode::Solid(c) = p.stroke.color {
+                    out.push(c);
+                }
+            }
+            egui::Shape::Vec(v) => v.iter().for_each(|s| walk(s, out)),
+            _ => {}
+        }
+    }
+    let mut out = Vec::new();
+    for c in &harness.output().shapes {
+        walk(&c.shape, &mut out);
+    }
+    out
+}
+
+fn text_ink(harness: &Harness<'_, Out>, text: &str) -> Color32 {
+    for c in &harness.output().shapes {
+        if let egui::Shape::Text(t) = &c.shape {
+            if t.galley.job.text == text {
+                return t.galley.job.sections[0].format.color;
+            }
+        }
+    }
+    panic!("{text:?} was not drawn");
+}
+
+#[test]
+fn an_unavailable_primary_button_keeps_the_accent_ink_on_its_icon_and_dims_its_label() {
+    for mode in MODES {
+        let sem = semantic(mode.is_dark());
+        let a = sem.role(Role::Accent).to_owned();
+        let mut spec = Spec::new(Weight::Primary);
+        spec.icon = true;
+        spec.unavailable = true;
+        let harness = drawn(mode, spec);
+        let icons = icon_inks(&harness);
+        assert!(!icons.is_empty(), "{mode:?}: no icon drawn");
+        assert!(
+            icons.iter().all(|c| *c == ink(a.foreground.base)),
+            "{mode:?}: icon inks {icons:?}"
+        );
+        assert_eq!(
+            text_ink(&harness, LABEL),
+            ink(a.foreground.disabled),
+            "{mode:?}"
+        );
+        assert_ne!(ink(a.foreground.base), ink(a.foreground.disabled));
+
+        // The default weight's icon goes to the disabled text, as its label does.
+        let mut spec = Spec::new(Weight::Default);
+        spec.icon = true;
+        spec.unavailable = true;
+        let icons = icon_inks(&drawn(mode, spec));
+        assert!(
+            icons.iter().all(|c| *c == ink(sem.text.disabled)),
+            "{mode:?}: {icons:?}"
+        );
+    }
+}
+
+#[test]
+fn an_unavailable_button_dims_its_key_and_a_dense_one_pads_space_3() {
+    for mode in MODES {
+        let sem = semantic(mode.is_dark());
+        let mut spec = Spec::new(Weight::Default);
+        spec.key = Some(KEY);
+        assert_eq!(
+            text_ink(&drawn(mode, spec), KEY),
+            ink(sem.text.secondary),
+            "{mode:?}"
+        );
+        spec.unavailable = true;
+        assert_eq!(
+            text_ink(&drawn(mode, spec), KEY),
+            ink(sem.text.disabled),
+            "{mode:?}"
+        );
+
+        let lead = |dense: bool| {
+            let mut spec = Spec::new(Weight::Default);
+            spec.dense = dense;
+            let harness = drawn(mode, spec);
+            let (_, label) = texts(&harness)
+                .into_iter()
+                .find(|(s, _)| s == LABEL)
+                .unwrap();
+            label.left() - harness.state().rect.left()
+        };
+        // The galley's own bearing is the same in both, so the difference is
+        // the padding.
+        assert!(
+            near(lead(false) - lead(true), SPACE_4 - SPACE_3),
+            "{mode:?}"
+        );
+        assert!(near(lead(false), SPACE_4), "{mode:?}: {}", lead(false));
     }
 }
