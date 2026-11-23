@@ -25,6 +25,7 @@
 use egui::{Rect, Sense};
 use meridian_design::chrome::{INK_DARK, INK_LIGHT};
 use meridian_design::colour::Rgba;
+use meridian_design::control::HAIRLINE;
 use meridian_design::spacing::{ROW_DENSE, ROW_PREVIEW, SPACE_1, SPACE_2};
 use meridian_design::viz::{
     CATEGORICAL_DARK, CATEGORICAL_LIGHT, NULL_INK_DARK, NULL_INK_LIGHT, SEQUENTIAL_MERIDIAN,
@@ -32,8 +33,6 @@ use meridian_design::viz::{
 
 use crate::theme::to_color32;
 
-/// The sheet's 1px between bars, and the baseline's thickness.
-const HAIRLINE: f32 = 1.0;
 /// The sequential ramp's 600 step: the ramp runs 100 to 700 in steps of 50.
 const HOVER_STEP: usize = (600 - 100) / 50;
 

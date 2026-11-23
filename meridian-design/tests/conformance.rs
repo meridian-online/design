@@ -106,6 +106,7 @@ fn tokens_css_draws_the_chrome_look() {
         ("focus-ring-offset", "0px"),
         ("focus-ring-bleed", "0px"),
         ("focus-ring-width-on-solid", "1px"),
+        ("hairline", "1px"),
         ("row-bar-width", "3px"),
         ("tab-bar-width", "2px"),
         ("keycap-foot-width", "2px"),

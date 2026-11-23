@@ -82,6 +82,12 @@ pub const ICON_XL: f32 = 24.0;
 /// The icon ladder in ascending order.
 pub const ICONS: [f32; 5] = [ICON_XS, ICON_SM, ICON_MD, ICON_LG, ICON_XL];
 
+/// `1` — the hairline: the width of every rule, border and divider in the
+/// chrome. A rule is one pixel throughout the system, so the heavier bars
+/// below ([`ROW_BAR_WIDTH`], [`TAB_BAR_WIDTH`], [`KEYCAP_FOOT_WIDTH`]) are
+/// read against it.
+pub const HAIRLINE: f32 = 1.0;
+
 /// `3` — the bar on the leading edge of a row under the cursor
 /// (`guidelines/chrome.md`). Its ink is `semantic::Rows::cursor_bar`. A
 /// square row has no corner to say which row the keys act on, so the bar

@@ -182,6 +182,7 @@ fn geometry(css: &mut String) {
         &px(focus::RING_WIDTH_ON_SOLID),
     );
 
+    decl(css, "hairline", &px(HAIRLINE));
     decl(css, "row-bar-width", &px(ROW_BAR_WIDTH));
     decl(css, "tab-bar-width", &px(TAB_BAR_WIDTH));
     decl(css, "keycap-foot-width", &px(KEYCAP_FOOT_WIDTH));

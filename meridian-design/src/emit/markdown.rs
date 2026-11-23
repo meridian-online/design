@@ -699,6 +699,7 @@ pub fn tokens_md() -> String {
         "--m-panel-padding",
         "--m-section-gap",
         "--m-pane-gap",
+        "--m-hairline",
         "--m-tab-bar-width",
         "--m-keycap-foot-width",
         "--m-keycap-height",

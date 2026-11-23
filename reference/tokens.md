@@ -328,6 +328,7 @@ Stated once, in logical pixels, and mode-invariant throughout. The spacing ladde
 | `--m-focus-ring-inset` | `1px` |
 | `--m-focus-ring-bleed` | `0px` |
 | `--m-focus-ring-width-on-solid` | `1px` |
+| `--m-hairline` | `1px` |
 | `--m-row-bar-width` | `3px` |
 | `--m-tab-bar-width` | `2px` |
 | `--m-keycap-foot-width` | `2px` |
