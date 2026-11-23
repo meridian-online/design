@@ -224,6 +224,9 @@ pub fn key_chip_with(
 
 /// The box a keycap takes for `keystroke` at `size`.
 ///
+/// The height of a key in a control is set by `keycap_height_in_control`, not
+/// built up from its parts, and its keystroke is centred in the face.
+///
 /// A row key is its galley plus the chip's padding, hairline and foot: 1 + 2 +
 /// 15 + 1 + 2 = 21. A key in a control is 16 whatever the keystroke: the
 /// hairline, 1px of padding, a 12px text box and the foot, 1 + 1 + 12 + 2. Its

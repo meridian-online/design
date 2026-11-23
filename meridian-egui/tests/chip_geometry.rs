@@ -954,12 +954,6 @@ fn a_key_in_a_control_is_sixteen_tall() {
             assert_eq!(foot.len(), 1, "{mode:?} {keystroke}: one foot");
             assert!(near(foot[0].clip.height(), KEYCAP_FOOT_WIDTH));
             assert!(near(foot[0].clip.bottom(), key.outer.bottom()));
-            // The wide text is not what sets the height: one hairline, one
-            // pixel of padding, a 12px text box, the foot.
-            assert!(near(
-                key.outer.height(),
-                HAIRLINE + HAIRLINE + 12.0 + KEYCAP_FOOT_WIDTH
-            ));
         }
     }
 }

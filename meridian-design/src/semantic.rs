@@ -386,7 +386,7 @@ pub struct KeycapInks {
     pub on_solid_rule: Rgba,
     /// The foot under the key. At 100% this is [`Text::on_solid`] itself; it is
     /// its own slot so the look is stated where a later change would look for
-    /// it. Hugh's choice, made so a visible step remains between rule and foot.
+    /// it. The owner chose it so that a visible step remains between rule and foot.
     pub on_solid_foot: Rgba,
 }
 
