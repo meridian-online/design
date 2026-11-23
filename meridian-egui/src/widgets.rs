@@ -17,7 +17,7 @@
 use egui::{Align, Layout, Response, RichText, Sense, StrokeKind, UiBuilder};
 use meridian_design::semantic::{semantic, Role};
 use meridian_design::typography::UI_SIZE;
-use meridian_design::{control, focus};
+use meridian_design::{control, focus, radius};
 
 use crate::align::LayoutInfo;
 use crate::icons::Icon;
@@ -150,7 +150,7 @@ pub fn pane_header_with(
         ui.allocate_exact_size(egui::vec2(ui.available_width(), height), Sense::hover());
     if ui.is_rect_visible(rect) {
         let painter = ui.painter();
-        painter.rect_filled(rect, 0, to_color32(sem.surfaces.header));
+        painter.rect_filled(rect, radius::NONE, to_color32(sem.surfaces.header));
         painter.line_segment(
             [rect.left_bottom(), rect.right_bottom()],
             egui::Stroke::new(1.0, to_color32(sem.borders.subtle)),

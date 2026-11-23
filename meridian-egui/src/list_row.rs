@@ -22,9 +22,9 @@
 //! flicker: the pointer is over the row whether or not the affordance exists
 //! yet.
 
-use egui::{Color32, CornerRadius, Rect, Sense, UiBuilder};
+use egui::{Color32, Rect, Sense, UiBuilder};
 use meridian_design::control::ROW_BAR_WIDTH;
-use meridian_design::{semantic, Role};
+use meridian_design::{radius, semantic, Role};
 
 use crate::theme::to_color32;
 use crate::tokens::Tokens;
@@ -179,12 +179,12 @@ pub fn list_row<R>(
         };
         if let Some(fill) = fill {
             ui.painter()
-                .rect_filled(rect, CornerRadius::ZERO, to_color32(fill));
+                .rect_filled(rect, radius::NONE, to_color32(fill));
         }
         if state.selected {
             let bar = Rect::from_min_size(rect.min, egui::vec2(ROW_BAR_WIDTH, rect.height()));
             let ink = row.bar_ink.unwrap_or_else(|| to_color32(rows.cursor_bar));
-            ui.painter().rect_filled(bar, CornerRadius::ZERO, ink);
+            ui.painter().rect_filled(bar, radius::NONE, ink);
         }
     }
 

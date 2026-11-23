@@ -19,9 +19,9 @@
 
 use std::sync::Arc;
 
-use egui::{Color32, CornerRadius, Galley, Rect, Sense, TextStyle, UiBuilder};
+use egui::{Color32, Galley, Rect, Sense, TextStyle, UiBuilder};
 use meridian_design::control::TAB_BAR_WIDTH;
-use meridian_design::semantic;
+use meridian_design::{radius, semantic};
 
 use crate::theme::to_color32;
 use crate::widgets::optically_centred_galley_top;
@@ -144,7 +144,7 @@ pub fn line_tabs(ui: &mut egui::Ui, tabs: LineTabs<'_>) -> LineTabsResponse {
             egui::pos2(strip.left(), strip.bottom() - STRIP_RULE),
             strip.max,
         );
-        painter.rect_filled(rule, CornerRadius::ZERO, to_color32(sem.borders.divider));
+        painter.rect_filled(rule, radius::NONE, to_color32(sem.borders.divider));
 
         // The words sit above the bar, so the open tab's bar is not a line
         // through its own text.
@@ -158,7 +158,7 @@ pub fn line_tabs(ui: &mut egui::Ui, tabs: LineTabs<'_>) -> LineTabsResponse {
                 let ink = tabs
                     .bar_ink
                     .unwrap_or_else(|| to_color32(sem.tabs.active_bar));
-                painter.rect_filled(bar, CornerRadius::ZERO, ink);
+                painter.rect_filled(bar, radius::NONE, ink);
             }
             let top = optically_centred_galley_top(&word.galley, centre_y);
             painter.galley(

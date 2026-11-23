@@ -13,13 +13,14 @@
 
 use std::sync::Arc;
 
+use egui::epaint::RectShape;
 use egui::{
     Align, Color32, CornerRadius, FontFamily, FontId, FontSelection, Galley, Rect, RichText, Sense,
-    Vec2, WidgetText,
+    Stroke, StrokeKind, Vec2, WidgetText,
 };
 use meridian_design::control::KEYCAP_FOOT_WIDTH;
-use meridian_design::semantic;
 use meridian_design::typography::CHART_LABEL_SIZE;
+use meridian_design::{radius, semantic};
 
 use crate::theme::to_color32;
 use crate::widgets::optically_centred_galley_top;
@@ -61,53 +62,37 @@ fn keycap_face(rect: Rect) -> Rect {
     )
 }
 
-/// Paint the keycap's box in `rect`: the sunken fill, a 1px hairline in the
-/// subtle border ink on the top and both sides, and a [`KEYCAP_FOOT_WIDTH`] foot
-/// in the default border ink across the bottom — so it reads as a key by its
-/// heavier foot rather than by a corner. One frame stroke cannot draw the two
-/// widths, so the box is five square rects that do not overlap: the fill's
-/// face and the four rules around it.
+/// Paint the keycap's box in `rect`: one rect at the chip corner, filled with
+/// the sunken surface and stroked inside with a 1px hairline in the subtle
+/// border ink, then a [`KEYCAP_FOOT_WIDTH`] foot in the default border ink
+/// across the bottom — so it reads as a key by its heavier foot as well as by
+/// its corner. The foot is rounded at its two bottom corners with the same
+/// radius, so the corner is the box's and the foot follows it; it covers the
+/// hairline's bottom run.
 fn paint_keycap(ui: &egui::Ui, rect: Rect) {
     let sem = semantic(ui.visuals().dark_mode);
     let painter = ui.painter();
-    let square = CornerRadius::ZERO;
-    let side = to_color32(sem.borders.subtle);
-    let foot = to_color32(sem.borders.default_);
-
-    painter.rect_filled(rect, square, to_color32(sem.surfaces.sunken));
-
-    let (left, right, top, bottom) = (rect.left(), rect.right(), rect.top(), rect.bottom());
-    let foot_top = bottom - KEYCAP_FOOT_WIDTH;
-    let rules = [
-        // The top hairline, across the whole width.
-        (
-            Rect::from_min_max(rect.min, egui::pos2(right, top + KEYCAP_SIDE_RULE)),
-            side,
-        ),
-        // The two sides, between the top hairline and the foot.
-        (
-            Rect::from_min_max(
-                egui::pos2(left, top + KEYCAP_SIDE_RULE),
-                egui::pos2(left + KEYCAP_SIDE_RULE, foot_top),
-            ),
-            side,
-        ),
-        (
-            Rect::from_min_max(
-                egui::pos2(right - KEYCAP_SIDE_RULE, top + KEYCAP_SIDE_RULE),
-                egui::pos2(right, foot_top),
-            ),
-            side,
-        ),
-        // The foot, across the whole width.
-        (
-            Rect::from_min_max(egui::pos2(left, foot_top), rect.max),
-            foot,
-        ),
-    ];
-    for (rule, ink) in rules {
-        painter.rect_filled(rule, square, ink);
-    }
+    let corner = CornerRadius::same(radius::CHIP.round() as u8);
+    painter.add(RectShape::new(
+        rect,
+        corner,
+        to_color32(sem.surfaces.sunken),
+        Stroke::new(KEYCAP_SIDE_RULE, to_color32(sem.borders.subtle)),
+        StrokeKind::Inside,
+    ));
+    let foot = Rect::from_min_max(
+        egui::pos2(rect.left(), rect.bottom() - KEYCAP_FOOT_WIDTH),
+        rect.max,
+    );
+    painter.rect_filled(
+        foot,
+        CornerRadius {
+            nw: 0,
+            ne: 0,
+            ..corner
+        },
+        to_color32(sem.borders.default_),
+    );
 }
 
 /// The keystroke laid out in the keycap's monospace ink: one section, no
@@ -151,7 +136,7 @@ pub(crate) fn chip_width(ui: &egui::Ui, keystroke: &str) -> f32 {
 
 /// A keystroke rendered as a keycap chip: monospace label on the sunken
 /// surface, a 1px hairline on its top and sides and a heavier foot under it —
-/// see [`paint_keycap`] — with spacing-ladder padding and no corner. Every
+/// see [`paint_keycap`] — with spacing-ladder padding and the chip corner. Every
 /// geometry and colour comes from a token — there is nothing to tune at the
 /// call site, which is the point.
 ///

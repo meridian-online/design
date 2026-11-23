@@ -279,9 +279,9 @@ Stated once, in logical pixels, and mode-invariant throughout. The spacing ladde
 | Token | Value |
 |---|---|
 | `--m-radius-none` | `0px` |
-| `--m-radius-chip` | `0px` |
-| `--m-radius-control` | `0px` |
-| `--m-radius-panel` | `0px` |
+| `--m-radius-chip` | `2px` |
+| `--m-radius-control` | `3px` |
+| `--m-radius-panel` | `3px` |
 | `--m-radius-full` | `9999px` |
 | `--m-space-0` | `0px` |
 | `--m-space-1` | `2px` |

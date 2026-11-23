@@ -1,7 +1,7 @@
 ---
 status: accepted
 date-created: 2026-09-29
-date-modified: 2026-09-29
+date-modified: 2026-11-23
 ---
 # 0013. Square chrome: a rule and a bar do what a corner and a wash did
 
@@ -49,3 +49,23 @@ The selection wash (`rows.selected_background`) stays, square, for a toggle that
 - Bad, because the keycap's foot is faint: `borders.default_` on the sunken fill measures 1.53:1 in light and 1.92:1 in dark. A key hint takes no input, so the 3:1 floor for a control's boundary does not bind it.
 - Bad, because `borders.control` on the fill under the cursor measures 2.86:1 in light, under the 3:1 floor. No control with a drawn boundary sits in a row under the cursor today, so the gate holds text and the focus ink on that fill and not the control boundary; a control placed there reopens this.
 - Neutral, because the website's own corners come from its own `--radius`, not from these tokens, and follow in the website's own change.
+
+### Update (2026-11-22 — a small corner returns)
+
+Square at every right angle was ruled for a look that was drawn and driven as a prototype. Seen against the product it now has to sit beside, the ruling was relaxed. The amount was chosen from a corner switch on the component sheet, against measurements of a comparable app, whose small controls round by 2px and whose everything else rounds by 3px.
+
+| Token | Was | Is | Rounds |
+|---|---|---|---|
+| `radius::CHIP` | 0 | 2 | keycap, status pill, timeline bar, a tab's close control |
+| `radius::CONTROL` | 0 | 3 | button, text field, segmented control, focus ring |
+| `radius::PANEL` | 0 | 3 | popover, menu, modal card, banner, toast, an inspector or step list as a card |
+| `radius::FULL` | 9999 | 9999 | a dot, a ring, a spinner, a slider's thumb |
+
+- **Narrows:** "no corners". Chips, controls and cards take the radii above. These are smaller than the 3, 6 and 8 the decision retired.
+- **Stands:** everything else decided above. The focus ring is a 2px rule inside the control's edge and follows the control's corner. Overlays cast a hard shadow with no blur. A cursor is a fill and a bar. Tabs are line tabs.
+- **Stays square:** rows and their hover, cursor and selection fills; every bar (a line tab's, a cursor's, a progress bar along a foot); every hairline; data marks, including the distribution bar's bins; bands that run edge to edge. A shape that stays square reads `radius::NONE`, never a rounding rung, so it does not round the next time a rung moves.
+- **Joined cells round only their outer corners:** the ribbon's open tab at the top, a vertical tab's current place on the side away from the canvas. A text field rounds its top corners and keeps its rule straight.
+
+The keycap is now one rounded box with its hairline on three sides and a 2px foot that follows the box's bottom corners.
+
+Consumers read the radius tokens in their own painters, some of them for row fills and selection washes that were square only because the rungs were 0. Each consumer therefore moves its row fills, bars and edge-to-edge bands to `radius::NONE` (`--m-radius-none` on the web) in the same change as its bump.

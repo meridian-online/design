@@ -189,7 +189,7 @@ impl Painted {
     /// The one box painted with `fill` at the chip radius. Each harness below
     /// draws a single chip, so one box with that fill is the chip; a frame that
     /// also draws another sunken box, or a keycap among them, tells a keycap
-    /// apart by its foot instead — see `keycap_boxes` in `square_look.rs`.
+    /// apart by its foot instead — see `chrome_look.rs`.
     fn chip_box(&self, fill: egui::Color32) -> egui::Rect {
         let radius = egui::CornerRadius::from(meridian_design::radius::CHIP);
         let found: Vec<egui::Rect> = self

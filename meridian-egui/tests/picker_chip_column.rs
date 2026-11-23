@@ -530,11 +530,11 @@ fn the_match_rows_still_sit_on_their_named_ladder_rung() {
             let harness = draw(mode, density);
             let shapes = paint_list(&harness);
             let cursor = theme::to_color32(semantic(mode.is_dark()).rows.cursor_background);
-            let control = egui::CornerRadius::from(radius::CONTROL);
+            let square = egui::CornerRadius::from(radius::NONE);
             let boxes: Vec<egui::Rect> = shapes
                 .iter()
                 .filter_map(|s| match s {
-                    Shape::Rect(rect, fill, cr) if *fill == cursor && *cr == control => Some(*rect),
+                    Shape::Rect(rect, fill, cr) if *fill == cursor && *cr == square => Some(*rect),
                     _ => None,
                 })
                 .collect();

@@ -45,12 +45,12 @@ fn tokens_css_carries_the_geometry_layer() {
     assert!(!css.contains("--m-shadow-flat"));
 }
 
-/// The square look, as the web receives it. The values are the ruling's,
+/// The chrome look, as the web receives it. The values are the ruling's,
 /// written out rather than read back from the Rust constants: a test that
 /// formats `radius::CONTROL` passes whatever `CONTROL` holds, and what has to
 /// hold here is the look.
 #[test]
-fn tokens_css_draws_the_square_look() {
+fn tokens_css_draws_the_chrome_look() {
     let css = meridian_design::emit::tokens_css();
     let (light, dark) = css.split_once("\n.dark {").expect("two mode blocks");
     let value = |block: &str, name: &str| -> String {
@@ -63,9 +63,9 @@ fn tokens_css_draws_the_square_look() {
     };
 
     for (name, want) in [
-        ("radius-chip", "0px"),
-        ("radius-control", "0px"),
-        ("radius-panel", "0px"),
+        ("radius-chip", "2px"),
+        ("radius-control", "3px"),
+        ("radius-panel", "3px"),
         ("radius-full", "9999px"),
         ("focus-ring-width", "2px"),
         ("focus-ring-offset", "0px"),
