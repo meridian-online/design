@@ -44,7 +44,7 @@ pub struct Tokens {
 
     /// Inline chips, badges, tags, swatches.
     pub radius_chip: f32,
-    /// The default control radius: buttons, inputs, selects, list rows.
+    /// The default control radius: buttons, text fields, selects. List rows are square and read `radius::NONE`.
     pub radius_control: f32,
     /// Containers: panels, cards, popovers, modals, docked regions.
     pub radius_panel: f32,

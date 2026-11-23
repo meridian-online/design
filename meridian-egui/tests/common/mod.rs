@@ -42,10 +42,12 @@ pub struct Painted {
     pub kind: StrokeKind,
     pub radius: CornerRadius,
     pub blur: f32,
+    /// The clip rect the shape was painted under.
+    pub clip: Rect,
 }
 
 impl Painted {
-    pub fn from(r: &RectShape) -> Self {
+    pub fn from(r: &RectShape, clip: Rect) -> Self {
         Self {
             rect: r.rect,
             fill: r.fill,
@@ -53,6 +55,7 @@ impl Painted {
             kind: r.stroke_kind,
             radius: r.corner_radius,
             blur: r.blur_width,
+            clip,
         }
     }
 
@@ -84,16 +87,16 @@ impl Painted {
 /// widget's. It is the one fill in `mode` that is the page's, and it is left
 /// out; nothing a primitive draws is the page's fill.
 pub fn painted<S>(harness: &Harness<'_, S>, mode: Mode) -> Vec<Painted> {
-    pub fn walk(shape: &egui::Shape, out: &mut Vec<Painted>) {
+    pub fn walk(shape: &egui::Shape, clip: Rect, out: &mut Vec<Painted>) {
         match shape {
-            egui::Shape::Rect(r) => out.push(Painted::from(r)),
-            egui::Shape::Vec(shapes) => shapes.iter().for_each(|s| walk(s, out)),
+            egui::Shape::Rect(r) => out.push(Painted::from(r, clip)),
+            egui::Shape::Vec(shapes) => shapes.iter().for_each(|s| walk(s, clip, out)),
             _ => {}
         }
     }
     let mut out = Vec::new();
     for clipped in &harness.output().shapes {
-        walk(&clipped.shape, &mut out);
+        walk(&clipped.shape, clipped.clip_rect, &mut out);
     }
     let page = theme::meridian_visuals(mode).panel_fill;
     out.retain(|r| r.fill != page);

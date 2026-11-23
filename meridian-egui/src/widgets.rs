@@ -305,7 +305,7 @@ pub fn status_pill(ui: &mut egui::Ui, icon: &Icon, label: &str, role: Role) -> R
 /// it — a layout reserves nothing for it ([`focus::RING_BLEED`] is `0`).
 ///
 /// `control_radius` is the corner radius of the control the ring follows
-/// (usually `ui.tokens().radius_control`, which is `0`: chrome is square). A
+/// (usually `ui.tokens().radius_control`, which is `3`; a square shape passes [`meridian_design::radius::NONE`]). A
 /// round mark — a dot, a slider's thumb — passes [`meridian_design::radius::FULL`]
 /// and keeps a concentric ring.
 ///

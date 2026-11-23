@@ -66,9 +66,10 @@ fn keycap_face(rect: Rect) -> Rect {
 /// the sunken surface and stroked inside with a 1px hairline in the subtle
 /// border ink, then a [`KEYCAP_FOOT_WIDTH`] foot in the default border ink
 /// across the bottom — so it reads as a key by its heavier foot as well as by
-/// its corner. The foot is rounded at its two bottom corners with the same
-/// radius, so the corner is the box's and the foot follows it; it covers the
-/// hairline's bottom run.
+/// its corner. The foot is the box's own rect at the same corner, clipped to the
+/// bottom band: a rect only as tall as the foot would clamp its corners to half
+/// its height and poke out of the box's outline. It covers the hairline's
+/// bottom run.
 fn paint_keycap(ui: &egui::Ui, rect: Rect) {
     let sem = semantic(ui.visuals().dark_mode);
     let painter = ui.painter();
@@ -80,19 +81,13 @@ fn paint_keycap(ui: &egui::Ui, rect: Rect) {
         Stroke::new(KEYCAP_SIDE_RULE, to_color32(sem.borders.subtle)),
         StrokeKind::Inside,
     ));
-    let foot = Rect::from_min_max(
+    let band = Rect::from_min_max(
         egui::pos2(rect.left(), rect.bottom() - KEYCAP_FOOT_WIDTH),
         rect.max,
     );
-    painter.rect_filled(
-        foot,
-        CornerRadius {
-            nw: 0,
-            ne: 0,
-            ..corner
-        },
-        to_color32(sem.borders.default_),
-    );
+    painter
+        .with_clip_rect(band.intersect(painter.clip_rect()))
+        .rect_filled(rect, corner, to_color32(sem.borders.default_));
 }
 
 /// The keystroke laid out in the keycap's monospace ink: one section, no

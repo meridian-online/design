@@ -178,7 +178,7 @@ pub fn meridian_visuals(mode: Mode) -> egui::Visuals {
     w.open.fg_stroke = egui::Stroke::new(1.0, c(p.gray[11]));
 
     // Box model: corner radii from the radius ladder. Controls (buttons, inputs,
-    // list rows, menu items) take `CONTROL`; containers (windows, menus) take
+    // menu items) take `CONTROL`; containers (windows, menus) take
     // `PANEL`. Left at egui's defaults before this bridge governed the box model.
     let control_radius = egui::CornerRadius::same(radius::CONTROL.round() as u8);
     for wv in [

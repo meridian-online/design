@@ -225,18 +225,16 @@ fn a_key_and_a_pill_draw_the_chip_corner() {
         assert_eq!(boxes.len(), 1, "{mode:?}: one key box");
         assert_corner(&boxes, radius::CHIP, &format!("the key's box, {mode:?}"));
 
-        // The foot follows the box's bottom corners and is flat where it
-        // meets the sides, so the corner is the shape's and not a cut-out.
+        // The foot is the box's own rect at the chip corner, so its corners
+        // are the box's; the key test below pins what it is clipped to.
         let foot_ink = ink(semantic(mode.is_dark()).borders.default_);
         let feet = filled(&rects, foot_ink);
         assert_eq!(feet.len(), 1, "{mode:?}: one foot");
-        let want = CornerRadius {
-            nw: 0,
-            ne: 0,
-            sw: radius::CHIP as u8,
-            se: radius::CHIP as u8,
-        };
-        assert_eq!(feet[0].radius, want, "{mode:?}: the foot's corners");
+        assert_eq!(
+            feet[0].radius,
+            CornerRadius::same(radius::CHIP as u8),
+            "{mode:?}: the foot's corners"
+        );
     }
 }
 
@@ -315,16 +313,38 @@ fn cards(mode: Mode) -> Harness<'static, (NotificationLayer, ToastLayer)> {
 fn the_modal_card_the_banner_and_the_toast_draw_the_panel_corner() {
     for mode in MODES {
         let harness = cards(mode);
-        // The modal carries a keystroke hint, which is a chip and takes the
-        // chip corner, and a scrim that dims the whole screen, which is not a
-        // card; every other rect in the frame belongs to a card.
         let sem = semantic(mode.is_dark());
+        let rects = painted(&harness, mode);
+
+        // Each card is a ruled rect in the overlay fill: the inline modal card,
+        // the modal layer's card, the banner and the toast (a dismiss button inside one
+        // is a smaller ruled rect in the same fill, and is a control). Four must be on the
+        // frame, or a missing card would pass for a right corner.
+        let overlay = ink(sem.surfaces.overlay);
+        let cards: Vec<Painted> = filled(&rects, overlay)
+            .into_iter()
+            .filter(|r| r.is_stroked() && r.rect.height() >= 30.0)
+            .collect();
+        assert_eq!(
+            cards.len(),
+            4,
+            "{mode:?}: the inline card, the modal card, the banner and the toast; painted {rects:?}"
+        );
+        assert_corner(&cards, radius::PANEL, &format!("the cards, {mode:?}"));
+
+        // And nothing else the cards paint is rounded differently: their
+        // shadows take the panel corner too. The keystroke hint in the modal is
+        // a chip and the scrim dims the whole screen; neither is a card.
         let keycap = [ink(sem.surfaces.sunken), ink(sem.borders.default_)];
-        let card_rects: Vec<Painted> = painted(&harness, mode)
+        let rest: Vec<Painted> = rects
             .into_iter()
             .filter(|r| !keycap.contains(&r.fill) && r.rect.width() < 900.0)
             .collect();
-        assert_corner(&card_rects, radius::PANEL, &format!("the cards, {mode:?}"));
+        assert_corner(
+            &rest,
+            radius::PANEL,
+            &format!("the cards' shadows, {mode:?}"),
+        );
     }
 }
 
@@ -548,25 +568,30 @@ fn a_key_is_one_rounded_box_with_a_hairline_on_three_sides_and_a_foot() {
         assert!(near(b.stroke.width, 1.0), "{mode:?}: the hairline's width");
         assert_eq!(b.kind, StrokeKind::Inside, "{mode:?}: the hairline's side");
 
-        // The foot, 2px, the whole width, flush with the bottom, and rounded
-        // at the bottom corners only so it follows the box.
+        // The foot is the box's own rect at the box's corner, clipped to the
+        // bottom 2px. A rect only 2px tall would clamp its corners to 1px and
+        // poke out of the box's outline; this cannot.
         let feet = filled(&rects, foot_ink);
         assert_eq!(feet.len(), 1, "{mode:?}: one foot");
-        let foot = Rect::from_min_max(egui::pos2(b.rect.left(), b.rect.bottom() - 2.0), b.rect.max);
         assert!(
-            near_rect(feet[0].rect, foot),
-            "{mode:?}: the foot is {:?}, not {foot:?}",
-            feet[0].rect
+            near_rect(feet[0].rect, b.rect),
+            "{mode:?}: the foot's rect is {:?}, not the box's {:?}",
+            feet[0].rect,
+            b.rect
         );
         assert_eq!(
             feet[0].radius,
-            CornerRadius {
-                nw: 0,
-                ne: 0,
-                sw: 2,
-                se: 2
-            },
-            "{mode:?}: the foot follows the box's bottom corners"
+            CornerRadius::same(2),
+            "{mode:?}: the foot follows the box's corners"
+        );
+        let band = Rect::from_min_max(
+            egui::pos2(b.rect.left(), b.rect.bottom() - KEYCAP_FOOT_WIDTH),
+            b.rect.max,
+        );
+        assert!(
+            near_rect(feet[0].clip, band),
+            "{mode:?}: the foot shows through {:?}, not the bottom band {band:?}",
+            feet[0].clip
         );
         assert_eq!(
             rects.len(),

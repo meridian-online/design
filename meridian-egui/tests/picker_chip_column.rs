@@ -27,7 +27,6 @@
 //! the CPU tessellation path and is green on a headless runner.
 
 use egui_kittest::Harness;
-use meridian_design::control::KEYCAP_FOOT_WIDTH;
 use meridian_design::radius;
 use meridian_design::semantic::semantic;
 use meridian_design::spacing::{ICON_LABEL_GAP, ROW_GRID};
@@ -207,16 +206,16 @@ fn drawn_rows<S>(harness: &Harness<'_, S>, mode: Mode) -> Vec<DrawnRow> {
     let foot_ink = theme::to_color32(sem.borders.default_);
 
     // The sunken fill is also the query line's, so a box with that fill is a
-    // keycap only if it stands on a foot: a rect in the default border ink as
-    // wide as the box, flush with its bottom edge, and the named foot tall.
+    // keycap only if it stands on a foot: a rect in the default border ink with
+    // the box's own rect (it is clipped to the bottom band when painted).
     let stands_on_a_foot = |chip: &egui::Rect| {
         shapes.iter().any(|s| match s {
             Shape::Rect(foot, ink, _) => {
                 *ink == foot_ink
                     && (foot.left() - chip.left()).abs() < EPS
                     && (foot.right() - chip.right()).abs() < EPS
+                    && (foot.top() - chip.top()).abs() < EPS
                     && (foot.bottom() - chip.bottom()).abs() < EPS
-                    && (foot.height() - KEYCAP_FOOT_WIDTH).abs() < EPS
             }
             Shape::Text(_) => false,
         })

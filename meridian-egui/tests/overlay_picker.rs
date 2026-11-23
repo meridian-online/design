@@ -9,7 +9,6 @@
 
 use egui_kittest::kittest::Queryable;
 use egui_kittest::Harness;
-use meridian_design::control::KEYCAP_FOOT_WIDTH;
 use meridian_egui::{
     key_chip, list_row, theme, ListRow, MeridianUi, ModalChrome, ModalLayer, Mode, Notification,
     NotificationId, NotificationLayer, Picker, PickerDelegate, PickerEvent, PickerHint,
@@ -516,8 +515,8 @@ fn toast_layer_renders_queued_toasts() {
 // carries a size for, and the galley never stretched. What stretched was the
 // chip's own box, which exists only as a painted shape. `surfaces.sunken` is
 // the keycap's fill and the query line's too, so a chip box is the sunken rect
-// that stands on a keycap foot — see `keycap_boxes` — and the pair of fill and
-// radius no longer tells them apart, the chrome having no corner.
+// that stands on a keycap foot — see `keycap_boxes` — and fill alone does not tell
+// them apart.
 
 /// The hairline every box in this crate is stroked with. Named here so the
 /// content-derived chip height below is spelled out term by term rather than
@@ -555,8 +554,8 @@ fn boxes_of<S>(harness: &Harness<'_, S>, fill: egui::Color32, radius: f32) -> Ve
 }
 
 /// The keycap boxes a frame painted: the rects filled with the sunken surface
-/// that stand on a foot — a rect in the default border ink as wide as the box,
-/// flush with its bottom edge and [`KEYCAP_FOOT_WIDTH`] tall.
+/// that stand on a foot — a rect in the default border ink with the box's own rect,
+/// painted under a clip that leaves only its bottom [`KEYCAP_FOOT_WIDTH`] showing.
 fn keycap_boxes<S>(harness: &Harness<'_, S>, dark: bool) -> Vec<egui::Rect> {
     let sem = meridian_design::semantic(dark);
     let sunken = theme::to_color32(sem.surfaces.sunken);
@@ -570,8 +569,8 @@ fn keycap_boxes<S>(harness: &Harness<'_, S>, dark: bool) -> Vec<egui::Rect> {
                     *ink == foot_ink
                         && (foot.left() - rect.left()).abs() < 0.01
                         && (foot.right() - rect.right()).abs() < 0.01
+                        && (foot.top() - rect.top()).abs() < 0.01
                         && (foot.bottom() - rect.bottom()).abs() < 0.01
-                        && (foot.height() - KEYCAP_FOOT_WIDTH).abs() < 0.01
                 })
         })
         .map(|(rect, _, _)| *rect)
