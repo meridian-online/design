@@ -407,9 +407,20 @@ fn a_help_line_sits_beneath_in_the_muted_ink_at_label_size() {
             r.top() >= h.state().rect.bottom() - 0.01,
             "{mode:?}: {r:?} not beneath"
         );
+        let size = h
+            .output()
+            .shapes
+            .iter()
+            .find_map(|c| match &c.shape {
+                egui::Shape::Text(t) if t.galley.job.text == HELP => {
+                    Some(t.galley.job.sections[0].format.font_id.size)
+                }
+                _ => None,
+            })
+            .expect("help drawn");
         assert!(
-            near(r.height(), 14.0) || r.height() < 16.0,
-            "{mode:?}: line is {r:?}"
+            near(size, meridian_design::typography::LABEL_SIZE),
+            "{mode:?}: {size}"
         );
         // The field's own response is the field, not the message line.
         assert!(near(h.state().rect.height(), control::HEIGHT_MD));
@@ -495,6 +506,18 @@ fn the_field_fills_the_width_it_is_given() {
         spec.help = Some(HELP);
         let h = drawn(Mode::Light, spec);
         assert!(near(h.state().rect.width(), w), "{w}: {:?}", h.state().rect);
+        let sem = semantic(false);
+        let fill = field_fill(
+            &painted(&h, Mode::Light),
+            ink(sem.surfaces.sunken),
+            h.state().rect,
+            "width",
+        );
+        assert!(
+            near(fill.rect.width(), w),
+            "{w}: painted fill {:?}",
+            fill.rect
+        );
     }
 }
 
@@ -517,4 +540,181 @@ fn the_field_is_a_text_input_and_the_error_is_its_description() {
         .get_by_role(AccessRole::TextInput)
         .accesskit_node()
         .is_disabled());
+}
+
+fn click_at(h: &mut Harness<'_, Out>, pos: egui::Pos2) {
+    h.event(egui::Event::PointerMoved(pos));
+    h.run();
+    for pressed in [true, false] {
+        h.event(egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        });
+        h.run();
+    }
+}
+
+#[test]
+fn a_press_anywhere_in_the_box_gives_the_field_the_keys() {
+    let mut spec = Spec::new();
+    spec.icon = true;
+    spec.unit = Some("days");
+    spec.help = Some(HELP);
+    for (what, dx) in [("left padding", 3.0), ("icon", 8.0 + 7.0), ("unit", 195.0)] {
+        let mut h = drawn(Mode::Light, spec);
+        let r = h.state().rect;
+        click_at(&mut h, egui::pos2(r.left() + dx, r.center().y));
+        assert!(
+            h.state().focused,
+            "{what}: the press did not focus the field"
+        );
+    }
+    // The strip above the text line, inside the box.
+    let mut h = drawn(Mode::Light, spec);
+    let r = h.state().rect;
+    click_at(&mut h, egui::pos2(r.center().x, r.top() + 1.0));
+    assert!(h.state().focused, "top strip");
+    // Control: a press on the message line beneath is not in the box.
+    let mut h = drawn(Mode::Light, spec);
+    let r = h.state().rect;
+    click_at(&mut h, egui::pos2(r.center().x, r.bottom() + 8.0));
+    assert!(!h.state().focused, "the message line took the keys");
+    // An unavailable field stays unfocused.
+    let mut off = spec;
+    off.unavailable = true;
+    let mut h = drawn(Mode::Light, off);
+    let r = h.state().rect;
+    click_at(&mut h, egui::pos2(r.left() + 3.0, r.center().y));
+    assert!(!h.state().focused);
+}
+
+/// How many vertices of a text's selection wash are in `want`: egui paints the
+/// selection into the galley's own mesh.
+fn washes(h: &Harness<'_, Out>, want: Color32) -> usize {
+    fn walk(s: &egui::Shape, want: Color32, n: &mut usize) {
+        match s {
+            egui::Shape::Text(t) => {
+                for r in &t.galley.rows {
+                    *n += r
+                        .visuals
+                        .mesh
+                        .vertices
+                        .iter()
+                        .filter(|v| v.color == want)
+                        .count();
+                }
+            }
+            egui::Shape::Vec(v) => v.iter().for_each(|s| walk(s, want, n)),
+            _ => {}
+        }
+    }
+    let mut n = 0;
+    for c in &h.output().shapes {
+        walk(&c.shape, want, &mut n);
+    }
+    n
+}
+
+#[test]
+fn the_caret_and_the_selection_wear_the_editor_inks() {
+    for mode in MODES {
+        let sem = semantic(mode.is_dark());
+        let mut h = drawn(mode, Spec::new());
+        h.get_by_role(AccessRole::TextInput).focus();
+        h.run();
+        // A blinking caret is off for half its period: look across frames.
+        let mut carets = 0;
+        for _ in 0..40 {
+            h.step();
+            fn walk(s: &egui::Shape, want: Color32, n: &mut usize) {
+                match s {
+                    egui::Shape::LineSegment { stroke, .. } if stroke.color == want => *n += 1,
+                    egui::Shape::Vec(v) => v.iter().for_each(|s| walk(s, want, n)),
+                    _ => {}
+                }
+            }
+            for c in &h.output().shapes {
+                walk(&c.shape, ink(sem.editor.caret), &mut carets);
+            }
+        }
+        assert!(carets > 0, "{mode:?}: no caret in the editor ink");
+
+        h.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::A);
+        h.run();
+        assert!(
+            washes(&h, ink(sem.editor.selection)) > 0,
+            "{mode:?}: no selection wash"
+        );
+        // Control: with nothing selected there is no such wash.
+        let rest = drawn(mode, Spec::new());
+        assert_eq!(washes(&rest, ink(sem.editor.selection)), 0);
+        assert_ne!(
+            ink(sem.editor.selection),
+            ink(semantic(mode.is_dark()).borders.focus)
+        );
+    }
+}
+
+#[test]
+fn the_placeholder_goes_in_the_frame_the_first_letter_arrives() {
+    let mut spec = Spec::new();
+    spec.text = "";
+    spec.placeholder = Some("Name");
+    let mut h = drawn(Mode::Light, spec);
+    text_of(&h, "Name");
+    h.get_by_role(AccessRole::TextInput).focus();
+    h.run();
+    text_of(&h, "Name");
+    h.get_by_role(AccessRole::TextInput).type_text("x");
+    h.step();
+    assert_eq!(h.state().text, "x");
+    assert!(
+        !texts(&h).iter().any(|(t, _, _)| t == "Name"),
+        "the placeholder lingered a frame over the typed letter"
+    );
+}
+
+#[test]
+fn a_long_placeholder_is_cut_with_an_ellipsis_on_one_line() {
+    let mut spec = Spec::new();
+    spec.text = "";
+    spec.placeholder = Some("Search every column of every table in the workspace");
+    spec.width = 120.0;
+    let h = drawn(Mode::Light, spec);
+    let b = h.state().rect;
+    let mut shown = None;
+    for c in &h.output().shapes {
+        if let egui::Shape::Text(t) = &c.shape {
+            if t.galley.job.text.starts_with("Search") {
+                let rows: String = t.galley.rows.iter().map(|r| r.text()).collect();
+                shown = Some((
+                    t.galley.rows.len(),
+                    rows,
+                    t.galley.rect.translate(t.pos.to_vec2()),
+                ));
+            }
+        }
+    }
+    let (rows, text, rect) = shown.expect("placeholder drawn");
+    assert_eq!(rows, 1, "wrapped onto {rows} lines");
+    assert!(text.ends_with('\u{2026}'), "not cut: {text:?}");
+    assert!(rect.bottom() < b.bottom() - 2.0 && rect.right() <= b.right());
+}
+
+#[test]
+fn a_value_and_its_unit_share_a_baseline() {
+    let mut spec = Spec::new();
+    spec.text = "30";
+    spec.unit = Some("days");
+    let h = drawn(Mode::Light, spec);
+    let (_, v) = text_of(&h, "30");
+    let (_, u) = text_of(&h, "days");
+    // egui snaps the edit's line to a pixel, so allow the tenth that costs.
+    assert!(
+        (v.bottom() - u.bottom()).abs() < 0.25 && (v.top() - u.top()).abs() < 0.25,
+        "{v:?} vs {u:?}"
+    );
+    assert!(v.height() > 10.0);
 }

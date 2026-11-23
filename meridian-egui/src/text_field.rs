@@ -30,7 +30,6 @@ use meridian_design::typography::UI_SIZE;
 
 use crate::icons::Icon;
 use crate::theme::to_color32;
-use crate::widgets::optically_centred_galley_top;
 use crate::MeridianUi;
 
 /// One text field's configuration, drawn by [`text_field`].
@@ -124,12 +123,17 @@ fn line(
     size: f32,
     ink: Color32,
     width: f32,
+    one_row: bool,
 ) -> std::sync::Arc<egui::Galley> {
     let mut job = LayoutJob::single_section(
         text.to_owned(),
         TextFormat::simple(FontId::proportional(size), ink),
     );
     job.wrap.max_width = width;
+    if one_row {
+        job.wrap.max_rows = 1;
+        job.wrap.break_anywhere = true;
+    }
     ui.painter().layout_job(job)
 }
 
@@ -145,11 +149,12 @@ pub fn text_field(ui: &mut egui::Ui, field: TextField<'_>) -> TextFieldResponse 
     let gap = t.space[2];
     let radius = t.radius_control.round() as u8;
 
-    let (field_rect, message) = {
-        let mut result = None;
+    let field_rect = {
         ui.scope(|ui| {
             ui.spacing_mut().item_spacing.y = t.space[1];
-            let (rect, _) = ui.allocate_exact_size(Vec2::new(width, height), Sense::hover());
+            let sense = if off { Sense::hover() } else { Sense::CLICK };
+            // Clickable but not focusable: the edit takes the keys, not the box.
+            let (rect, box_response) = ui.allocate_exact_size(Vec2::new(width, height), sense);
             let message = field.error.or(field.help).map(|m| {
                 let ink = if field.error.is_some() {
                     let red = if ui.visuals().dark_mode {
@@ -161,23 +166,26 @@ pub fn text_field(ui: &mut egui::Ui, field: TextField<'_>) -> TextFieldResponse 
                 } else {
                     c(sem.text.muted)
                 };
-                let galley = line(ui, m, t.label_size, ink, width);
+                let galley = line(ui, m, t.label_size, ink, width, false);
                 let (r, _) = ui
                     .allocate_exact_size(galley.size().max(Vec2::new(width, 0.0)), Sense::hover());
                 (r, galley)
             });
-            result = Some((rect, message));
-        });
-        result.expect("scope ran")
+            (rect, box_response, message)
+        })
+        .inner
     };
+    let (field_rect, box_response, message) = (field_rect.0, field_rect.1, field_rect.2);
 
     // The box is painted under the text edit, once the state is known.
     let slot = ui.painter().add(Shape::Noop);
     let hovered = !off && ui.rect_contains_pointer(field_rect);
 
+    let row = ui.fonts_mut(|f| f.row_height(&FontId::proportional(UI_SIZE)));
+    let row_top = field_rect.center().y - row / 2.0;
     let unit_galley = field
         .unit
-        .map(|u| line(ui, u, UI_SIZE, c(sem.text.muted), f32::INFINITY));
+        .map(|u| line(ui, u, UI_SIZE, c(sem.text.muted), f32::INFINITY, false));
     let mut left = field_rect.left() + pad;
     let mut right = field_rect.right() - pad;
     if let Some(icon) = field.icon {
@@ -190,22 +198,18 @@ pub fn text_field(ui: &mut egui::Ui, field: TextField<'_>) -> TextFieldResponse 
     }
     if let Some(g) = &unit_galley {
         let x = right - g.size().x;
-        let y = optically_centred_galley_top(g, field_rect.center().y);
+        // On the edit's own row, so the value and its unit share a baseline.
         ui.painter()
-            .galley(egui::pos2(x, y), g.clone(), c(sem.text.muted));
+            .galley(egui::pos2(x, row_top), g.clone(), c(sem.text.muted));
         right = x - gap;
     }
-    let row = ui.fonts_mut(|f| f.row_height(&FontId::proportional(UI_SIZE)));
     let edit_rect = Rect::from_min_max(
-        egui::pos2(left, field_rect.center().y - row / 2.0),
+        egui::pos2(left, row_top),
         egui::pos2(right.max(left), field_rect.center().y + row / 2.0),
     );
-    // egui's own hint text takes its own ink, so the placeholder is drawn here.
-    if let (true, Some(p)) = (field.text.is_empty(), field.placeholder) {
-        let g = line(ui, p, UI_SIZE, c(sem.text.placeholder), edit_rect.width());
-        ui.painter()
-            .galley(edit_rect.min, g, c(sem.text.placeholder));
-    }
+    // egui's own hint text takes its own ink, so the placeholder is drawn here,
+    // after the edit has taken its input: reserve its place under the text.
+    let hint_slot = ui.painter().add(Shape::Noop);
 
     let id = ui.next_auto_id();
     let text_ink = if off {
@@ -213,7 +217,7 @@ pub fn text_field(ui: &mut egui::Ui, field: TextField<'_>) -> TextFieldResponse 
     } else {
         c(sem.text.primary)
     };
-    let edit = TextEdit::singleline(field.text)
+    let edit = TextEdit::singleline(&mut *field.text)
         .id(id)
         .frame(egui::Frame::NONE)
         .margin(Margin::ZERO)
@@ -225,8 +229,37 @@ pub fn text_field(ui: &mut egui::Ui, field: TextField<'_>) -> TextFieldResponse 
             .max_rect(edit_rect)
             .layout(Layout::left_to_right(Align::Center)),
     );
+    {
+        let v = child.visuals_mut();
+        v.text_cursor.stroke.color = c(sem.editor.caret);
+        v.selection.bg_fill = c(sem.editor.selection);
+    }
     let mut response = child.add_sized(edit_rect.size(), edit);
     response.rect = field_rect;
+    if let (true, Some(p)) = (field.text.is_empty(), field.placeholder) {
+        let g = line(
+            ui,
+            p,
+            UI_SIZE,
+            c(sem.text.placeholder),
+            edit_rect.width(),
+            true,
+        );
+        ui.painter().set(
+            hint_slot,
+            Shape::galley(edit_rect.min, g, c(sem.text.placeholder)),
+        );
+    }
+    // A press anywhere in the box, not only on the line of text, gives it the
+    // keys, and the whole box shows the text cursor.
+    if !off {
+        if box_response.hovered() {
+            ui.ctx().set_cursor_icon(egui::CursorIcon::Text);
+        }
+        if box_response.clicked() {
+            ui.memory_mut(|m| m.request_focus(id));
+        }
+    }
 
     let focused = !off && response.has_focus();
     let danger = field.error.is_some();
