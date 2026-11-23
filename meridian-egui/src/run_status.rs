@@ -19,16 +19,21 @@
 //! it takes the neutral hover fill at the control corner, and with keyboard
 //! focus the ring at the same corner. Its accessibility node is a `Status`
 //! named by its words and the mark's state word, holding a `ProgressIndicator`
-//! child while running.
+//! child while running (accesskit's name for what the spec calls a
+//! `ProgressBar`).
 //!
 //! [`teaching_message`] is the one piece of copy a component owns: the command
 //! in primary, `" · next time, press"` in secondary, `SPACE_3`, and the
 //! keystroke on a 21 key, on one line in a 24 row.
+//!
+//! Not drawn: the sheet's count uses tabular figures, but egui 0.35's
+//! `TextFormat` has no OpenType feature switch, so a count's digits keep their
+//! proportional widths and the area's width moves by the digit-width difference
+//! as the count advances.
 
 use egui::text::LayoutJob;
 use egui::{Color32, CornerRadius, FontId, Rect, Sense, TextFormat, UiBuilder, Vec2};
 use meridian_design::control::{ICON_SM, TAB_BAR_WIDTH};
-use meridian_design::focus;
 use meridian_design::radius;
 use meridian_design::spacing::ROW_GRID;
 use meridian_design::typography::UI_SIZE;
@@ -39,7 +44,7 @@ pub use meridian_design::marks::StepMark;
 use crate::key_chip::{key_size, paint_key, KeyInk, KeySize};
 use crate::step_row::paint_mark;
 use crate::theme::to_color32;
-use crate::widgets::{focus_ring_corners, medium_family, mode_of, optically_centred_galley_top};
+use crate::widgets::{focus_ring, medium_family, mode_of, optically_centred_galley_top};
 use crate::MeridianUi;
 use meridian_design::marks::word;
 
@@ -222,12 +227,14 @@ pub fn run_status(ui: &mut egui::Ui, status: RunStatus<'_>) -> egui::Response {
             }
         }
         if response.has_focus() {
-            let r = focus::ring_radius(t.radius_control).round() as u8;
-            focus_ring_corners(&area, rect, CornerRadius::same(r));
+            focus_ring(&area, rect, t.radius_control);
         }
     }
     response
 }
+
+/// The sentence's own words, after the command.
+const TEACHING_COPY: &str = " · next time, press";
 
 /// `<command> · next time, press [key]`: the one piece of copy a component
 /// owns. The command is in primary, the sentence's own words in secondary,
@@ -276,6 +283,3 @@ pub fn teaching_message(ui: &mut egui::Ui, command: &str, keystroke: &str) -> eg
     }
     response
 }
-
-/// The sentence's own words, after the command.
-const TEACHING_COPY: &str = " · next time, press";

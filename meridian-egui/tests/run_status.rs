@@ -564,3 +564,30 @@ fn the_teaching_message_is_the_command_the_copy_and_a_21_key_on_one_line() {
         assert!(near(command.rect.left(), a.left()));
     }
 }
+
+#[test]
+fn the_bar_along_the_foot_takes_neither_hover_nor_click_from_the_area() {
+    for mode in MODES {
+        let sem = semantic(mode.is_dark());
+        let hover = ink(sem.role(Role::Neutral).background.hover);
+        let mut h = drawn(mode, RUNNING);
+        let a = area(&h);
+        let pos = egui::pos2(a.center().x, a.bottom() - 1.0);
+        move_to(&mut h, pos);
+        assert_eq!(
+            filled(&painted(&h, mode), hover).len(),
+            1,
+            "{mode:?}: hover"
+        );
+        for pressed in [true, false] {
+            h.event(egui::Event::PointerButton {
+                pos,
+                button: egui::PointerButton::Primary,
+                pressed,
+                modifiers: egui::Modifiers::NONE,
+            });
+            h.run();
+        }
+        assert!(h.state().clicked, "{mode:?}: click");
+    }
+}
