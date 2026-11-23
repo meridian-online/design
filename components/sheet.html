@@ -133,6 +133,8 @@ figure.wide { width: 100%; align-items: stretch; }
 /* An error while the field has the keys: candidates, not yet ruled. */
 .fld.ek-c { box-shadow: inset 0 calc(-1 * var(--m-focus-ring-width)) 0 var(--m-danger-border), inset var(--m-focus-ring-width) 0 0 var(--m-border-focus), inset calc(-1 * var(--m-focus-ring-width)) 0 0 var(--m-border-focus), inset 0 var(--m-focus-ring-width) 0 var(--m-border-focus); }
 .fld.ek-d { box-shadow: inset 0 calc(-1 * var(--m-focus-ring-width)) 0 var(--m-danger-border), inset 0 calc(-2 * var(--m-focus-ring-width)) 0 var(--m-border-focus); }
+.fld.ek-e { box-shadow: inset 0 0 0 var(--m-focus-ring-width) var(--m-danger-border); }
+.fld.ek-f { background: var(--m-red-3); box-shadow: inset 0 calc(-1 * var(--m-focus-ring-width)) 0 var(--m-danger-border); }
 .fld.boxed { box-shadow: inset 0 0 0 var(--x-hairline) var(--m-border-subtle), inset 0 calc(-1 * var(--x-hairline)) 0 var(--m-border-control); }
 .fld.boxed.is-focus { box-shadow: inset 0 0 0 var(--m-focus-ring-width) var(--m-border-focus); }
 .fld.boxed.is-error { box-shadow: inset 0 0 0 var(--x-hairline) var(--m-danger-border), inset 0 calc(-1 * var(--m-focus-ring-width)) 0 var(--m-danger-border); }
@@ -514,8 +516,12 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
     <figure><div class="frow"><label>Window</label><div class="fld ek-c"><span class="v">thirty</span><span class="caret"></span><span class="unit">days</span></div><span class="msg err">Enter a whole number of days.</span></div><figcaption>C · the danger foot, the focus ring on the other three sides</figcaption></figure>
     <figure><div class="frow"><label>Window</label><div class="fld ek-d"><span class="v">thirty</span><span class="caret"></span><span class="unit">days</span></div><span class="msg err">Enter a whole number of days.</span></div><figcaption>D · the focus rule stacked over the danger rule</figcaption></figure>
   </div>
+  <div class="row">
+    <figure><div class="frow"><label>Window</label><div class="fld ek-e"><span class="v">thirty</span><span class="caret"></span><span class="unit">days</span></div><span class="msg err">Enter a whole number of days.</span></div><figcaption>E · the focus ring drawn in the danger ink, all four sides</figcaption></figure>
+    <figure><div class="frow"><label>Window</label><div class="fld ek-f"><span class="v">thirty</span><span class="caret"></span><span class="unit">days</span></div><span class="msg err">Enter a whole number of days.</span></div><figcaption>F · the danger foot over a red wash</figcaption></figure>
+  </div>
 </div>
-<p class="pick"><b>Pick for the error with the keys: C.</b> A is what is built today, and with the caret blinking off nothing on the field says it has the keys. B says it plainly but drops the red from the field while the error is still true, so the message line alone carries it. C keeps the danger foot and adds the focus ring every other control draws, 2px inside its edge and following its top corners, so both facts stay on the field. D keeps both on the foot but reads as one 4px two-colour bar, a mark no other component uses.</p>
+<p class="pick"><b>Pick for the error with the keys: E.</b> A is what is built today, and with the caret blinking off nothing on the field says it has the keys. B drops the red from the field while the error is still true. C and D put the focus blue and the danger red on one field, and the two read as contradicting each other. E keeps one hue: at rest an error is the red foot, and with the keys the same red closes into the ring every control draws, 2px inside its edge and following its top corners. F also keeps one hue, but a wash is not how any other control says it has the keys. E departs from one token: the danger role's focus border is the focus blue today, and E would make it the danger red.</p>
 
 <!-- ================================================================= -->
 <h2>3 · Ribbon tabs &nbsp;and&nbsp; 4 · Ribbon row</h2>
