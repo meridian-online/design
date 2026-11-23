@@ -74,3 +74,41 @@ fn every_glyph_stays_on_the_native_grid() {
         }
     }
 }
+
+#[test]
+fn the_chrome_s_icons_are_in_the_manifest() {
+    for name in [
+        "adjustments",
+        "axis-x",
+        "axis-y",
+        "palette",
+        "zoom-in",
+        "zoom-out",
+        "arrow-back-up",
+        "list",
+        "schema",
+        "hierarchy",
+        "link",
+        "unlink",
+        "key",
+        "fold",
+        "trash",
+        "layout-columns",
+        "eye-off",
+        "cursor-text",
+        "math-function",
+        "transform",
+        "bucket-droplet",
+        "copy-off",
+        "list-numbers",
+        "sum",
+        "arrows-join",
+        "row-insert-bottom",
+        "file-import",
+    ] {
+        assert!(
+            icons::Icon::by_name(name).is_some(),
+            "{name} is not in the icon manifest"
+        );
+    }
+}
