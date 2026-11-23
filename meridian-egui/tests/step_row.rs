@@ -81,12 +81,17 @@ struct Out {
 }
 
 fn drawn(mode: Mode, spec: Spec) -> Harness<'static, Out> {
+    drawn_at(mode, spec, WIDTH)
+}
+
+fn drawn_at(mode: Mode, spec: Spec, width: f32) -> Harness<'static, Out> {
     let mut harness = Harness::builder()
         .with_size(egui::vec2(WIDTH + 40.0, 80.0))
         .build_ui_state(
             move |ui, out: &mut Out| {
                 theme::apply(ui.ctx(), mode);
-                ui.allocate_ui(egui::vec2(WIDTH, 40.0), |ui| {
+                ui.allocate_ui(egui::vec2(width, 40.0), |ui| {
+                    ui.set_max_width(width);
                     let gutter = Gutter {
                         lanes: spec.lanes,
                         node: spec.node,
@@ -766,6 +771,161 @@ fn a_long_name_is_cut_and_the_output_bar_and_duration_keep_their_columns() {
         );
         assert!(name_rect.height() <= HEIGHT_MD);
     }
+}
+
+/// Every part a row drew, as the box it reached on screen (its shape's box cut
+/// by its clip), named for what it is: the gutter (anything starting inside
+/// it), the fold control, the name, the output, the timeline column (its
+/// gridlines and bar) and the duration.
+fn parts(h: &Harness<'_, Out>, spec: &Spec, mode: Mode) -> Vec<(&'static str, Rect)> {
+    let row = row_rect(h);
+    let gutter_right = row.left() + gutter_width(spec.lanes);
+    let mut out: Vec<(&'static str, Rect)> = Vec::new();
+    let mut add = |name: &'static str, r: Rect| {
+        if r.is_positive() {
+            match out.iter_mut().find(|(n, _)| *n == name) {
+                Some((_, acc)) => *acc = acc.union(r),
+                None => out.push((name, r)),
+            }
+        }
+    };
+    fn walk(shape: &egui::Shape, clip: Rect, out: &mut Vec<(egui::Shape, Rect)>) {
+        match shape {
+            egui::Shape::Vec(v) => v.iter().for_each(|s| walk(s, clip, out)),
+            s => out.push((s.clone(), clip)),
+        }
+    }
+    let mut shapes = Vec::new();
+    for c in &h.output().shapes {
+        walk(&c.shape, c.clip_rect, &mut shapes);
+    }
+    let page = painted(h, mode);
+    for (shape, clip) in shapes {
+        let reach = shape.visual_bounding_rect().intersect(clip);
+        if !reach.is_positive() {
+            continue;
+        }
+        let name = match &shape {
+            egui::Shape::Rect(r) => {
+                // The row's own grounds and the harness's page are not parts.
+                if near_rect(r.rect, row) || !page.iter().any(|p| p.rect == r.rect) {
+                    continue;
+                }
+                if reach.left() < gutter_right {
+                    "gutter"
+                } else {
+                    "timeline"
+                }
+            }
+            egui::Shape::Text(t) => {
+                let s: String = t.galley.rows.iter().map(|r| r.text()).collect();
+                if reach.left() < gutter_right {
+                    "gutter"
+                } else if s == DURATION {
+                    "duration"
+                } else if spec.output.is_some_and(|o| s == o) {
+                    "output"
+                } else if s.chars().all(|c| c.is_ascii_digit()) {
+                    "fold"
+                } else {
+                    "name"
+                }
+            }
+            _ if reach.left() < gutter_right => "gutter",
+            _ => "fold",
+        };
+        add(name, reach);
+    }
+    out
+}
+
+#[test]
+fn a_narrow_row_drops_columns_and_draws_no_part_over_another() {
+    let long = "a_long_step_name_for_a_narrow_row";
+    let mut specs = vec![Spec::new()];
+    let mut folded = Spec::new();
+    folded.fold = Some(Fold::Folded { members: 128 });
+    folded.label = long;
+    specs.push(folded);
+    let mut table = Spec::new();
+    table.entry = StepEntry::Table;
+    specs.push(table);
+    for mode in MODES {
+        for spec in &specs {
+            let mut width = WIDTH;
+            while width >= 20.0 {
+                let h = drawn_at(mode, spec.clone(), width);
+                let row = row_rect(&h);
+                let gutter_right = row.left() + gutter_width(spec.lanes);
+                let drawn = parts(&h, spec, mode);
+                for (name, r) in &drawn {
+                    assert!(
+                        r.right() <= row.right() + 0.01,
+                        "{mode:?} at {width}: {name} {r:?} past the row {row:?}"
+                    );
+                    if *name == "gutter" {
+                        assert!(
+                            r.right() <= gutter_right + 0.5,
+                            "{mode:?} at {width}: {r:?}"
+                        );
+                    }
+                }
+                for (i, (a, ra)) in drawn.iter().enumerate() {
+                    for (b, rb) in &drawn[i + 1..] {
+                        let overlap = ra.intersect(*rb);
+                        assert!(
+                            overlap.width() <= 0.5 || overlap.height() <= 0.5,
+                            "{mode:?} at {width}: {a} {ra:?} overlaps {b} {rb:?}"
+                        );
+                    }
+                }
+                width -= 10.0;
+            }
+        }
+    }
+}
+
+#[test]
+fn a_narrowing_row_gives_up_the_timeline_before_the_output_and_the_output_before_the_name() {
+    let mode = Mode::Light;
+    let spec = Spec::new();
+    let mut last = ["timeline", "duration", "output", "name"].map(|_| true);
+    let mut width = WIDTH;
+    while width >= 100.0 {
+        let h = drawn_at(mode, spec.clone(), width);
+        let drawn = parts(&h, &spec, mode);
+        let has = |n: &str| drawn.iter().any(|(name, _)| *name == n);
+        let now = [has("timeline"), has("duration"), has("output"), has("name")];
+        if width == WIDTH {
+            assert_eq!(
+                now, [true; 4],
+                "at full width every part is drawn: {drawn:?}"
+            );
+        }
+        assert_eq!(
+            now[0], now[1],
+            "at {width}: the timeline and duration go together"
+        );
+        for k in 0..4 {
+            assert!(!now[k] || last[k], "at {width}: a dropped part came back");
+        }
+        // The output goes no sooner than the timeline, the name no sooner than either.
+        assert!(
+            !now[0] || now[2],
+            "at {width}: the output went before the timeline"
+        );
+        assert!(
+            !now[2] || now[3],
+            "at {width}: the name went before the output"
+        );
+        last = now;
+        width -= 5.0;
+    }
+    assert!(
+        !last[0] && !last[2],
+        "at 100 the trailing columns should be gone"
+    );
+    assert!(last[3], "at 100 the name should still be drawn");
 }
 
 // ─── the fold control ───────────────────────────────────────────────────────

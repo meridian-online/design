@@ -199,6 +199,7 @@ pub fn run_status(ui: &mut egui::Ui, status: RunStatus<'_>) -> egui::Response {
         let centre_y = rect.center().y;
         paint_mark(
             &painter,
+            t,
             egui::pos2(rect.left() + t.space[4] + ICON_SM / 2.0, centre_y),
             mark,
             mode,

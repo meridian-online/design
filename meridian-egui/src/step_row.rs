@@ -9,6 +9,12 @@
 //! produced, right-aligned, and for a step a timeline column and a duration.
 //! `SPACE_4` trails the row.
 //!
+//! A row too narrow for all of that keeps its gutter, its mark and its fold
+//! control, and gives up the rest least essential first: when the name would
+//! be squeezed below four ems (or its own width, if shorter), the timeline and
+//! duration go, then the output, and the name is cut with an ellipsis to what
+//! is left. No two parts are drawn over each other or over the gutter.
+//!
 //! The row has two marks of place. The cursor ([`StepRow::cursor`]) is the list
 //! row's: where the keys act, a fill and a bar. Focused ([`StepRow::focused`])
 //! is the node the canvas shows: the selection wash with a 1px inside rule.
@@ -35,10 +41,8 @@
 use egui::epaint::CubicBezierShape;
 use egui::{Color32, FontId, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Vec2};
 use meridian_design::chrome::{INK_DARK, INK_LIGHT};
-use meridian_design::control::{
-    ICON_XS, STEP_MARK, STEP_MARK_DIAMOND_REACH, STEP_MARK_DISC_RADIUS, STEP_MARK_DOT_RADIUS,
-    STEP_MARK_STROKE,
-};
+// The fold chevron's size is not in `Tokens`, so it is read from `control`.
+use meridian_design::control::ICON_XS;
 use meridian_design::marks::{glyph, word, MarkShape};
 use meridian_design::typography::UI_SIZE;
 use meridian_design::viz::STATUS;
@@ -197,13 +201,12 @@ pub fn step_row(ui: &mut egui::Ui, row: StepRow<'_>) -> StepRowResponse {
         node.set_selected(row.focused);
     });
 
-    let t = ui.tokens();
-    let cols = Columns::of(t, rect, row.gutter.lanes);
+    let cols = Columns::of(ui, rect, &row);
 
     let mut fold_clicked = false;
-    if let Some(fold) = row.fold {
+    if let (Some(fold), Some((left, right))) = (row.fold, cols.fold) {
         let fold_rect =
-            Rect::from_x_y_ranges(cols.lead..=fold_end(ui, cols.lead, fold), rect.y_range());
+            Rect::from_x_y_ranges(left..=right.max(left), rect.y_range()).intersect(rect);
         let fold_response = ui.interact(fold_rect, response.id.with("fold"), Sense::click());
         let name = row.label;
         fold_response
@@ -248,7 +251,7 @@ pub fn step_mark(ui: &mut egui::Ui, mark: StepMark, focused: bool) -> egui::Resp
         } else if response.hovered() {
             painter.rect_filled(rect, radius::NONE, to_color32(rows.hover_background));
         }
-        paint_mark(painter, rect.center(), mark, mode);
+        paint_mark(painter, t, rect.center(), mark, mode);
     }
     response
 }
@@ -256,17 +259,23 @@ pub fn step_mark(ui: &mut egui::Ui, mark: StepMark, focused: bool) -> egui::Resp
 /// Draw `mark`'s shape in its ink, centred on `centre`.
 ///
 /// An outline (the ring, and the rings under the half disc and the centre dot)
-/// is `STEP_MARK` across at its stroke's centre, with a `STEP_MARK_STROKE`
+/// is `step_mark` across at its stroke's centre, with a `step_mark_stroke`
 /// stroke. The solid shapes and the centre dot take their own sizes:
-/// `STEP_MARK_DISC_RADIUS`, `STEP_MARK_DIAMOND_REACH` (the diamond's
-/// half-diagonal) and `STEP_MARK_DOT_RADIUS`.
-pub(crate) fn paint_mark(painter: &egui::Painter, centre: Pos2, mark: StepMark, mode: Mode) {
+/// `step_mark_disc_radius`, `step_mark_diamond_reach` (the diamond's
+/// half-diagonal) and `step_mark_dot_radius`.
+pub(crate) fn paint_mark(
+    painter: &egui::Painter,
+    t: &Tokens,
+    centre: Pos2,
+    mark: StepMark,
+    mode: Mode,
+) {
     let g = glyph(mark, mode.is_dark());
     let ink = to_color32(g.ink);
     let fill = to_color32(g.fill.unwrap_or(g.ink));
-    let r = STEP_MARK / 2.0;
+    let r = t.step_mark / 2.0;
     let ring = || {
-        painter.circle_stroke(centre, r, Stroke::new(STEP_MARK_STROKE, ink));
+        painter.circle_stroke(centre, r, Stroke::new(t.step_mark_stroke, ink));
     };
     match g.shape {
         MarkShape::Ring => ring(),
@@ -284,10 +293,10 @@ pub(crate) fn paint_mark(painter: &egui::Painter, centre: Pos2, mark: StepMark, 
             painter.add(Shape::convex_polygon(points, ink, Stroke::NONE));
         }
         MarkShape::Disc => {
-            painter.circle_filled(centre, STEP_MARK_DISC_RADIUS, fill);
+            painter.circle_filled(centre, t.step_mark_disc_radius, fill);
         }
         MarkShape::Diamond => {
-            let d = STEP_MARK_DIAMOND_REACH;
+            let d = t.step_mark_diamond_reach;
             let points = vec![
                 centre - Vec2::new(0.0, d),
                 centre + Vec2::new(d, 0.0),
@@ -298,41 +307,95 @@ pub(crate) fn paint_mark(painter: &egui::Painter, centre: Pos2, mark: StepMark, 
         }
         MarkShape::RingWithCentre => {
             ring();
-            painter.circle_filled(centre, STEP_MARK_DOT_RADIUS, ink);
+            painter.circle_filled(centre, t.step_mark_dot_radius, ink);
         }
     }
 }
 
 /// How far a mark reaches from its centre: the ring's outer edge. An edge stops
 /// here rather than running under a hollow mark.
-fn mark_reach() -> f32 {
-    (STEP_MARK + STEP_MARK_STROKE) / 2.0
+fn mark_reach(t: &Tokens) -> f32 {
+    (t.step_mark + t.step_mark_stroke) / 2.0
 }
 
-/// The row's columns, from the leading edge and from the trailing edge.
+/// The narrowest a name is squeezed to before a column gives way to it: four
+/// ems of UI text, room for a short word and its ellipsis. A shorter name
+/// needs only its own width.
+const NAME_FLOOR: f32 = 4.0 * UI_SIZE;
+
+/// Where each part of a row goes, for the width it was given.
+///
+/// The gutter and its mark are always placed; then, at the leading edge, the
+/// fold control and the name, and at the trailing edge the timeline and
+/// duration, then the output. When the name would be squeezed below
+/// [`NAME_FLOOR`] (or its own width, if shorter), the trailing columns give
+/// way, least essential first: the timeline and duration, then the output.
+/// What is left of the room goes to the name, cut with an ellipsis. No part is
+/// placed over another, and none over the gutter; a row too narrow even for
+/// the gutter and fold control is clipped at its own edges.
 struct Columns {
     /// The gutter's trailing edge.
     gutter_right: f32,
-    /// Where the first column after the gutter starts.
-    lead: f32,
-    timeline_left: f32,
+    /// The fold control's span, cut at the row's trailing padding.
+    fold: Option<(f32, f32)>,
+    /// Where the name starts.
+    name_left: f32,
+    /// The widest the name may be drawn.
+    name_room: f32,
+    /// The output's span, when it keeps its column.
+    output: Option<(f32, f32)>,
+    /// Where the timeline column starts, when it keeps its column.
+    timeline_left: Option<f32>,
     duration_right: f32,
-    /// Where the output's right-aligned text ends.
-    output_right: f32,
 }
 
 impl Columns {
-    fn of(t: &Tokens, rect: Rect, lanes: u8) -> Self {
+    fn of(ui: &egui::Ui, rect: Rect, row: &StepRow<'_>) -> Self {
+        let t = ui.tokens();
         let gap = t.space[3];
-        let gutter_right = rect.left() + 2.0 * t.gutter_pad + f32::from(lanes) * t.gutter_lane;
+        let gutter_right =
+            rect.left() + 2.0 * t.gutter_pad + f32::from(row.gutter.lanes) * t.gutter_lane;
+        let lead = gutter_right + gap;
         let duration_right = rect.right() - t.space[4];
+        let fold = row.fold.map(|f| (lead, fold_end(ui, lead, f)));
+        let name_left = fold.map_or(lead, |(_, end)| end + gap);
+        let natural = label_galley(ui, row.label, Color32::PLACEHOLDER, f32::INFINITY)
+            .size()
+            .x;
+        let floor = natural.min(NAME_FLOOR);
+
+        let output_width = row.output.map(|o| {
+            label_galley(ui, o, Color32::PLACEHOLDER, f32::INFINITY)
+                .size()
+                .x
+        });
+        // The space the name and the output need before a column gives way.
+        let needs = |output: Option<f32>| name_left + floor + output.map_or(0.0, |w| gap + w);
+
+        // The timeline column goes first: it stays only while the name's floor
+        // and the whole output fit before it. The test reads each row's own
+        // parts, so in a band of widths a row with a wider fold control,
+        // output or name can give up the column a little sooner than its
+        // neighbours, and the list's lattice breaks there.
         let timeline_left = duration_right - t.duration_width - gap - t.timeline_width;
+        let timeline_left = (needs(output_width) + gap <= timeline_left).then_some(timeline_left);
+        let mut name_right = timeline_left.map_or(duration_right, |l| l - gap);
+
+        // Then the output, once the name's floor no longer fits beside it.
+        let output = output_width
+            .filter(|w| needs(Some(*w)) <= name_right)
+            .map(|w| (name_right - w, name_right));
+        if let Some((left, _)) = output {
+            name_right = left - gap;
+        }
         Self {
             gutter_right,
-            lead: gutter_right + gap,
+            fold: fold.map(|(a, b)| (a, b.min(duration_right))),
+            name_left,
+            name_room: (name_right - name_left).max(0.0),
+            output,
             timeline_left,
             duration_right,
-            output_right: timeline_left - gap,
         }
     }
 }
@@ -363,7 +426,6 @@ fn paint_row(ui: &egui::Ui, rect: Rect, row: &StepRow<'_>, cols: &Columns) {
     let c = to_color32;
     let painter = ui.painter_at(rect);
     let centre_y = rect.center().y;
-    let gap = t.space[3];
 
     paint_gutter(
         &painter,
@@ -375,9 +437,12 @@ fn paint_row(ui: &egui::Ui, rect: Rect, row: &StepRow<'_>, cols: &Columns) {
         mode,
     );
 
-    // The fold control.
-    let mut left = cols.lead;
-    if let Some(fold) = row.fold {
+    // The fold control, cut at the row's trailing padding.
+    if let (Some(fold), Some((left, right))) = (row.fold, cols.fold) {
+        let painter = painter.with_clip_rect(painter.clip_rect().intersect(Rect::from_x_y_ranges(
+            left..=right.max(left),
+            rect.y_range(),
+        )));
         let muted = c(sem.text.muted);
         let name = match fold {
             Fold::Folded { .. } => "chevron-right",
@@ -399,44 +464,45 @@ fn paint_row(ui: &egui::Ui, rect: Rect, row: &StepRow<'_>, cols: &Columns) {
                 Color32::PLACEHOLDER,
             );
         }
-        left = fold_end(ui, left, fold) + gap;
     }
 
-    // The output, claimed from the trailing side first so the name is cut to the
-    // room it leaves. It is cut only when even the whole row will not hold it.
-    let mut output_left = cols.output_right;
-    if let Some(output) = row.output {
-        let galley = label_galley(
-            ui,
-            output,
-            c(sem.text.secondary),
-            (cols.output_right - left).max(0.0),
-        );
-        output_left = cols.output_right - galley.size().x;
+    // The output, right-aligned in its column, when it keeps one.
+    if let (Some(output), Some((left, right))) = (row.output, cols.output) {
+        let galley = label_galley(ui, output, c(sem.text.secondary), right - left);
         let top = cap_centred_galley_top(ui.painter(), &galley, centre_y);
-        painter.galley(egui::pos2(output_left, top), galley, Color32::PLACEHOLDER);
+        painter.galley(
+            egui::pos2(right - galley.size().x, top),
+            galley,
+            Color32::PLACEHOLDER,
+        );
     }
 
-    let name_ink = match row.entry {
-        StepEntry::Step => sem.text.primary,
-        StepEntry::Table => sem.text.secondary,
-    };
-    let galley = label_galley(
-        ui,
-        row.label,
-        c(name_ink),
-        (output_left - gap - left).max(0.0),
-    );
-    let top = cap_centred_galley_top(ui.painter(), &galley, centre_y);
-    painter.galley(egui::pos2(left, top), galley, Color32::PLACEHOLDER);
+    // The name takes what the columns leave, cut with an ellipsis; with no
+    // room at all it is not drawn, so a lone ellipsis cannot run past its room.
+    if cols.name_room > 0.0 {
+        let name_ink = match row.entry {
+            StepEntry::Step => sem.text.primary,
+            StepEntry::Table => sem.text.secondary,
+        };
+        let galley = label_galley(ui, row.label, c(name_ink), cols.name_room);
+        if galley.size().x <= cols.name_room + 0.5 {
+            let top = cap_centred_galley_top(ui.painter(), &galley, centre_y);
+            painter.galley(
+                egui::pos2(cols.name_left, top),
+                galley,
+                Color32::PLACEHOLDER,
+            );
+        }
+    }
 
     // The timeline column: a gridline at the start of each half, on every row so
-    // the list reads as one lattice; then the step's bar and its duration.
+    // the list reads as one lattice; then the step's bar and its duration. A
+    // row too narrow for the column draws none of it.
+    let Some(timeline_left) = cols.timeline_left else {
+        return;
+    };
     let gridline = c(if dark { INK_DARK } else { INK_LIGHT }.gridline);
-    for x in [
-        cols.timeline_left,
-        cols.timeline_left + t.timeline_width / 2.0,
-    ] {
+    for x in [timeline_left, timeline_left + t.timeline_width / 2.0] {
         painter.rect_filled(
             Rect::from_x_y_ranges(x..=x + 1.0, rect.y_range()),
             radius::NONE,
@@ -447,11 +513,11 @@ fn paint_row(ui: &egui::Ui, rect: Rect, row: &StepRow<'_>, cols: &Columns) {
         return;
     };
     if let Some((a, b)) = timeline.span() {
-        let right_edge = cols.timeline_left + t.timeline_width;
+        let right_edge = timeline_left + t.timeline_width;
         // The sheet's `min-width: var(--m-space-1)` on the bar.
         let min = t.space[1];
-        let mut x0 = cols.timeline_left + a * t.timeline_width;
-        let mut x1 = cols.timeline_left + b * t.timeline_width;
+        let mut x0 = timeline_left + a * t.timeline_width;
+        let mut x1 = timeline_left + b * t.timeline_width;
         if x1 - x0 < min {
             x1 = (x0 + min).min(right_edge);
             x0 = x1 - min;
@@ -509,7 +575,7 @@ fn paint_gutter(
         return;
     };
     let centre = egui::pos2(x(node), mid);
-    let reach = mark_reach();
+    let reach = mark_reach(t);
     for &l in gutter.from_above.iter().filter(live) {
         if l == node {
             painter.line_segment(
@@ -547,7 +613,7 @@ fn paint_gutter(
             painter.add(Shape::line(points, stroke));
         }
     }
-    paint_mark(&painter, centre, mark, mode);
+    paint_mark(&painter, t, centre, mark, mode);
 }
 
 fn flatten(points: [Pos2; 4]) -> Vec<Pos2> {
