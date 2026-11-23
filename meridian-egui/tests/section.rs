@@ -233,16 +233,32 @@ fn a_click_on_the_header_reports_toggled_and_changes_nothing_itself() {
 }
 
 #[test]
-fn enter_on_a_focused_header_toggles() {
-    let mut harness = drawn(Mode::Light, Spec::new());
-    harness
-        .get_by_role_and_label(AccessRole::Button, TITLE)
-        .focus();
-    harness.run();
-    assert!(!harness.state().toggled);
-    harness.key_press(egui::Key::Enter);
-    harness.run();
-    assert!(harness.state().toggled);
+fn enter_and_space_on_a_focused_header_toggle() {
+    for key in [egui::Key::Enter, egui::Key::Space] {
+        let mut harness = drawn(Mode::Light, Spec::new());
+        harness
+            .get_by_role_and_label(AccessRole::Button, TITLE)
+            .focus();
+        harness.run();
+        assert!(!harness.state().toggled);
+        harness.key_press(key);
+        harness.run();
+        assert!(harness.state().toggled, "{key:?}");
+    }
+}
+
+#[test]
+fn a_header_in_a_disabled_ui_reports_disabled() {
+    for enabled in [true, false] {
+        let mut harness = Harness::new_ui(move |ui| {
+            ui.add_enabled_ui(enabled, |ui| {
+                section(ui, Section::new(TITLE, false), |_| ());
+            });
+        });
+        harness.run();
+        let node = harness.get_by_role_and_label(AccessRole::Button, TITLE);
+        assert_eq!(node.accesskit_node().data().is_disabled(), !enabled);
+    }
 }
 
 #[test]
@@ -256,7 +272,10 @@ fn the_title_is_drawn_in_capitals_whatever_the_caller_passed() {
             t.iter().any(|(s, ..)| s == "FIELDS"),
             "{title}: drawn {t:?}"
         );
-        assert!(!t.iter().any(|(s, ..)| s == title && title != "FIELDS"));
+        assert!(
+            !t.iter().any(|(s, ..)| s == title),
+            "raw title drawn: {t:?}"
+        );
     }
 }
 
@@ -339,10 +358,7 @@ fn the_chevron_points_down_when_open_and_right_when_closed_in_muted_ink() {
             assert!(!icons.is_empty(), "{mode:?} open={open}: no chevron");
             for (c, b) in &icons {
                 assert_eq!(*c, ink(sem.text.muted), "{mode:?}");
-                assert!(
-                    near(b.left().floor(), (h.left() + SPACE_2).floor())
-                        || b.left() >= h.left() + SPACE_2
-                );
+                assert!(b.left() >= h.left() + SPACE_2 - 0.01, "{b:?} in {h:?}");
                 assert!(b.right() <= h.left() + SPACE_2 + ICON_SM + 0.01, "{b:?}");
                 // Down is wider than tall; right is taller than wide.
                 assert_eq!(b.width() > b.height(), open, "{mode:?} open={open}: {b:?}");
@@ -425,6 +441,11 @@ fn keyboard_focus_rings_the_header_square_in_the_focus_ink() {
         let (rects, h) = interacted(mode, Spec::new(), How::Focus);
         let r = rings(&rects, h, ink(sem.borders.focus));
         assert_eq!(r.len(), 1, "{mode:?}: {rects:?}");
+        assert_eq!(
+            r[0].radius,
+            egui::CornerRadius::ZERO,
+            "{mode:?}: ring is rounded"
+        );
         assert!(
             near(r[0].stroke.width, meridian_design::focus::RING_WIDTH),
             "{mode:?}"

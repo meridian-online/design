@@ -17,6 +17,10 @@
 //! node is a `Button` named by the title **as the caller passed it**, not the
 //! capitalised form, so a screen reader does not spell capitals; its expanded
 //! state is set.
+//!
+//! Not drawn: the sheet's count uses tabular figures, but egui 0.35's
+//! `TextFormat` has no OpenType feature switch, so `typography::TNUM` is not
+//! applied and a count's digits keep their proportional widths.
 
 use egui::text::{LayoutJob, TextFormat};
 use egui::{Color32, FontId, Margin, Rect, Sense, Vec2};
@@ -26,7 +30,7 @@ use meridian_design::typography::UI_SIZE;
 
 use crate::icons::Icon;
 use crate::theme::to_color32;
-use crate::widgets::{focus_ring_for, optically_centred_galley_top};
+use crate::widgets::{focus_ring, optically_centred_galley_top};
 use crate::MeridianUi;
 
 /// One section's configuration. Built with [`Section::new`] and
@@ -97,7 +101,8 @@ fn section_in<R>(
 
     let title = section.title;
     let open = section.open;
-    response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, title));
+    let enabled = ui.is_enabled();
+    response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled, title));
     ui.ctx().accesskit_node_builder(response.id, |node| {
         node.set_expanded(open);
     });
@@ -113,7 +118,7 @@ fn section_in<R>(
             top: t.space[2].round() as i8,
             bottom: t.space[5].round() as i8,
         };
-        let inner_width = width - t.space[6] - t.space[4];
+        let inner_width = (width - t.space[6] - t.space[4]).max(0.0);
         egui::Frame::new()
             .inner_margin(margin)
             .show(ui, |ui| {
@@ -202,5 +207,8 @@ fn paint_header(ui: &egui::Ui, rect: Rect, response: &egui::Response, section: &
     let top = optically_centred_galley_top(&galley, centre_y);
     painter.galley(egui::pos2(title_left, top), galley, Color32::PLACEHOLDER);
 
-    focus_ring_for(ui, response);
+    // The sheet's focus is an inset ring on a header with no radius: square.
+    if response.has_focus() {
+        focus_ring(ui, rect, meridian_design::radius::NONE);
+    }
 }
