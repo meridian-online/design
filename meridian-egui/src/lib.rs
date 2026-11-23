@@ -57,6 +57,7 @@ pub mod picker;
 pub mod popover;
 pub mod query;
 pub mod ribbon;
+pub mod run_status;
 pub mod section;
 pub mod segmented;
 pub mod step_row;
@@ -80,6 +81,7 @@ pub use ribbon::{
     key_tip, ribbon_row, ribbon_tabs, CommandAt, RibbonRow, RibbonRowResponse, RibbonTab,
     RibbonTabs, RibbonTabsResponse, TabPick,
 };
+pub use run_status::{run_status, teaching_message, RunStatus};
 pub use section::{section, Section, SectionResponse};
 pub use segmented::{segmented, Segmented, SegmentedOption, SegmentedResponse};
 pub use step_row::{
