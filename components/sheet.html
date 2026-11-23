@@ -299,8 +299,9 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
 .vt .dirty { width: var(--x-dot); height: var(--x-dot); border-radius: var(--m-radius-full); background: var(--m-text-secondary); flex: none; }
 .vt .x { color: var(--m-text-muted); visibility: hidden; width: var(--m-control-xs); height: var(--m-control-xs); display: flex; align-items: center; justify-content: center; flex: none; }
 .vt.is-hover { background: var(--m-rows-hover-bg); color: var(--m-text-primary); }
-.vt.is-hover .x, .vt.cur .x { visibility: visible; }
-.vt .x.is-hover { background: var(--m-neutral-bg-active); color: var(--m-text-primary); }
+.vt.is-hover .x, .vt.cur .x, .vt.is-focus .x, .vt .x.is-focus { visibility: visible; }
+.vt .x.is-hover, .vt .x.is-focus { background: var(--m-neutral-bg-active); color: var(--m-text-primary); }
+.vt .x.is-focus { box-shadow: inset 0 0 0 var(--m-focus-ring-width) var(--m-border-focus); }
 .vt.is-focus { box-shadow: inset 0 0 0 var(--m-focus-ring-width) var(--m-border-focus); }
 .vtabs.a .vt.cur { position: relative; z-index: 1; margin-right: calc(-1 * var(--x-hairline)); background: var(--m-surface-raised); border-color: var(--m-border-subtle); color: var(--m-text-primary); font-weight: 500; }
 .vtabs.a .vt.cur .l em { color: var(--m-text-secondary); font-weight: 400; }
@@ -743,7 +744,8 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
     <figure><div class="vtabs a" style="border-right: var(--x-hairline) solid var(--m-border-subtle)">
       <div class="vt cur is-hover"><span class="l">ranking <em>· Chart</em></span><span class="x"><i class="ic xs" data-i="x"></i></span></div>
       <div class="vt is-hover"><span class="l">rising <em>· Grid</em></span><span class="x is-hover"><i class="ic xs" data-i="x"></i></span></div>
-    </div><figcaption>current and under the pointer · the close control under the pointer</figcaption></figure>
+      <div class="vt"><span class="l">analytics_30d <em>· Grid</em></span><span class="x is-focus"><i class="ic xs" data-i="x"></i></span></div>
+    </div><figcaption>current and under the pointer · the close control under the pointer · the close control with the keys</figcaption></figure>
   </div>
 </div>
 <div class="spec"><div class="cap">B<span>a bar on the edge that faces the canvas</span></div>
