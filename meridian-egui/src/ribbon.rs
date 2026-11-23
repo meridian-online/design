@@ -9,6 +9,13 @@
 //! strip can be collapsed, and then no tab is open and the selected one is
 //! marked by its label alone: Medium, in the primary ink.
 //!
+//! The contextual tab is the one place this module reads a raw scale: its wash,
+//! bar and inks are Maritime steps 3, 9, 11 and 12, as the sheet draws them. No
+//! semantic token names a contextual wash. Step 3 is also the neutral role's
+//! selected background, but borrowing that would tie this tab to the selection
+//! wash, so a change to one would silently move the other. If a second surface
+//! needs the same tint, it earns a semantic name and this reads it.
+//!
 //! [`ribbon_row`] is the command row beneath it: a 32 band on the raised
 //! surface with a 1px rule along its foot, holding groups of quiet buttons
 //! divided by a 1px rule. When the row is narrower than its commands it drops
