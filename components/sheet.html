@@ -164,6 +164,11 @@ figure.wide { width: 100%; align-items: stretch; }
 /* composed: the key tip, a keycap on the target's bottom edge */
 .tipped { position: relative; }
 .tipped > .kc.tip { position: absolute; right: 0; bottom: 0; transform: translate(25%, 50%); z-index: 3; box-shadow: var(--m-shadow-overlay); }
+/* a command's tip sits at the end of its label, which stands the button's full
+   height so its bottom corner is the button's; the own keycap is hidden and
+   keeps its slot, so nothing moves when tips come on */
+.btn > .tipped { align-self: stretch; display: inline-flex; align-items: center; }
+.kc.gone { visibility: hidden; }
 
 /* ---------- 5. popover ---------- */
 .pop { background: var(--m-popover-bg); border: var(--m-hairline) solid var(--m-border-default); box-shadow: var(--m-shadow-overlay); color: var(--m-text-primary); }
@@ -560,9 +565,9 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
   <figure class="wide"><div class="rib a" style="padding-bottom: var(--m-space-5)">
     <div class="rtabs"><span class="rtab">Bring in</span><span class="rtab open">Shape</span><span class="rtab">Model</span><span class="rtab">Publish</span><span class="rsep"></span><span class="rtab ctx">Grid · ranking</span></div>
     <div class="rrow" style="overflow: visible">
-      <div class="rgrp"><span class="btn quiet bare still tipped" style="padding-right: var(--m-space-3)"><i class="ic" data-i="filter"></i>Filter<span class="kc tip">F</span></span><span class="btn quiet bare still tipped" style="padding-right: var(--m-space-3)"><i class="ic" data-i="arrows-sort"></i>Sort<span class="kc tip">O</span></span><span class="btn quiet bare still tipped" style="padding-right: var(--m-space-3)"><i class="ic" data-i="eye-off"></i>Hide<span class="kc tip">H</span></span></div>
-      <div class="rgrp"><span class="btn quiet bare still tipped" style="padding-right: var(--m-space-3)"><i class="ic" data-i="math-function"></i>Derive<span class="kc tip">D</span></span><span class="btn quiet bare is-off tipped" style="padding-right: var(--m-space-3)"><i class="ic" data-i="arrows-join"></i>Join<span class="kc tip dim">J</span></span></div>
-    </div></div><figcaption>then, with a tab chosen, a tip on each of its commands; while tips are on, a command's own keycap gives way to its tip</figcaption></figure>
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="filter"></i><span class="tipped">Filter<span class="kc full tip">F</span></span><span class="kc gone">F</span></span><span class="btn quiet bare still"><i class="ic" data-i="arrows-sort"></i><span class="tipped">Sort<span class="kc full tip">O</span></span><span class="kc gone">O</span></span><span class="btn quiet bare still"><i class="ic" data-i="eye-off"></i><span class="tipped">Hide<span class="kc full tip">H</span></span><span class="kc gone">H</span></span></div>
+      <div class="rgrp"><span class="btn quiet bare still"><i class="ic" data-i="math-function"></i><span class="tipped">Derive<span class="kc full tip">D</span></span><span class="kc gone">D</span></span><span class="btn quiet bare is-off"><i class="ic" data-i="arrows-join"></i><span class="tipped">Join<span class="kc full tip dim">J</span></span><span class="kc gone dim">J</span></span></div>
+    </div></div><figcaption>then, with a tab chosen, a tip on each of its commands, at the end of its label; while tips are on, a command's own keycap gives way to its tip and leaves its slot empty, so the commands stay put</figcaption></figure>
 </div>
 <p class="pick"><b>Pick: A.</b> The joined cell says which tab owns the row beneath, which a bar cannot, and it is the one treatment here that cannot be taken for a line tab. Collapsed, the cell goes and only the heavier word remains, so selected and open stay distinct. One thing to settle with the tint: the contextual tab uses the Maritime wash, and Maritime otherwise means interaction; the alternative is the neutral header fill with the divider alone.</p>
 <p class="ruling"><b>Ruling, 22 November 2026:</b> the pick stands.</p>

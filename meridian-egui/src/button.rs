@@ -373,6 +373,70 @@ pub(crate) fn button_size(ui: &egui::Ui, button: &Button<'_>, drop_label: bool) 
     )
 }
 
+/// Where [`paint_button`] puts a button's parts in its rect: the keycap and
+/// its keystroke, the icon, and the label with its top-left corner, cut to the
+/// room the key leaves. A part that is not drawn is `None`.
+struct Parts<'a> {
+    key: Option<(Rect, &'a str)>,
+    icon: Option<Rect>,
+    label: Option<(egui::Pos2, std::sync::Arc<egui::Galley>)>,
+}
+
+/// Lay `button` out in `rect` as `p` draws it, its label in `label_ink`. The
+/// one account of where the parts go: [`paint_button`] paints it and
+/// [`content_end`] reads it.
+fn parts<'a>(
+    ui: &egui::Ui,
+    rect: Rect,
+    button: &Button<'a>,
+    p: &ButtonPaint,
+    label_ink: Color32,
+) -> Parts<'a> {
+    if is_square(button, !p.label) {
+        return Parts {
+            key: None,
+            icon: button
+                .icon
+                .map(|_| Rect::from_center_size(rect.center(), Vec2::splat(ICON_SM))),
+            label: None,
+        };
+    }
+    let gap = ui.tokens().icon_label_gap;
+    let mut x = rect.left() + lead(ui, button);
+    let mut right = rect.right() - padding(ui, button);
+    let key = button.key().filter(|_| p.key).map(|k| {
+        let r = control_key_rect(ui, rect, key_size(ui, k, KeySize::Control));
+        right = r.left() - gap;
+        (r, k)
+    });
+    let icon = button.icon.map(|_| {
+        let r = Rect::from_center_size(
+            egui::pos2(x + ICON_SM / 2.0, rect.center().y),
+            Vec2::splat(ICON_SM),
+        );
+        x += ICON_SM + gap;
+        r
+    });
+    let label = (p.label && !button.icon_only).then(|| {
+        let galley = label_galley(ui, button.label, label_ink, (right - x).max(0.0));
+        let top = cap_centred_galley_top(ui.painter(), &galley, rect.center().y);
+        (egui::pos2(x, top), galley)
+    });
+    Parts { key, icon, label }
+}
+
+/// Where the button's content ends, as `p` draws it in `rect`: the label's
+/// trailing edge, or the icon's when no label is drawn. The keycap is not
+/// content here; a ribbon row anchors a command's key tip to this edge.
+pub(crate) fn content_end(ui: &egui::Ui, rect: Rect, button: &Button<'_>, p: ButtonPaint) -> f32 {
+    let parts = parts(ui, rect, button, &p, Color32::PLACEHOLDER);
+    match (&parts.label, parts.icon) {
+        (Some((at, galley)), _) => at.x + galley.size().x,
+        (None, Some(icon)) => icon.right(),
+        (None, None) => rect.left(),
+    }
+}
+
 /// Paint `button` in `rect` in the state `p` describes: its box, the focus
 /// ring, the icon, the label (cut with an ellipsis to the room the key leaves)
 /// and the keycap. `rect` is the button's box; a caller that laid it out
@@ -407,38 +471,15 @@ pub(crate) fn paint_button(ui: &egui::Ui, rect: Rect, button: &Button<'_>, p: Bu
         }
     }
 
-    let key = button.key().filter(|_| p.key);
-    let draw_label = p.label && !button.icon_only;
-    let gap = t.icon_label_gap;
-
-    if is_square(button, !p.label) {
-        if let Some(icon) = button.icon {
-            let r = Rect::from_center_size(rect.center(), Vec2::splat(ICON_SM));
-            icon.paint(painter, r, ink.icon);
-        }
-        return;
+    let parts = parts(ui, rect, button, &p, ink.label);
+    if let Some((r, k)) = parts.key {
+        paint_key(ui, r, k, KeySize::Control, ink.key);
     }
-
-    let mut x = rect.left() + lead(ui, button);
-    let mut right = rect.right() - padding(ui, button);
-    if let Some(k) = key {
-        let size = key_size(ui, k, KeySize::Control);
-        let key_rect = control_key_rect(ui, rect, size);
-        paint_key(ui, key_rect, k, KeySize::Control, ink.key);
-        right = key_rect.left() - gap;
-    }
-    if let Some(icon) = button.icon {
-        let r = Rect::from_center_size(
-            egui::pos2(x + ICON_SM / 2.0, rect.center().y),
-            Vec2::splat(ICON_SM),
-        );
+    if let (Some(icon), Some(r)) = (button.icon, parts.icon) {
         icon.paint(painter, r, ink.icon);
-        x += ICON_SM + gap;
     }
-    if draw_label {
-        let galley = label_galley(ui, button.label, ink.label, (right - x).max(0.0));
-        let top = cap_centred_galley_top(ui.painter(), &galley, rect.center().y);
-        painter.galley(egui::pos2(x, top), galley, ink.label);
+    if let Some((at, galley)) = parts.label {
+        painter.galley(at, galley, ink.label);
     }
 }
 

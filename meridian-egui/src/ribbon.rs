@@ -21,7 +21,11 @@
 //! divided by a 1px rule. When the row is narrower than its commands it drops
 //! their labels from the trailing end, one command at a time, until it fits;
 //! the icon and the key remain. Narrower than that, it clips at its trailing
-//! edge and what is clipped takes no pointer.
+//! edge and what is clipped takes no pointer. With its key tips on, no command
+//! moves: each hides its own keycap and leaves the slot empty, and its tip sits
+//! at the trailing bottom corner of its label, or of its icon when the label is
+//! dropped, so the tip stays beside the word it names rather than a slot past
+//! it, nearer the next command.
 //!
 //! The caller holds which tab is selected and whether the strip is collapsed;
 //! nothing is kept between frames. A click on any tab, the selected one
@@ -46,7 +50,9 @@ use meridian_design::scales::{MARITIME_DARK, MARITIME_LIGHT};
 use meridian_design::spacing::{BAND_HEIGHT, ROW_GRID};
 use meridian_design::{semantic, Role};
 
-use crate::button::{button_size, mark_unavailable, paint_button, Button, ButtonPaint, Weight};
+use crate::button::{
+    button_size, content_end, mark_unavailable, paint_button, Button, ButtonPaint, Weight,
+};
 use crate::key_chip::{key_size, paint_key, KeyInk, KeySize};
 use crate::theme::to_color32;
 use crate::widgets::{
@@ -441,8 +447,10 @@ impl<'a> RibbonRow<'a> {
         }
     }
 
-    /// Show each command's key as a tip at its corner instead of the keycap
-    /// the command draws itself. Nothing moves when they are on.
+    /// Show each command's key as a tip at the trailing bottom corner of its
+    /// label (its icon's, when the label is dropped) instead of the keycap the
+    /// command draws itself, whose slot stays empty. Nothing moves when they
+    /// are on.
     pub fn key_tips(mut self, shown: bool) -> Self {
         self.key_tips = shown;
         self
@@ -471,6 +479,18 @@ struct Command<'a> {
     button: Button<'a>,
     bare: bool,
     rect: Rect,
+}
+
+impl Command<'_> {
+    /// What the row draws of this command at rest: its label unless dropped,
+    /// its own key unless key tips are on.
+    fn paint(&self, row: &RibbonRow<'_>) -> ButtonPaint {
+        ButtonPaint {
+            label: !self.bare,
+            key: !row.key_tips,
+            ..ButtonPaint::REST
+        }
+    }
 }
 
 /// The row's contents laid out from the band's left edge: each command's rect
@@ -609,8 +629,7 @@ pub fn ribbon_row(ui: &mut egui::Ui, row: RibbonRow<'_>) -> RibbonRowResponse {
                     hovered: r.hovered(),
                     pressed: r.is_pointer_button_down_on(),
                     focused: r.has_focus(),
-                    label: !c.bare,
-                    key: !row.key_tips,
+                    ..c.paint(&row)
                 },
             );
         }
@@ -625,7 +644,13 @@ pub fn ribbon_row(ui: &mut egui::Ui, row: RibbonRow<'_>) -> RibbonRowResponse {
                 } else {
                     KeyInk::Plain
                 };
-                key_tip_inked(ui, c.rect, k, ink);
+                // The tip's corner is the end of the label (the icon's, when
+                // the label is dropped), not the command's trailing edge: the
+                // command's own key leaves its slot empty, and a tip a slot
+                // past its label reads as its neighbour's.
+                let end = content_end(&list, c.rect, &c.button, c.paint(&row));
+                let target = Rect::from_min_max(c.rect.min, egui::pos2(end, c.rect.bottom()));
+                key_tip_inked(ui, target, k, ink);
             }
         }
     }

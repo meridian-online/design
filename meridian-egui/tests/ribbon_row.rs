@@ -10,7 +10,7 @@ use egui::accesskit::Role as AccessRole;
 use egui::{Color32, Rect};
 use egui_kittest::kittest::{NodeT, Queryable};
 use egui_kittest::Harness;
-use meridian_design::control::{KEYCAP_HEIGHT, KEYCAP_HEIGHT_IN_CONTROL};
+use meridian_design::control::{ICON_SM, KEYCAP_HEIGHT, KEYCAP_HEIGHT_IN_CONTROL};
 use meridian_design::semantic::semantic;
 use meridian_design::spacing::{BAND_HEIGHT, SPACE_1, SPACE_3, SPACE_4, SPACE_6};
 use meridian_egui::{
@@ -473,22 +473,88 @@ fn key_tips_replace_each_command_s_own_key() {
             };
             let tip = tips
                 .iter()
-                .find(|k| near(k.rect.right(), r.right() + k.rect.width() / 4.0))
+                .find(|k| r.x_range().contains(k.rect.right() - k.rect.width() / 4.0))
                 .expect("a tip");
             let galleys = key_texts(&on, tip.rect);
             assert_eq!(galleys.len(), 1, "{c:?}: {galleys:?}");
             assert_eq!(galleys[0], ink(want), "{mode:?}: {c:?} tip ink");
         }
-        // Each tip is at its command's trailing bottom corner; nothing moved.
-        for (c, r) in &on.state().rects {
-            assert!(near_rect(*r, rect_of(&off, *c)), "{c:?} moved");
-            assert!(
-                tips.iter().any(|k| {
-                    near(k.rect.right(), r.right() + k.rect.width() / 4.0)
-                        && near(k.rect.bottom(), r.bottom() + k.rect.height() / 2.0)
-                }),
-                "{mode:?}: no tip at {c:?} {r:?}"
-            );
+    }
+}
+
+/// Each painted label's trailing edge on screen, by its text.
+fn label_ends(h: &Harness<'_, Out>) -> Vec<(String, f32)> {
+    fn walk(shape: &egui::Shape, out: &mut Vec<(String, f32)>) {
+        match shape {
+            egui::Shape::Text(t) => {
+                out.push((t.galley.text().to_owned(), t.pos.x + t.galley.size().x));
+            }
+            egui::Shape::Vec(v) => v.iter().for_each(|s| walk(s, out)),
+            _ => {}
+        }
+    }
+    let mut out = Vec::new();
+    for c in &h.output().shapes {
+        walk(&c.shape, &mut out);
+    }
+    out
+}
+
+#[test]
+fn each_key_tip_sits_at_the_end_of_its_label_and_nothing_moves() {
+    let full = widths(&drawn(Mode::Light, Spec::new(900.0)));
+    let bare = widths(&drawn(Mode::Light, Spec::new(10.0)));
+    let labels = [
+        "Filter", "Sort", "Hide", "Derive", "Join", "Group", "Delete",
+    ];
+    for mode in MODES {
+        // Every label drawn, and the last three dropped to their icons.
+        for width in [900.0, width_with_dropped(&full, &bare, 3)] {
+            let off = drawn(mode, Spec::new(width));
+            let mut spec = Spec::new(width);
+            spec.tips = true;
+            let on = drawn(mode, spec);
+            let slots = key_faces(&off, mode, KEYCAP_HEIGHT_IN_CONTROL);
+            let tips = key_faces(&on, mode, KEYCAP_HEIGHT);
+            let ends = label_ends(&on);
+            assert_eq!(tips.len(), 7, "{mode:?} at {width}");
+            for (i, c) in ORDER.iter().enumerate() {
+                let r = rect_of(&on, *c);
+                assert!(
+                    near_rect(r, rect_of(&off, *c)),
+                    "{mode:?}: {c:?} moved at {width}"
+                );
+                // The label's trailing edge, or the icon's for a command whose
+                // label was dropped: the row's lead, then the icon.
+                let end = if on.state().icon_only.contains(c) {
+                    r.left() + SPACE_3 + ICON_SM
+                } else {
+                    ends.iter()
+                        .find(|(t, _)| t == labels[i])
+                        .map(|(_, x)| *x)
+                        .unwrap_or_else(|| panic!("no label {}", labels[i]))
+                };
+                let slot = slots
+                    .iter()
+                    .find(|k| r.contains_rect(k.rect))
+                    .unwrap_or_else(|| panic!("{c:?}: no own key with tips off"));
+                let tip = tips
+                    .iter()
+                    .find(|k| {
+                        near(k.rect.bottom(), r.bottom() + k.rect.height() / 2.0)
+                            && r.x_range().contains(k.rect.left())
+                    })
+                    .unwrap_or_else(|| panic!("{mode:?}: no tip in {c:?} at {width}"));
+                assert!(
+                    near(tip.rect.right() - tip.rect.width() / 4.0, end),
+                    "{mode:?}: {c:?}'s tip anchors at {} not its content's end {end}",
+                    tip.rect.right() - tip.rect.width() / 4.0
+                );
+                assert!(
+                    tip.rect.left() < slot.rect.left(),
+                    "{mode:?}: {c:?}'s tip starts in its key's slot"
+                );
+            }
         }
     }
 }

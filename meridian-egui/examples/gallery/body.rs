@@ -698,7 +698,7 @@ fn ribbon(ui: &mut egui::Ui, state: &mut GalleryState) {
         figure(
             ui,
             width,
-            "a tab chosen: a tip on each command, in place of its own keycap",
+            "a tab chosen: a tip at the end of each command's label; nothing moves",
             |ui| {
                 ribbon_tabs(
                     ui,
