@@ -555,7 +555,7 @@ fn boxes_of<S>(harness: &Harness<'_, S>, fill: egui::Color32, radius: f32) -> Ve
 
 /// The keycap boxes a frame painted: the rects filled with the sunken surface
 /// that stand on a foot — a rect in the default border ink with the box's own rect,
-/// painted under a clip that leaves only its bottom [`KEYCAP_FOOT_WIDTH`] showing.
+/// painted under a clip that leaves only its bottom [`meridian_design::control::KEYCAP_FOOT_WIDTH`] showing.
 fn keycap_boxes<S>(harness: &Harness<'_, S>, dark: bool) -> Vec<egui::Rect> {
     let sem = meridian_design::semantic(dark);
     let sunken = theme::to_color32(sem.surfaces.sunken);

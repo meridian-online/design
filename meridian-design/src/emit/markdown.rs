@@ -656,6 +656,7 @@ pub fn tokens_md() -> String {
         "--m-progress-",
         "--m-slider-",
         "--m-mark-",
+        "--m-keycap-",
         "--m-sidebar-",
         "--m-title-bar-",
         "--m-status-bar-",

@@ -303,6 +303,9 @@ fn semantic_block(css: &mut String, dark: bool) {
     decl(css, "mark-failed", &s.marks.failed.hex());
     decl(css, "mark-stale", &s.marks.stale.hex());
 
+    decl(css, "keycap-on-solid-rule", &s.keycap.on_solid_rule.hex());
+    decl(css, "keycap-on-solid-foot", &s.keycap.on_solid_foot.hex());
+
     let c = &s.containers;
     decl(css, "sidebar-bg", &c.sidebar_background.hex());
     decl(css, "sidebar-border", &c.sidebar_border.hex());

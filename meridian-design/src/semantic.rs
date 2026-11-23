@@ -374,6 +374,22 @@ pub struct MarkInks {
     pub stale: Rgba,
 }
 
+/// The inks of a keycap drawn on a solid accent fill, which has no face of its
+/// own: a rule on three sides and a heavier foot, both the on-solid text ink
+/// ([`Text::on_solid`]) at 70% and 100% laid over the accent's rest fill
+/// ([`Role::Accent`]'s `background.base`) and stored flattened, so a consumer
+/// draws an opaque ink and does no blending. Both clear the 3:1 non-text floor
+/// on the accent in each state it is shown in (`tests/chrome_gate.rs`).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct KeycapInks {
+    /// The hairline on the key's top and sides.
+    pub on_solid_rule: Rgba,
+    /// The foot under the key. At 100% this is [`Text::on_solid`] itself; it is
+    /// its own slot so the look is stated where a later change would look for
+    /// it. Hugh's choice, made so a visible step remains between rule and foot.
+    pub on_solid_foot: Rgba,
+}
+
 /// Named containers that are not roles and not rows.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Containers {
@@ -408,6 +424,7 @@ pub struct Semantic {
     pub drag_drop: DragDrop,
     pub feedback: Feedback,
     pub marks: MarkInks,
+    pub keycap: KeycapInks,
     pub containers: Containers,
 }
 
@@ -639,6 +656,10 @@ pub const LIGHT: Semantic = {
             failed: STATUS.critical,
             stale: AMBER_LIGHT[10],
         },
+        keycap: KeycapInks {
+            on_solid_rule: on_solid.flattened_over(0.70, accent.background.base),
+            on_solid_foot: on_solid.flattened_over(1.0, accent.background.base),
+        },
         containers: Containers {
             sidebar_background: g[0],
             sidebar_border: borders.subtle,
@@ -853,6 +874,10 @@ pub const DARK: Semantic = {
             ok: STATUS.good,
             failed: r[10],
             stale: STATUS.warning,
+        },
+        keycap: KeycapInks {
+            on_solid_rule: on_solid.flattened_over(0.70, accent.background.base),
+            on_solid_foot: on_solid.flattened_over(1.0, accent.background.base),
         },
         containers: Containers {
             sidebar_background: g[0],

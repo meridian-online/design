@@ -54,7 +54,7 @@ pub mod picker;
 pub mod query;
 pub mod tabs;
 
-pub use key_chip::{key_chip, tooltip_for_action};
+pub use key_chip::{key_chip, key_chip_with, tooltip_for_action, KeyInk, KeySize};
 pub use list_row::{list_row, ListRow, ListRowResponse, RowHeight, RowState};
 pub use notify::{Notification, NotificationId, NotificationLayer, Severity, Toast, ToastLayer};
 pub use overlay::{overlay_frame, ModalChrome, ModalLayer, ModalLayerResponse, ModalWidth};

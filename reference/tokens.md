@@ -261,6 +261,8 @@ Named parts that earn their own slots because two consumers both need them and n
 | `--m-mark-ok` | `#218a45` | `#218a45` |
 | `--m-mark-failed` | `#c9302d` | `#ff9083` |
 | `--m-mark-stale` | `#9e6300` | `#da950b` |
+| `--m-keycap-on-solid-rule` | `#c3d1da` | `#c5d1d8` |
+| `--m-keycap-on-solid-foot` | `#fcfcfb` | `#fcfcfb` |
 | `--m-sidebar-bg` | `#f8f7f7` | `#0d0c0c` |
 | `--m-sidebar-border` | `#d4d2cf` | `#3c3a38` |
 | `--m-title-bar-bg` | `#fbfaf9` | `#0e0c0b` |
@@ -276,6 +278,12 @@ Named parts that earn their own slots because two consumers both need them and n
 | `--m-window-border` | `#d4d2cf` | `#3c3a38` |
 | `--m-shadow-overlay` | `3px 3px 0px #231f1c1f` | `3px 3px 0px #00000066` |
 | `--m-shadow-modal` | `6px 6px 0px #231f1c29` | `6px 6px 0px #0000008c` |
+| `--m-keycap-foot-width` | `2px` | — |
+| `--m-keycap-height` | `21px` | — |
+| `--m-keycap-height-in-control` | `16px` | — |
+| `--m-keycap-inset-in-control` | `4px` | — |
+
+A dash means the dark block does not redefine the token and the light value stands — the web artefact leans on the cascade for that, so a value appearing once is a decision rather than an omission.
 
 ## Box model
 
@@ -328,10 +336,6 @@ Stated once, in logical pixels, and mode-invariant throughout. The spacing ladde
 | `--m-focus-ring-width-on-solid` | `1px` |
 | `--m-row-bar-width` | `3px` |
 | `--m-tab-bar-width` | `2px` |
-| `--m-keycap-foot-width` | `2px` |
-| `--m-keycap-height` | `21px` |
-| `--m-keycap-height-in-control` | `16px` |
-| `--m-keycap-inset-in-control` | `4px` |
 | `--m-gutter-lane` | `12px` |
 | `--m-step-mark-cell` | `24px` |
 | `--m-step-mark` | `7px` |

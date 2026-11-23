@@ -154,6 +154,12 @@ mod tests {
     #[test]
     fn tokens_mirror_the_design_constants() {
         assert_eq!(TOKENS.space, spacing::SPACE);
+        assert_eq!(TOKENS.panel_padding, spacing::PANEL_PADDING);
+        assert_eq!(TOKENS.section_gap, spacing::SECTION_GAP);
+        assert_eq!(TOKENS.pane_gap, spacing::PANE_GAP);
+        assert_eq!(TOKENS.modal_padding, spacing::MODAL_PADDING);
+        assert_eq!(TOKENS.radius_chip, radius::CHIP);
+        assert_eq!(TOKENS.modal_width_narrow, spacing::MODAL_WIDTH_NARROW);
         assert_eq!(TOKENS.control_gap, spacing::CONTROL_GAP);
         assert_eq!(TOKENS.icon_label_gap, spacing::ICON_LABEL_GAP);
         assert_eq!(TOKENS.chip_padding_x, spacing::CHIP_PADDING_X);

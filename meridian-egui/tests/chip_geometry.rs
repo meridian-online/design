@@ -37,11 +37,15 @@
 //! and the triangles its text tessellated into — so there is no expression
 //! they could be quietly copying from the widget.
 
+mod common;
+
 use egui_kittest::Harness;
-use meridian_design::control::{HEIGHT_XS, ICON_XS, KEYCAP_FOOT_WIDTH};
+use meridian_design::control::{
+    HEIGHT_XS, ICON_XS, KEYCAP_FOOT_WIDTH, KEYCAP_HEIGHT, KEYCAP_HEIGHT_IN_CONTROL,
+};
 use meridian_design::semantic::{semantic, Role};
 use meridian_design::spacing::{CHIP_PADDING_X, ICON_LABEL_GAP, SPACE_1};
-use meridian_egui::{icons, key_chip, theme, widgets, Mode};
+use meridian_egui::{icons, key_chip, key_chip_with, theme, widgets, KeyInk, KeySize, Mode};
 
 /// The hairline every box in this crate is stroked with. Named here so the
 /// insets below are spelled out term by term rather than borrowed from the
@@ -895,6 +899,150 @@ fn a_keystroke_with_nothing_to_ink_falls_back_to_its_font_box() {
                      face's centreline"
                 );
             }
+        }
+    }
+}
+
+// ─── the keycap's two sizes and three inks ──────────────────────────────────
+
+/// One keycap as drawn: its rects in paint order, the box it spans, and the
+/// colour its keystroke was inked in.
+struct Key {
+    rects: Vec<common::Painted>,
+    outer: egui::Rect,
+    text: egui::Color32,
+}
+
+fn drawn_key(mode: Mode, keystroke: &'static str, size: KeySize, key_ink: KeyInk) -> Key {
+    let mut harness = Harness::builder()
+        .with_size(egui::vec2(400.0, 200.0))
+        .build_ui(move |ui| {
+            theme::apply(ui.ctx(), mode);
+            key_chip_with(ui, keystroke, size, key_ink);
+        });
+    harness.run();
+    let rects = common::painted(&harness, mode);
+    let outer = rects
+        .iter()
+        .map(|r| r.rect)
+        .reduce(|a, b| a.union(b))
+        .expect("the key painted a box");
+    let text = painted(&harness).only_text_shape().galley.job.sections[0]
+        .format
+        .color;
+    Key { rects, outer, text }
+}
+
+const SIZES: [(KeySize, f32); 2] = [
+    (KeySize::Row, KEYCAP_HEIGHT),
+    (KeySize::Control, KEYCAP_HEIGHT_IN_CONTROL),
+];
+
+#[test]
+fn a_key_in_a_control_is_sixteen_tall() {
+    for mode in [Mode::Light, Mode::Dark] {
+        for keystroke in KEYSTROKES {
+            let key = drawn_key(mode, keystroke, KeySize::Control, KeyInk::Plain);
+            assert!(
+                near(key.outer.height(), KEYCAP_HEIGHT_IN_CONTROL),
+                "{mode:?} {keystroke}: a key in a control drew {} tall",
+                key.outer.height()
+            );
+            // The foot is still the box's own rect, clipped to its bottom band.
+            let sem = semantic(mode.is_dark());
+            let foot = common::filled(&key.rects, common::ink(sem.borders.default_));
+            assert_eq!(foot.len(), 1, "{mode:?} {keystroke}: one foot");
+            assert!(near(foot[0].clip.height(), KEYCAP_FOOT_WIDTH));
+            assert!(near(foot[0].clip.bottom(), key.outer.bottom()));
+            // The wide text is not what sets the height: one hairline, one
+            // pixel of padding, a 12px text box, the foot.
+            assert!(near(
+                key.outer.height(),
+                HAIRLINE + HAIRLINE + 12.0 + KEYCAP_FOOT_WIDTH
+            ));
+        }
+    }
+}
+
+#[test]
+fn a_key_in_a_row_is_still_twenty_one() {
+    for mode in [Mode::Light, Mode::Dark] {
+        for keystroke in KEYSTROKES {
+            let key = drawn_key(mode, keystroke, KeySize::Row, KeyInk::Plain);
+            assert!(near(key.outer.height(), KEYCAP_HEIGHT));
+            // And `key_chip` is that same key.
+            let plain = drawn_key_chip(mode, keystroke);
+            assert!(near(plain.chip.height(), key.outer.height()));
+            assert!(near(plain.chip.width(), key.outer.width()));
+        }
+    }
+}
+
+#[test]
+fn a_wide_keystroke_widens_the_key_and_never_its_height() {
+    for (size, height) in SIZES {
+        let one = drawn_key(Mode::Light, "K", size, KeyInk::Plain);
+        for wide in ["\u{2303}\u{2325}\u{21e7}K", "F12"] {
+            let key = drawn_key(Mode::Light, wide, size, KeyInk::Plain);
+            assert!(
+                near(key.outer.height(), height),
+                "{size:?} {wide}: drew {} tall, not {height}",
+                key.outer.height()
+            );
+            assert!(
+                key.outer.width() > one.outer.width() + 1.0,
+                "{size:?} {wide}: {} wide is not wider than one key's {}",
+                key.outer.width(),
+                one.outer.width()
+            );
+        }
+    }
+}
+
+#[test]
+fn a_dimmed_key_draws_its_keystroke_in_the_disabled_ink_and_keeps_its_box() {
+    for mode in [Mode::Light, Mode::Dark] {
+        let sem = semantic(mode.is_dark());
+        for (size, _) in SIZES {
+            let plain = drawn_key(mode, "\u{2318}E", size, KeyInk::Plain);
+            let dim = drawn_key(mode, "\u{2318}E", size, KeyInk::Dimmed);
+            assert_eq!(
+                dim.text,
+                common::ink(sem.text.disabled),
+                "{mode:?} {size:?}"
+            );
+            assert_ne!(plain.text, dim.text);
+            assert_eq!(dim.rects.len(), plain.rects.len());
+            for (a, b) in plain.rects.iter().zip(&dim.rects) {
+                assert!(common::near_rect(a.rect, b.rect));
+                assert!(common::near_rect(a.clip, b.clip));
+                assert_eq!(a.fill, b.fill, "the face and the foot keep their inks");
+                assert_eq!(a.stroke, b.stroke, "the hairline keeps its ink");
+            }
+        }
+    }
+}
+
+#[test]
+fn a_key_on_a_solid_fill_has_no_face_and_draws_in_the_on_solid_inks() {
+    for mode in [Mode::Light, Mode::Dark] {
+        let sem = semantic(mode.is_dark());
+        for (size, height) in SIZES {
+            let key = drawn_key(mode, "\u{2318}\u{21a9}", size, KeyInk::OnSolid);
+            assert!(near(key.outer.height(), height));
+            assert_eq!(key.text, common::ink(sem.text.on_solid));
+            assert!(
+                common::filled(&key.rects, common::ink(sem.surfaces.sunken)).is_empty(),
+                "{mode:?} {size:?}: a key on a solid fill has no face"
+            );
+            let rule = common::ink(sem.keycap.on_solid_rule);
+            let foot = common::ink(sem.keycap.on_solid_foot);
+            assert_eq!(key.rects.len(), 2, "one hairline box and one foot");
+            assert_eq!(key.rects[0].fill, egui::Color32::TRANSPARENT);
+            assert_eq!(key.rects[0].stroke.color, rule);
+            assert!(near(key.rects[0].stroke.width, HAIRLINE));
+            assert_eq!(key.rects[1].fill, foot);
+            assert!(near(key.rects[1].clip.height(), KEYCAP_FOOT_WIDTH));
         }
     }
 }

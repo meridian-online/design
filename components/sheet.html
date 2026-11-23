@@ -77,7 +77,7 @@ figure.wide { width: 100%; align-items: stretch; }
 /* The keycap, as key_chip draws it: 21 tall, a 2px foot inside the box. */
 .kc { display: inline-block; flex: none; font: var(--m-font-size-chart)/var(--x-keycap-line) var(--m-font-mono), monospace; font-feature-settings: "calt" 0; color: var(--m-text-secondary); background: var(--m-surface-sunken); padding: var(--m-space-1) var(--m-space-3) var(--x-hairline); border: var(--x-hairline) solid var(--m-border-subtle); border-bottom: var(--m-keycap-foot-width) solid var(--m-border-default); white-space: nowrap; }
 .kc.dim { color: var(--m-text-disabled); }
-.kc.solid { background: transparent; color: var(--m-text-on-solid); border-color: color-mix(in srgb, var(--m-text-on-solid) 45%, transparent); border-bottom-color: color-mix(in srgb, var(--m-text-on-solid) 80%, transparent); }
+.kc.solid { background: transparent; color: var(--m-text-on-solid); border-color: var(--m-keycap-on-solid-rule); border-bottom-color: var(--m-keycap-on-solid-foot); }
 
 /* A keycap inside a control. The full keycap is 21 tall, and a 24 control draws
    its focus ring 2px inside its edge, which leaves 20: the ring would run through
@@ -89,7 +89,7 @@ figure.wide { width: 100%; align-items: stretch; }
 .btn.lg:has(.kc) { padding-right: var(--m-space-2); }
 .btn.flush { padding-right: 0; }
 .btn.flush .key { align-self: stretch; display: flex; align-items: center; padding: 0 var(--m-space-3); margin-left: var(--m-space-1); border-left: var(--x-hairline) solid var(--m-neutral-border); font: var(--m-font-size-chart) var(--m-font-mono), monospace; font-feature-settings: "calt" 0; color: var(--m-text-secondary); }
-.btn.primary.flush .key { border-left-color: color-mix(in srgb, var(--m-text-on-solid) 45%, transparent); color: var(--m-text-on-solid); }
+.btn.primary.flush .key { border-left-color: var(--m-keycap-on-solid-rule); color: var(--m-text-on-solid); }
 
 /* ---------- 1. button ---------- */
 .btn { display: inline-flex; align-items: center; gap: var(--m-icon-label-gap); height: var(--m-control-md); padding: 0 var(--m-space-4); background: var(--m-neutral-bg); border: var(--x-hairline) solid var(--m-neutral-border); color: var(--m-neutral-fg); font: inherit; white-space: nowrap; cursor: default; }

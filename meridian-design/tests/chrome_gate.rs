@@ -238,6 +238,35 @@ fn the_ring_on_the_accent_takes_the_on_solid_ink_and_is_seen() {
     }
 }
 
+/// A keycap on the accent's solid fill is drawn in two inks: the rule on its
+/// top and sides, and the heavier foot. Both are findable against the fill in
+/// every state the fill is shown in, at the non-text floor.
+#[test]
+fn the_key_on_a_solid_fill_is_findable() {
+    for (mode, s) in modes() {
+        let accent = s.role(Role::Accent).background;
+        for (state, fill) in [
+            ("base", accent.base),
+            ("hover", accent.hover),
+            ("active", accent.active),
+            ("selected", accent.selected),
+            ("focus", accent.focus),
+        ] {
+            for (ink_name, ink) in [
+                ("rule", s.keycap.on_solid_rule),
+                ("foot", s.keycap.on_solid_foot),
+            ] {
+                assert_eq!(ink.a, 1.0, "{mode}: the {ink_name} ink is stored flattened");
+                let c = contrast(ink, fill);
+                assert!(
+                    c >= NON_TEXT,
+                    "{mode}: the key's {ink_name} on accent.{state} is {c:.2}:1, below {NON_TEXT}"
+                );
+            }
+        }
+    }
+}
+
 #[test]
 fn border_steps_are_the_documented_band() {
     // Ground truth: ADR 0007 and `scales.rs` both document steps 6–8 as the

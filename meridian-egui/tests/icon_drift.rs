@@ -45,7 +45,7 @@ fn generated_constants_match_the_manifest_byte_for_byte() {
 fn the_set_is_sorted_unique_and_at_the_agreed_size() {
     assert!(
         icons::ALL.len() >= 40,
-        "the curated set carries ~40 glyphs; found {}",
+        "the curated set carries 75 glyphs; found {}",
         icons::ALL.len()
     );
     for pair in icons::ALL.windows(2) {
