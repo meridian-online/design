@@ -54,6 +54,7 @@ pub mod overlay;
 pub mod picker;
 pub mod query;
 pub mod tabs;
+pub mod text_field;
 
 pub use button::{button, Button, ButtonResponse, Weight};
 pub use key_chip::{key_chip, key_chip_with, tooltip_for_action, KeyInk, KeySize};
@@ -65,3 +66,4 @@ pub use picker::{
 };
 pub use query::{query_line, QueryLineResponse, PROMPT_GLYPH};
 pub use tabs::{line_tabs, LineTabs, LineTabsResponse};
+pub use text_field::{text_field, TextField, TextFieldResponse};
