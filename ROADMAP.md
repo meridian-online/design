@@ -32,7 +32,7 @@ The Masonry/Xilem watch is **retired** (ADR 0003 update, 2026-07-20): Brightfiel
 
 ## Phase 6 — Desktop components ✅
 
-Brightfield's move off GPUI left no host widget library to defer to, so a capped set of egui primitives and the egui adapter landed here as a second crate, `meridian-egui`, alongside the geometry/state token layer they consume (ADR 0011). The token crate's contract is unchanged.
+Brightfield's move off GPUI left no host widget library to defer to, so an inventoried set of egui components (`meridian-egui/INVENTORY.md`) and the egui adapter landed here as a second crate, `meridian-egui`, alongside the geometry/state token layer they consume (ADR 0011). The token crate's contract is unchanged.
 
 With the desktop app on egui, the gpui-component `ThemeConfig` emitter that Phase 4 introduced has been **retired** — it had no remaining consumer once the shell cut over. `tokens.css` for the web is the crate's only *consumer* artefact (pinned by `tests/conformance.rs`); the desktop is themed through `meridian-egui`. A second emitter has since joined it with no consumer at all: `reference/tokens.md`, the browsable sheet, generated from `tokens.css` rather than from the token modules so the two cannot disagree.
 
@@ -51,3 +51,7 @@ All three of that phase's outstanding items closed on 2026-08-16.
 **Web took the asset** (`meridian-online/web#79`): the hand-rolled loading glyph that inlined the mark's path and spun it is gone, replaced by the tracked file behind a byte-for-byte pin against `design@main`, on the same clone and in the same CI step group as the token pin. That closes the inline-mark drift this phase opened on.
 
 Standing after the phase: Brightfield still pins an older rev and has not taken the work cue, and the wordmark-forming animation is authored but unbuilt. Both are new work rather than unfinished work.
+
+## Phase 8 — Components for Brightfield's chrome ✅ (2026-11-22 → 2026-11-24)
+
+Brightfield's chrome (a ribbon, a step list, an inspector, open places, a title band) is assembled from components drawn here rather than in the shell. Twelve landed in `meridian-egui`: `button`, `text_field`, `Popover`, `menu_item`, `segmented`, `section`, `distribution_bar`, `ribbon_tabs`, `ribbon_row`, `step_row`, `vertical_tab` and `run_status`, with `key_tip`, `step_mark`, `teaching_message`, `menu_separator` and `PickerRow::unavailable` composed from them. Each look was ruled on `components/sheet.html` first, which now reads `tokens.css` alone. The corners relaxed to 2, 3 and 3 (ADR 0013's update), the keycap gained a 16 size for use inside a control, the state marks became data in `meridian_design::marks` with every mark held to 3:1 on every row ground, labels in a row now share one baseline, and 27 Tabler icons joined the manifest. ADR 0011's cap of 15 became `meridian-egui/INVENTORY.md`, which a test holds against the crate's public surface. Adoption in Brightfield is Brightfield's work, at its next bump.

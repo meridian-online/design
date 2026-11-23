@@ -5,7 +5,7 @@
 //! paints hover/selected/pressed state **from the semantic row tokens only**.
 //! The function takes no fill colour and no height in pixels: the height is a
 //! rung of the row ladder ([`RowHeight`]) and the state fills come from
-//! [`meridian_design::semantic`], so a hand-rolled row background cannot be
+//! [`meridian_design::semantic()`], so a hand-rolled row background cannot be
 //! expressed through this API at all. That is deliberate — the audit behind
 //! ADR 0011 found rows re-inventing their own accent at the call site, and the
 //! durable fix is an API with no fill parameter to misuse. The one ink a caller
@@ -22,9 +22,9 @@
 //! flicker: the pointer is over the row whether or not the affordance exists
 //! yet.
 
-use egui::{Color32, CornerRadius, Rect, Sense, UiBuilder};
+use egui::{Color32, Rect, Sense, UiBuilder};
 use meridian_design::control::ROW_BAR_WIDTH;
-use meridian_design::{semantic, Role};
+use meridian_design::{radius, semantic, Role};
 
 use crate::theme::to_color32;
 use crate::tokens::Tokens;
@@ -66,6 +66,9 @@ pub struct ListRow {
     height: RowHeight,
     selected: bool,
     bar_ink: Option<Color32>,
+    inert: bool,
+    no_pointer_fill: bool,
+    wash: bool,
 }
 
 impl ListRow {
@@ -76,7 +79,38 @@ impl ListRow {
             height,
             selected: false,
             bar_ink: None,
+            inert: false,
+            no_pointer_fill: false,
+            wash: false,
         }
+    }
+
+    /// The pointer draws no fill on the row (hover or pressed) but the row still
+    /// takes its click. For an unavailable row whose click moves the cursor.
+    #[must_use]
+    pub(crate) fn no_pointer_fill(mut self) -> Self {
+        self.no_pointer_fill = true;
+        self
+    }
+
+    /// The row takes the cursor but not the pointer: no click, no hover fill, no
+    /// pressed fill, and no keyboard focus of its own. For a row that is
+    /// unavailable and still walked with the keys.
+    #[must_use]
+    pub(crate) fn inert(mut self) -> Self {
+        self.no_pointer_fill = true;
+        self.inert = true;
+        self
+    }
+
+    /// The row is the selected thing — the node a canvas shows — rather than
+    /// where the keys act: the selection wash (`rows.selected_background`) with
+    /// a 1px inside rule in `rows.selected_border`, over any pointer fill. The
+    /// cursor's bar, when the row also has the cursor, is drawn over the rule.
+    #[must_use]
+    pub(crate) fn wash(mut self, on: bool) -> Self {
+        self.wash = on;
+        self
     }
 
     /// Mark the row as the one under the cursor — where the keys act. It takes
@@ -143,8 +177,10 @@ impl<R> ListRowResponse<R> {
 /// The bar is in the token's ink unless the caller passes one with
 /// [`ListRow::bar_ink`].
 ///
-/// State precedence: under the cursor > pressed > hovered > nothing, so the
-/// cursor survives losing the pointer.
+/// State precedence: the selection wash (a crate-internal option for a row
+/// that is the selected thing) > under the cursor > pressed > hovered >
+/// nothing, so the cursor survives losing the pointer. The cursor's bar is drawn
+/// over the wash.
 pub fn list_row<R>(
     ui: &mut egui::Ui,
     row: ListRow,
@@ -156,17 +192,24 @@ pub fn list_row<R>(
 
     let height = row.height.px(t);
     let desired = egui::vec2(ui.available_width(), height);
-    let (rect, response) = ui.allocate_exact_size(desired, Sense::click());
+    let sense = if row.inert {
+        Sense::hover()
+    } else {
+        Sense::click()
+    };
+    let (rect, response) = ui.allocate_exact_size(desired, sense);
 
     let state = RowState {
-        hovered: response.contains_pointer(),
+        hovered: !row.no_pointer_fill && response.contains_pointer(),
         selected: row.selected,
-        pressed: response.is_pointer_button_down_on(),
+        pressed: !row.no_pointer_fill && response.is_pointer_button_down_on(),
     };
 
     if ui.is_rect_visible(rect) {
         let rows = &sem.rows;
-        let fill = if state.selected {
+        let fill = if row.wash {
+            None
+        } else if state.selected {
             Some(rows.cursor_background)
         } else if state.pressed {
             // The rows vocabulary has no pressed slot; the neutral role's
@@ -177,14 +220,16 @@ pub fn list_row<R>(
         } else {
             None
         };
-        if let Some(fill) = fill {
+        if row.wash {
+            paint_wash(ui.painter(), rect, dark);
+        } else if let Some(fill) = fill {
             ui.painter()
-                .rect_filled(rect, CornerRadius::ZERO, to_color32(fill));
+                .rect_filled(rect, radius::NONE, to_color32(fill));
         }
         if state.selected {
             let bar = Rect::from_min_size(rect.min, egui::vec2(ROW_BAR_WIDTH, rect.height()));
             let ink = row.bar_ink.unwrap_or_else(|| to_color32(rows.cursor_bar));
-            ui.painter().rect_filled(bar, CornerRadius::ZERO, ink);
+            ui.painter().rect_filled(bar, radius::NONE, ink);
         }
     }
 
@@ -201,6 +246,20 @@ pub fn list_row<R>(
         state,
         inner,
     }
+}
+
+/// The selection wash on `rect`: `rows.selected_background` with a 1px inside
+/// rule in `rows.selected_border`, as one square shape. The thing that is
+/// selected — a focused step row, a focused thin step mark — wears it.
+pub(crate) fn paint_wash(painter: &egui::Painter, rect: Rect, dark: bool) {
+    let rows = &semantic(dark).rows;
+    painter.rect(
+        rect,
+        radius::NONE,
+        to_color32(rows.selected_background),
+        egui::Stroke::new(1.0, to_color32(rows.selected_border)),
+        egui::StrokeKind::Inside,
+    );
 }
 
 #[cfg(test)]

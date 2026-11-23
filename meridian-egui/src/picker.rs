@@ -11,7 +11,7 @@
 //! around reading such patterns).
 //!
 //! The delegate hands back row *content* ([`PickerRow`]), never row
-//! *treatment*: the picker draws every row through [`crate::list_row`], so a
+//! *treatment*: the picker draws every row through [`crate::list_row()`], so a
 //! delegate cannot introduce its own row colours or heights even on purpose.
 //!
 //! The trait is deliberately wide enough for the delegate shapes an
@@ -35,14 +35,14 @@ use egui::text::{Galley, LayoutJob, TextFormat, TextWrapping};
 use egui::{Align, Color32, FontSelection, Key, Layout, Modifiers, RichText, UiBuilder};
 use meridian_design::semantic;
 
-use crate::key_chip::{chip_width, key_chip};
+use crate::key_chip::{chip_width, key_chip_with, KeyInk, KeySize};
 use crate::list_row::{list_row, ListRow, RowHeight};
 use crate::query::query_line;
 use crate::theme::to_color32;
 use crate::MeridianUi;
 
 /// One row's content, as data. The picker turns this into a themed
-/// [`crate::list_row`]; a delegate never draws.
+/// [`crate::list_row()`]; a delegate never draws.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PickerRow {
     /// Primary text.
@@ -52,6 +52,10 @@ pub struct PickerRow {
     /// A keystroke chip, right-aligned — a caller-provided string (the
     /// binding registry stays application-side).
     pub keystroke: Option<String>,
+    /// Why the row cannot be chosen now. An unavailable row draws this as its
+    /// detail, greyed with its label and key; it still takes the cursor, and
+    /// choosing it picks nothing.
+    pub unavailable: Option<String>,
 }
 
 impl PickerRow {
@@ -62,6 +66,7 @@ impl PickerRow {
             label: label.into(),
             detail: None,
             keystroke: None,
+            unavailable: None,
         }
     }
 
@@ -76,6 +81,17 @@ impl PickerRow {
     #[must_use]
     pub fn keystroke(mut self, keystroke: impl Into<String>) -> Self {
         self.keystroke = Some(keystroke.into());
+        self
+    }
+
+    /// The row cannot be chosen now, for `reason` (the caller's sentence): the
+    /// menu item's unavailable treatment. The reason is drawn as the row's
+    /// detail, replacing any other, and the label and key are greyed. The row
+    /// still takes the cursor and keeps its place; Enter or a click on it
+    /// picks nothing.
+    #[must_use]
+    pub fn unavailable(mut self, reason: impl Into<String>) -> Self {
+        self.unavailable = Some(reason.into());
         self
     }
 }
@@ -299,6 +315,9 @@ impl<D: PickerDelegate> Picker<D> {
         } else {
             Some(self.selected.min(count - 1))
         };
+        if index.is_some_and(|i| self.delegate.row(i).unavailable.is_some()) {
+            return None;
+        }
         match self.delegate.confirm(index, &self.query) {
             PickerOutcome::Close => Some(PickerEvent::Confirmed),
             PickerOutcome::KeepOpen => None,
@@ -364,6 +383,8 @@ impl<D: PickerDelegate> Picker<D> {
         self.scroll_to_selected = false;
 
         if let Some(index) = clicked_row {
+            // An unavailable row takes the cursor and `confirm_current` picks
+            // nothing on it.
             self.selected = index;
             out.event = self.confirm_current();
         }
@@ -411,6 +432,7 @@ impl<D: PickerDelegate> Picker<D> {
         let sem = semantic(dark);
         let muted = to_color32(sem.text.muted);
         let secondary = to_color32(sem.text.secondary);
+        let disabled = to_color32(sem.text.disabled);
         let mut clicked = None;
 
         ui.add_space(t.space[2]);
@@ -428,60 +450,69 @@ impl<D: PickerDelegate> Picker<D> {
                         ui.add_space(t.space[1]);
                     }
                     let row = self.delegate.row(index);
+                    let off = row.unavailable.is_some();
                     let selected = index == self.selected;
-                    let r = list_row(
-                        ui,
-                        ListRow::new(self.row_height).selected(selected),
-                        |ui, _state| {
-                            // The keycap's column is claimed BEFORE anything is
-                            // laid out against it. Both labels below read
-                            // `ui.available_width()` at the moment they are
-                            // added, so a chip added afterwards is drawn over
-                            // text that was handed the whole row — and
-                            // `key_chip` paints an opaque fill, which means the
-                            // last characters and the elision marker were drawn
-                            // and then covered rather than never drawn.
-                            // `chip_width` is the horizontal twin of
-                            // `chip_height`, and it exists so this row can know
-                            // the column without drawing the chip first.
-                            let row_rect = ui.max_rect();
-                            let chip_column = row
-                                .keystroke
-                                .as_deref()
-                                .map_or(0.0, |k| chip_width(ui, k) + t.icon_label_gap);
-                            let text_rect = row_rect.with_max_x(row_rect.right() - chip_column);
+                    let mut list = ListRow::new(self.row_height).selected(selected);
+                    if off {
+                        list = list.no_pointer_fill();
+                    }
+                    let r = list_row(ui, list, |ui, _state| {
+                        // The keycap's column is claimed BEFORE anything is
+                        // laid out against it. Both labels below read
+                        // `ui.available_width()` at the moment they are
+                        // added, so a chip added afterwards is drawn over
+                        // text that was handed the whole row — and
+                        // `key_chip` paints an opaque fill, which means the
+                        // last characters and the elision marker were drawn
+                        // and then covered rather than never drawn.
+                        // `chip_width` is the horizontal twin of
+                        // `chip_height`, and it exists so this row can know
+                        // the column without drawing the chip first.
+                        let row_rect = ui.max_rect();
+                        let chip_column = row
+                            .keystroke
+                            .as_deref()
+                            .map_or(0.0, |k| chip_width(ui, k) + t.icon_label_gap);
+                        let text_rect = row_rect.with_max_x(row_rect.right() - chip_column);
 
+                        ui.scope_builder(
+                            UiBuilder::new()
+                                .max_rect(text_rect)
+                                .layout(Layout::left_to_right(Align::Center)),
+                            |ui| {
+                                let label = if off {
+                                    RichText::new(row.label.as_str()).color(disabled)
+                                } else {
+                                    RichText::new(row.label.as_str())
+                                };
+                                ui.add(egui::Label::new(label).selectable(false).truncate());
+                                if let Some(reason) = &row.unavailable {
+                                    ui.add_space(t.icon_label_gap);
+                                    detail_label(ui, reason, disabled);
+                                } else if let Some(detail) = &row.detail {
+                                    ui.add_space(t.icon_label_gap);
+                                    detail_label(ui, detail, muted);
+                                }
+                            },
+                        );
+
+                        if let Some(keystroke) = &row.keystroke {
                             ui.scope_builder(
                                 UiBuilder::new()
-                                    .max_rect(text_rect)
-                                    .layout(Layout::left_to_right(Align::Center)),
+                                    .max_rect(row_rect)
+                                    .layout(Layout::right_to_left(Align::Center)),
                                 |ui| {
-                                    ui.add(
-                                        egui::Label::new(row.label.as_str())
-                                            .selectable(false)
-                                            .truncate(),
-                                    );
-                                    if let Some(detail) = &row.detail {
-                                        ui.add_space(t.icon_label_gap);
-                                        detail_label(ui, detail, muted);
-                                    }
+                                    let ink = if off { KeyInk::Dimmed } else { KeyInk::Plain };
+                                    key_chip_with(ui, keystroke, KeySize::Row, ink);
                                 },
                             );
-
-                            if let Some(keystroke) = &row.keystroke {
-                                ui.scope_builder(
-                                    UiBuilder::new()
-                                        .max_rect(row_rect)
-                                        .layout(Layout::right_to_left(Align::Center)),
-                                    |ui| {
-                                        key_chip(ui, keystroke);
-                                    },
-                                );
-                            }
-                        },
-                    );
+                        }
+                    });
                     if selected && self.scroll_to_selected {
                         r.response.scroll_to_me(None);
+                    }
+                    if let Some(reason) = &row.unavailable {
+                        describe_unavailable(ui, r.response.id, reason);
                     }
                     if r.clicked() {
                         clicked = Some(index);
@@ -490,6 +521,15 @@ impl<D: PickerDelegate> Picker<D> {
             });
         clicked
     }
+}
+
+/// An unavailable row is disabled to a screen reader, with its reason as the
+/// node's description.
+fn describe_unavailable(ui: &egui::Ui, id: egui::Id, reason: &str) {
+    ui.ctx().accesskit_node_builder(id, |node| {
+        node.set_disabled();
+        node.set_description(reason);
+    });
 }
 
 /// The row's supporting annotation, drawn for the column it was actually

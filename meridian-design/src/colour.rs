@@ -43,6 +43,25 @@ impl Rgba {
         }
     }
 
+    /// This colour at `alpha` laid over the opaque `under`, flattened to one
+    /// opaque colour on the 8-bit grid [`Rgba::hex`] writes.
+    ///
+    /// For an ink a consumer cannot draw translucent: it stores the result of
+    /// the blend, so nothing downstream does the maths. The blend is in sRGB,
+    /// gamma-encoded, as CSS `color-mix` and the desktop painter both do.
+    pub const fn flattened_over(self, alpha: f32, under: Rgba) -> Rgba {
+        const fn mix(top: f32, alpha: f32, under: f32) -> f32 {
+            let v = top * alpha + under * (1.0 - alpha);
+            (v * 255.0 + 0.5) as u8 as f32 / 255.0
+        }
+        Rgba::new(
+            mix(self.r, alpha, under.r),
+            mix(self.g, alpha, under.g),
+            mix(self.b, alpha, under.b),
+            1.0,
+        )
+    }
+
     /// Whether two colours are the same paint ignoring opacity — the question
     /// a gate asks of a wash ("is this scrim the primary ink?").
     pub fn same_paint(&self, other: &Self) -> bool {
@@ -74,7 +93,7 @@ impl Rgba {
 /// supply: `selected` (persistent, unlike `active`, which is the transient
 /// press) and `focus` (keyboard, which the immediate-mode desktop framework
 /// has no bucket for at all — see [`crate::focus`]). A `StateSet` is
-/// instantiated per role in [`crate::semantic`]; nothing else should build one
+/// instantiated per role in [`crate::semantic`](mod@crate::semantic); nothing else should build one
 /// ad hoc.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct StateSet {
@@ -116,6 +135,16 @@ mod tests {
     fn hex_round_trips_u8_construction() {
         assert_eq!(Rgba::from_u8(0x4b, 0x7a, 0x9b, 0xff).hex(), "#4b7a9b");
         assert_eq!(Rgba::from_u8(0x4b, 0x7a, 0x9b, 0x80).hex(), "#4b7a9b80");
+    }
+
+    #[test]
+    fn flattening_blends_in_srgb_and_lands_on_the_8_bit_grid() {
+        let white = Rgba::from_u8(255, 255, 255, 255);
+        let black = Rgba::from_u8(0, 0, 0, 255);
+        // 45% white over black is 114.75, which rounds to 115 (0x73).
+        assert_eq!(white.flattened_over(0.45, black).hex(), "#737373");
+        assert_eq!(white.flattened_over(1.0, black), white);
+        assert_eq!(white.flattened_over(0.0, black), black);
     }
 
     #[test]

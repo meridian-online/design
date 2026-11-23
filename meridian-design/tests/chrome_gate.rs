@@ -238,6 +238,35 @@ fn the_ring_on_the_accent_takes_the_on_solid_ink_and_is_seen() {
     }
 }
 
+/// A keycap on the accent's solid fill is drawn in two inks: the rule on its
+/// top and sides, and the heavier foot. Both are findable against the fill in
+/// every state the fill is shown in, at the non-text floor.
+#[test]
+fn the_key_on_a_solid_fill_is_findable() {
+    for (mode, s) in modes() {
+        let accent = s.role(Role::Accent).background;
+        for (state, fill) in [
+            ("base", accent.base),
+            ("hover", accent.hover),
+            ("active", accent.active),
+            ("selected", accent.selected),
+            ("focus", accent.focus),
+        ] {
+            for (ink_name, ink) in [
+                ("rule", s.keycap.on_solid_rule),
+                ("foot", s.keycap.on_solid_foot),
+            ] {
+                assert_eq!(ink.a, 1.0, "{mode}: the {ink_name} ink is stored flattened");
+                let c = contrast(ink, fill);
+                assert!(
+                    c >= NON_TEXT,
+                    "{mode}: the key's {ink_name} on accent.{state} is {c:.2}:1, below {NON_TEXT}"
+                );
+            }
+        }
+    }
+}
+
 #[test]
 fn border_steps_are_the_documented_band() {
     // Ground truth: ADR 0007 and `scales.rs` both document steps 6–8 as the
@@ -274,6 +303,57 @@ fn border_steps_are_the_documented_band() {
     }
 }
 
+/// A divider drawn on an overlay — a menu's separator — must read there at
+/// least as well as the plain divider reads on the raised plane. The floor is
+/// that measured ratio rather than `NON_TEXT`: a divider sits deliberately
+/// below the border band (see `Borders::divider`), so holding this one to 3:1
+/// would make it louder than every other rule. The raised plane is the chart
+/// surface the gridline (the divider's one definition) was approved on in
+/// `chrome.rs`, so its ratio there is the quietness this system has already
+/// accepted for a divider. It is not the app plane: the dark scale climbs
+/// unevenly, and the same two-step lift measures 1.23:1 over step 1 but 1.21:1
+/// over step 3, so an app-plane floor would demand a third step the field doc
+/// does not promise. In dark the overlay is the divider's own step, so the
+/// plain divider there measures 1:1 and fails this.
+#[test]
+fn a_divider_on_an_overlay_reads_as_well_as_one_on_the_raised_plane() {
+    for (mode, s, g) in [
+        ("light", semantic(false), GRAY_LIGHT),
+        ("dark", semantic(true), GRAY_DARK),
+    ] {
+        let floor = divider_on_overlay_floor(s);
+        let c = contrast(s.borders.divider_overlay, s.surfaces.overlay);
+        assert!(
+            c >= floor,
+            "{mode}: the overlay divider is {c:.3}:1 on the overlay, under the \
+             {floor:.3}:1 the divider holds on the raised plane"
+        );
+        // The two values the field doc promises, read from the scale.
+        let step = if mode == "light" { g[2] } else { g[4] };
+        assert_eq!(
+            s.borders.divider_overlay, step,
+            "{mode}: overlay divider step moved"
+        );
+    }
+}
+
+/// The floor above, factored out so the next test can prove it bites.
+fn divider_on_overlay_floor(s: &Semantic) -> f64 {
+    contrast(s.borders.divider, s.surfaces.raised)
+}
+
+/// The gate above is only worth having if the value it replaced fails it: the
+/// plain divider on the dark overlay.
+#[test]
+fn the_plain_divider_fails_the_overlay_divider_gate_in_dark() {
+    let s = semantic(true);
+    let old = contrast(s.borders.divider, s.surfaces.overlay);
+    assert!(
+        old < divider_on_overlay_floor(s),
+        "dark: the plain divider on the overlay measures {old:.3}:1 and would pass"
+    );
+}
+
 #[test]
 fn the_focus_ring_is_maritime_and_nothing_else_is() {
     // `guidelines/identity.md`: Maritime is reserved for interaction. The ring
@@ -296,6 +376,7 @@ fn the_focus_ring_is_maritime_and_nothing_else_is() {
             s.borders.strong,
             s.borders.control,
             s.borders.divider,
+            s.borders.divider_overlay,
         ] {
             assert!(
                 gray.contains(&chrome),
@@ -493,6 +574,32 @@ fn a_chrome_tint_leaves_the_ink_over_it_legible() {
                          {c:.2}:1, below {floor}"
                     );
                 }
+            }
+        }
+    }
+}
+
+/// The step marks are drawn on the sidebar and on the cursor and selected
+/// rows of the step list, so each ink must clear the non-text floor there in
+/// both modes.
+#[test]
+fn step_mark_inks_clear_the_non_text_floor_on_chrome() {
+    use meridian_design::marks::{glyph, STEP_MARKS};
+    for (dark, name) in [(false, "light"), (true, "dark")] {
+        let s = semantic(dark);
+        let grounds = [
+            ("sidebar", s.surfaces.sidebar),
+            ("row-cursor", s.rows.cursor_background),
+            ("row-selected", s.rows.selected_background),
+        ];
+        for m in STEP_MARKS {
+            let ink = glyph(m, dark).ink;
+            for (gname, g) in grounds {
+                let c = contrast(ink, g);
+                assert!(
+                    c >= NON_TEXT,
+                    "{name} {m:?} ink on {gname}: {c:.2}:1 is under {NON_TEXT}:1"
+                );
             }
         }
     }

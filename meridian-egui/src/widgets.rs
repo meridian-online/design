@@ -17,7 +17,7 @@
 use egui::{Align, Layout, Response, RichText, Sense, StrokeKind, UiBuilder};
 use meridian_design::semantic::{semantic, Role};
 use meridian_design::typography::UI_SIZE;
-use meridian_design::{control, focus};
+use meridian_design::{control, focus, radius};
 
 use crate::align::LayoutInfo;
 use crate::icons::Icon;
@@ -41,7 +41,7 @@ pub fn mode_of(ui: &egui::Ui) -> Mode {
 /// at frame boundaries), so the very first frame after `theme::apply` would
 /// panic on the named family. Falling back to the default proportional face
 /// for that one frame keeps the primitive safe to draw unconditionally.
-fn medium_family(ui: &egui::Ui) -> egui::FontFamily {
+pub(crate) fn medium_family(ui: &egui::Ui) -> egui::FontFamily {
     let family = egui::FontFamily::Name("Inter-Medium".into());
     if ui.fonts(|fonts| fonts.definitions().families.contains_key(&family)) {
         family
@@ -150,7 +150,7 @@ pub fn pane_header_with(
         ui.allocate_exact_size(egui::vec2(ui.available_width(), height), Sense::hover());
     if ui.is_rect_visible(rect) {
         let painter = ui.painter();
-        painter.rect_filled(rect, 0, to_color32(sem.surfaces.header));
+        painter.rect_filled(rect, radius::NONE, to_color32(sem.surfaces.header));
         painter.line_segment(
             [rect.left_bottom(), rect.right_bottom()],
             egui::Stroke::new(1.0, to_color32(sem.borders.subtle)),
@@ -184,55 +184,71 @@ pub fn pane_header_with(
     response
 }
 
+/// The `y` to paint a one-line label at so every label in its face and size
+/// sits on **one baseline**, with the face's cap height centred on `centre_y`.
+///
+/// Labels in a row are read along a baseline, so a row of them has to share
+/// one. Centring each word on its own ink would not: a descender deepens the
+/// ink, so "Log" would be lifted above "Rows". Here the reference is the
+/// face's, not the word's: the ink of a capital "H" laid out in the label's
+/// own format (egui caches the layout, so this is cheap). Every word of that
+/// face and size then gets the same top and the same baseline, whatever its
+/// letters.
+///
+/// Cap height was chosen so that a capitalised word with no descender, the
+/// common label, lands where centring its own ink puts it. Words with a
+/// descender, and all-lowercase words, sit on the same baseline as their
+/// neighbours instead.
+///
+/// Falls back to centring the galley's box when there is nothing to measure:
+/// a galley with no glyph, or a face whose "H" inks nothing.
+#[must_use]
+pub fn cap_centred_galley_top(
+    painter: &egui::Painter,
+    galley: &egui::Galley,
+    centre_y: f32,
+) -> f32 {
+    let boxed = centre_y - galley.size().y / 2.0;
+    let (Some(section), Some(baseline)) = (galley.job.sections.first(), first_baseline(galley))
+    else {
+        return boxed;
+    };
+    let job = egui::text::LayoutJob::single_section("H".to_owned(), section.format.clone());
+    let cap = painter.layout_job(job);
+    let (ink, Some(cap_baseline)) = (cap.mesh_bounds, first_baseline(&cap)) else {
+        return boxed;
+    };
+    if !ink.is_positive() {
+        return boxed;
+    }
+    // The cap's centre, measured from the baseline, lands on `centre_y`.
+    centre_y - (ink.center().y - cap_baseline) - baseline
+}
+
+/// The baseline of a galley's first row, measured from the galley's top.
+fn first_baseline(galley: &egui::Galley) -> Option<f32> {
+    let row = galley.rows.first()?;
+    let glyph = row.row.glyphs.first()?;
+    Some(row.pos.y + glyph.pos.y)
+}
+
 /// The `y` to paint `galley` at so the glyphs it draws sit centred on
-/// `centre_y` — **optical** centring, as against centring the galley's box.
+/// `centre_y`: centring on the string's own ink box
+/// ([`egui::Galley::mesh_bounds`]) rather than on its font box.
 ///
-/// A galley's box is font metrics: the same ascent above the baseline and the
-/// same descent below it for every string set in the face, whatever the string
-/// is. Centring that box centres the metrics and leaves the glyphs wherever
-/// they happen to fall inside them — so a word that spends none of the descent
-/// lands centred, and a word with a descender hangs into the reserved room and
-/// reads low by half of it. That is the whole of the defect this exists for,
-/// and it is why the defect looks inconsistent rather than uniform: it is a
-/// function of the string.
+/// Its one use is a keycap ([`crate::key_chip`](mod@crate::key_chip)), where a short run of glyphs
+/// stands alone in a box of its own and is read as a shape, not along a line.
+/// Labels do not use it: each word would get its own baseline, and a word with
+/// a descender would sit higher than its neighbours. They use
+/// [`cap_centred_galley_top`].
 ///
-/// Beside a glyph a chip draws an icon, and an icon is centred on the box it
-/// actually draws in. So the two halves of one chip answer to two different
-/// vertical references. This gives the label the icon's reference: the tight
-/// box around the triangles the text tessellates into
-/// ([`egui::Galley::mesh_bounds`]), which is the drawn extent rather than a
-/// constant of the face.
-///
-/// **In the proportional UI face, a string with no descender does not move.**
-/// That face leaves an empty band above its ascenders exactly as deep as the
-/// descent it reserves below the baseline, so for such a string the two boxes
-/// already share a centre and this returns what box-centring returns, to the
-/// bit — which is why correcting the pill left `ok` alone and moved only the
-/// labels that were wrong.
-///
-/// That coincidence is a property of one face at one size and not of this
-/// function. A face whose two bands differ moves every string, descender or
-/// not, and the mono face bundled here is such a face. Any caller adopting
-/// this should expect its text to move and should look at it.
-///
-/// **What this settles is the layout position, not the drawn one**, and the
-/// difference is a whole rung of the pipeline. epaint snaps a galley's origin
-/// to a whole physical pixel before it tessellates it
-/// (`epaint::TessellationOptions::round_text_to_pixels`, on by default), so the
-/// `y` returned here is rounded before a triangle exists. Where the chip is an
-/// even number of physical pixels tall and its glyph box an even number too,
-/// the snap is a no-op and the drawn glyphs land on the centreline — that is
-/// the pill, at both densities. Where the chip is an *odd* number of physical
-/// pixels tall against an even glyph box, no paint position centres the drawn
-/// glyphs and the snap leaves half a physical pixel over whatever this returns
-/// — that is the keycap, at both densities. What the caller buys in that case
-/// is a *constant* residual in place of one that varies with the string, which
-/// is the defect this exists for; a caller wanting zero has to move its own
-/// height ladder, not this function.
+/// This settles the layout position, not the drawn one: epaint snaps a
+/// galley's origin to a whole physical pixel before it tessellates it, so an
+/// odd-height box against an even glyph box keeps half a physical pixel of
+/// residual. That residual is constant across strings, which is what matters.
 ///
 /// Falls back to the box when there are no glyphs to measure — an empty or
-/// all-whitespace galley, whose mesh bounds are [`egui::Rect::NOTHING`] and
-/// whose centre is therefore not a number.
+/// all-whitespace galley, whose mesh bounds are [`egui::Rect::NOTHING`].
 #[must_use]
 pub fn optically_centred_galley_top(galley: &egui::Galley, centre_y: f32) -> f32 {
     let glyphs = galley.mesh_bounds;
@@ -286,10 +302,9 @@ pub fn status_pill(ui: &mut egui::Ui, icon: &Icon, label: &str, role: Role) -> R
             egui::vec2(icon_size, icon_size),
         );
         icon.paint(painter, icon_rect, ink);
-        // The icon above is centred on the box it draws in; the label is
-        // centred on the glyphs it draws. One reference for both halves —
-        // see [`optically_centred_galley_top`].
-        let label_top = optically_centred_galley_top(&galley, rect.center().y);
+        // The label sits on its face's baseline, cap height centred, so two
+        // pills side by side read along one line ([`cap_centred_galley_top`]).
+        let label_top = cap_centred_galley_top(painter, &galley, rect.center().y);
         painter.galley(egui::pos2(icon_rect.right() + gap, label_top), galley, ink);
     }
     response
@@ -305,18 +320,36 @@ pub fn status_pill(ui: &mut egui::Ui, icon: &Icon, label: &str, role: Role) -> R
 /// it — a layout reserves nothing for it ([`focus::RING_BLEED`] is `0`).
 ///
 /// `control_radius` is the corner radius of the control the ring follows
-/// (usually `ui.tokens().radius_control`, which is `0`: chrome is square). A
+/// (usually `ui.tokens().radius_control`, which is `3`; a square shape passes [`meridian_design::radius::NONE`]). A
 /// round mark — a dot, a slider's thumb — passes [`meridian_design::radius::FULL`]
 /// and keeps a concentric ring.
 ///
 /// On a control filled with the accent the focus ink can be lost, so that
 /// control takes [`focus_ring_on_solid`] instead.
 pub fn focus_ring(ui: &egui::Ui, rect: egui::Rect, control_radius: f32) {
+    let radius = focus::ring_radius(control_radius).round() as u8;
+    focus_ring_corners(ui, rect, egui::CornerRadius::same(radius));
+}
+
+/// The focus ring with a corner of its own on each corner, for a control that
+/// is one part of a ruled box: only the box's outer corners round.
+pub(crate) fn focus_ring_corners(ui: &egui::Ui, rect: egui::Rect, corners: egui::CornerRadius) {
     let colour = semantic(mode_of(ui).is_dark()).borders.focus;
+    ring_corners_in(ui, rect, corners, to_color32(colour));
+}
+
+/// The same ring in an ink of the caller's: a field with an error rings in its
+/// danger border rather than the focus ink.
+pub(crate) fn ring_corners_in(
+    ui: &egui::Ui,
+    rect: egui::Rect,
+    corners: egui::CornerRadius,
+    colour: egui::Color32,
+) {
     ui.painter().rect_stroke(
         rect,
-        egui::CornerRadius::same(focus::ring_radius(control_radius).round() as u8),
-        egui::Stroke::new(focus::RING_WIDTH, to_color32(colour)),
+        corners,
+        egui::Stroke::new(focus::RING_WIDTH, colour),
         StrokeKind::Inside,
     );
 }
@@ -374,6 +407,40 @@ pub fn slider_colours(mode: Mode) -> SliderColours {
         track: to_color32(feedback.slider_track),
         thumb: to_color32(feedback.slider_thumb),
     }
+}
+
+/// The side an open cell opens onto: the one its rule does not run along.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum OpenSide {
+    /// The cell joins what lies below it (a ribbon tab).
+    Bottom,
+    /// The cell joins what lies beyond its trailing edge (a vertical tab).
+    Trailing,
+}
+
+/// An open cell: `fill`, and a 1px `rule` along the sides but `open`. The rule
+/// box is drawn one pixel past the open side, so that run falls outside
+/// `painter`'s clip, which the caller sets to end at the cell's open side.
+pub(crate) fn paint_open_cell(
+    painter: &egui::Painter,
+    cell: egui::Rect,
+    corners: egui::CornerRadius,
+    fill: egui::Color32,
+    rule: egui::Color32,
+    open: OpenSide,
+) {
+    painter.rect_filled(cell, corners, fill);
+    let mut ruled = cell;
+    match open {
+        OpenSide::Bottom => ruled.max.y += 1.0,
+        OpenSide::Trailing => ruled.max.x += 1.0,
+    }
+    painter.rect_stroke(
+        ruled,
+        corners,
+        egui::Stroke::new(1.0, rule),
+        StrokeKind::Inside,
+    );
 }
 
 #[cfg(test)]

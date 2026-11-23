@@ -126,6 +126,18 @@ pub struct Borders {
     /// chrome edit that moved the gridline off the band would redden rather
     /// than silently drag every table rule with it.
     pub divider: Rgba,
+    /// The divider drawn **on an overlay** — a menu's group separator, a rule
+    /// inside a popover. It exists because the dark overlay is gray step 3,
+    /// the divider's own step, so [`Self::divider`] drawn there paints nothing.
+    ///
+    /// The divider sits two steps above its ground (step 3 over the step-1
+    /// app plane), so this one takes the same two-step lift over the overlay:
+    /// step 5 in dark. In light the overlay is the near-white surface and the
+    /// divider already reads on it, so the two are one value. Gated in
+    /// `tests/chrome_gate.rs`: on the overlay it must hold at least the
+    /// contrast the divider holds on the raised plane, the chart surface the
+    /// gridline was approved on.
+    pub divider_overlay: Rgba,
 }
 
 /// Ink slots.
@@ -354,6 +366,42 @@ pub struct Feedback {
     pub slider_thumb: Rgba,
 }
 
+/// The ink of each step mark ([`crate::marks`]), as drawn on chrome.
+///
+/// Every ink clears the 3:1 non-text floor on the sidebar and on the cursor
+/// and selected rows, in both modes (`tests/chrome_gate.rs`). Where a state's
+/// usual ink does not, the mark takes the next step along that ink's own
+/// scale rather than a new hue: not run in light (step 10 of the gray scale,
+/// not [`Borders::control`]'s step 9), stale in light (amber step 11, not
+/// [`crate::viz::STATUS`]'s warning) and failed in dark (red step 11, not its
+/// critical). [`Borders::control`] and [`crate::viz::STATUS`] themselves are
+/// unchanged; other things read them.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct MarkInks {
+    pub not_run: Rgba,
+    /// [`Borders::focus`].
+    pub running: Rgba,
+    pub ok: Rgba,
+    pub failed: Rgba,
+    pub stale: Rgba,
+}
+
+/// The inks of a keycap drawn on a solid accent fill, which has no face of its
+/// own: a rule on three sides and a heavier foot, both the on-solid text ink
+/// ([`Text::on_solid`]) at 70% and 100% laid over the accent's rest fill
+/// ([`Role::Accent`]'s `background.base`) and stored flattened, so a consumer
+/// draws an opaque ink and does no blending. Both clear the 3:1 non-text floor
+/// on the accent in each state it is shown in (`tests/chrome_gate.rs`).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct KeycapInks {
+    /// The hairline on the key's top and sides.
+    pub on_solid_rule: Rgba,
+    /// The foot under the key. At 100% this is [`Text::on_solid`] itself; it is
+    /// its own slot so the look is stated where a later change would look for
+    /// it. The owner chose it so that a visible step remains between rule and foot.
+    pub on_solid_foot: Rgba,
+}
+
 /// Named containers that are not roles and not rows.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Containers {
@@ -387,6 +435,8 @@ pub struct Semantic {
     pub editor: Editor,
     pub drag_drop: DragDrop,
     pub feedback: Feedback,
+    pub marks: MarkInks,
+    pub keycap: KeycapInks,
     pub containers: Containers,
 }
 
@@ -458,6 +508,9 @@ pub const LIGHT: Semantic = {
         focus: m[8],
         // One definition with the chart layer's gridline — see the field doc.
         divider: INK_LIGHT.gridline,
+        // The light overlay is the surface, which the divider already reads
+        // on — see the field doc.
+        divider_overlay: INK_LIGHT.gridline,
     };
 
     let text = Text {
@@ -611,6 +664,17 @@ pub const LIGHT: Semantic = {
             slider_track: g[4],
             slider_thumb: m[9],
         },
+        marks: MarkInks {
+            not_run: g[9],
+            running: borders.focus,
+            ok: STATUS.good,
+            failed: STATUS.critical,
+            stale: AMBER_LIGHT[10],
+        },
+        keycap: KeycapInks {
+            on_solid_rule: on_solid.flattened_over(0.70, accent.background.base),
+            on_solid_foot: on_solid.flattened_over(1.0, accent.background.base),
+        },
         containers: Containers {
             sidebar_background: g[0],
             sidebar_border: borders.subtle,
@@ -668,6 +732,8 @@ pub const DARK: Semantic = {
         focus: m[10],
         // One definition with the chart layer's gridline — see the field doc.
         divider: INK_DARK.gridline,
+        // Step 5: the overlay is step 3, the divider's own — see the field doc.
+        divider_overlay: g[4],
     };
 
     let text = Text {
@@ -818,6 +884,17 @@ pub const DARK: Semantic = {
             progress_bar: m[9],
             slider_track: g[4],
             slider_thumb: m[9],
+        },
+        marks: MarkInks {
+            not_run: borders.control,
+            running: borders.focus,
+            ok: STATUS.good,
+            failed: r[10],
+            stale: STATUS.warning,
+        },
+        keycap: KeycapInks {
+            on_solid_rule: on_solid.flattened_over(0.70, accent.background.base),
+            on_solid_foot: on_solid.flattened_over(1.0, accent.background.base),
         },
         containers: Containers {
             sidebar_background: g[0],

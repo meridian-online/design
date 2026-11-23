@@ -24,7 +24,7 @@
 //!   (the ink/overlay tokens the renderer reads);
 //! - **geometry** — [`spacing`], [`radius`], [`control`], [`focus`],
 //!   [`elevation`], [`motion`], [`input_widgets`]: the box model, stated once;
-//! - **semantic** — [`semantic`]: what a colour is *for*, framework-neutral,
+//! - **semantic** — [`semantic`](mod@semantic): what a colour is *for*, framework-neutral,
 //!   with an instantiated [`StateSet`] per interaction role;
 //! - **contract** — [`a11y`]: role and keyboard intent, the half of a component
 //!   spec that colour tokens cannot carry;
@@ -46,6 +46,7 @@ pub mod emit;
 pub mod focus;
 pub mod fonts;
 pub mod input_widgets;
+pub mod marks;
 pub mod motion;
 pub mod radius;
 pub mod scales;

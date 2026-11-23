@@ -1,11 +1,12 @@
-//! The square look, read out of the paint list.
+//! The chrome look, read out of the paint list.
 //!
-//! The chrome is square: a rule and a bar do what a corner and a wash did. The
-//! design crate states the look in tokens and pins them; this file asks the
-//! primitives whether they *draw* it — every claim below is made of what a
-//! frame painted, because a token can read `0` while a painter still passes a
-//! radius of its own, offsets a ring outward, or strokes a hairline where a
-//! foot was wanted, and none of those is visible from the token.
+//! A chip, a control and a card take a small corner (2, 3 and 3); a row, a bar,
+//! a hairline and a band that runs edge to edge stay square. The design crate
+//! states the look in tokens and pins them; this file asks the primitives
+//! whether they *draw* it — every claim below is made of what a frame painted,
+//! because a token can read `3` while a painter still passes a radius of its
+//! own, offsets a ring outward, or strokes a hairline where a foot was wanted,
+//! and none of those is visible from the token.
 //!
 //! **What each test is looking at is the shape list, not a picture.** A
 //! `RectShape` says its rect, its fill, its stroke and where the stroke sits
@@ -19,136 +20,23 @@
 //!
 //! CPU tessellation only — green on a runner with no GPU, like its siblings.
 
-use egui::epaint::RectShape;
-use egui::{Color32, CornerRadius, Rect, Stroke, StrokeKind};
+mod common;
+
+use common::{assert_corner, assert_square, filled, ink, near, near_rect, painted, Painted, EPS};
+use egui::{Color32, CornerRadius, Rect, StrokeKind};
 use egui_kittest::kittest::Queryable;
 use egui_kittest::Harness;
-use meridian_design::colour::Rgba;
 use meridian_design::control::{KEYCAP_FOOT_WIDTH, ROW_BAR_WIDTH};
 use meridian_design::semantic::{semantic, Role};
 use meridian_design::spacing::{CHIP_PADDING_X, SPACE_1};
-use meridian_design::{focus, Elevation};
+use meridian_design::{focus, radius, Elevation};
 use meridian_egui::{
-    icons, key_chip, list_row, overlay_frame, query_line, theme, widgets, ListRow, ModalChrome,
-    ModalLayer, Mode, Notification, NotificationId, NotificationLayer, RowHeight, RowState,
-    Severity, Toast, ToastLayer, TOKENS,
+    icons, key_chip, line_tabs, list_row, overlay_frame, query_line, theme, widgets, LineTabs,
+    ListRow, ModalChrome, ModalLayer, Mode, Notification, NotificationId, NotificationLayer,
+    RowHeight, RowState, Severity, Toast, ToastLayer, TOKENS,
 };
 
-/// Float noise tolerance and nothing else: every figure here is a whole number
-/// of logical pixels, and the mutations these tests are built to catch move a
-/// number by a whole pixel.
-const EPS: f32 = 0.01;
-
 const MODES: [Mode; 2] = [Mode::Light, Mode::Dark];
-
-fn ink(t: Rgba) -> Color32 {
-    theme::to_color32(t)
-}
-
-fn near(a: f32, b: f32) -> bool {
-    (a - b).abs() < EPS
-}
-
-fn near_rect(a: Rect, b: Rect) -> bool {
-    near(a.min.x, b.min.x)
-        && near(a.min.y, b.min.y)
-        && near(a.max.x, b.max.x)
-        && near(a.max.y, b.max.y)
-}
-
-// ─── reading the paint list ─────────────────────────────────────────────────
-
-/// One rect the frame painted, with everything the look is stated in.
-#[derive(Clone, Copy, Debug)]
-struct Painted {
-    rect: Rect,
-    fill: Color32,
-    stroke: Stroke,
-    kind: StrokeKind,
-    radius: CornerRadius,
-    blur: f32,
-}
-
-impl Painted {
-    fn from(r: &RectShape) -> Self {
-        Self {
-            rect: r.rect,
-            fill: r.fill,
-            stroke: r.stroke,
-            kind: r.stroke_kind,
-            radius: r.corner_radius,
-            blur: r.blur_width,
-        }
-    }
-
-    /// The box everything this shape paints lies in: the fill, and the stroke
-    /// on the side of the edge its kind puts it on.
-    fn outer(&self) -> Rect {
-        if self.stroke.width <= 0.0 || self.stroke.color == Color32::TRANSPARENT {
-            return self.rect;
-        }
-        match self.kind {
-            StrokeKind::Inside => self.rect,
-            StrokeKind::Middle => self.rect.expand(self.stroke.width / 2.0),
-            StrokeKind::Outside => self.rect.expand(self.stroke.width),
-        }
-    }
-
-    fn is_stroked(&self) -> bool {
-        self.stroke.width > 0.0 && self.stroke.color != Color32::TRANSPARENT
-    }
-}
-
-/// Every rect a frame painted, in paint order, flattened out of the shape tree
-/// (an `egui::Frame` nests its background under a `Shape::Vec` when it also
-/// casts a shadow).
-///
-/// **Less the harness's own page.** A kittest harness paints the page surface
-/// behind whatever it hosts, as a rect the size of the hosted content — so a
-/// one-widget frame carries a rect that is the widget's own extent and is not the
-/// widget's. It is the one fill in `mode` that is the page's, and it is left
-/// out; nothing a primitive draws is the page's fill.
-fn painted<S>(harness: &Harness<'_, S>, mode: Mode) -> Vec<Painted> {
-    fn walk(shape: &egui::Shape, out: &mut Vec<Painted>) {
-        match shape {
-            egui::Shape::Rect(r) => out.push(Painted::from(r)),
-            egui::Shape::Vec(shapes) => shapes.iter().for_each(|s| walk(s, out)),
-            _ => {}
-        }
-    }
-    let mut out = Vec::new();
-    for clipped in &harness.output().shapes {
-        walk(&clipped.shape, &mut out);
-    }
-    let page = theme::meridian_visuals(mode).panel_fill;
-    out.retain(|r| r.fill != page);
-    out
-}
-
-/// The rects filled with `fill`.
-fn filled(rects: &[Painted], fill: Color32) -> Vec<Painted> {
-    rects.iter().filter(|r| r.fill == fill).copied().collect()
-}
-
-// ─── no shape has a corner ─────────────────────────────────────────────
-
-/// A frame is square if every rect in it has a corner radius of zero.
-fn assert_square(rects: &[Painted], what: &str) {
-    assert!(
-        !rects.is_empty(),
-        "{what}: the frame painted no rect at all"
-    );
-    for r in rects {
-        assert_eq!(
-            r.radius,
-            CornerRadius::ZERO,
-            "{what}: a rect at {:?} filled {:?} is drawn with corners {:?}",
-            r.rect,
-            r.fill,
-            r.radius
-        );
-    }
-}
 
 struct OwnWidgets {
     text: String,
@@ -220,7 +108,7 @@ fn own_widgets(mode: Mode) -> Harness<'static, OwnWidgets> {
 }
 
 #[test]
-fn egui_own_widgets_windows_and_menus_are_drawn_without_a_corner() {
+fn egui_own_buttons_fields_windows_and_menus_draw_their_token_corner() {
     for mode in MODES {
         let mut harness = own_widgets(mode);
         // The menus draw only while open, and a menu is the thing this claim is
@@ -231,12 +119,28 @@ fn egui_own_widgets_windows_and_menus_are_drawn_without_a_corner() {
         harness.run();
 
         let rects = painted(&harness, mode);
-        assert_square(&rects, &format!("egui's own widgets, {mode:?}"));
-
-        // The claim is only as wide as what was drawn: the parts it names must
-        // have been on the frame, or "no corner anywhere" is "nothing here".
         let v = theme::meridian_visuals(mode);
         let present = |fill: Color32| !filled(&rects, fill).is_empty();
+        // A button and a text field take the control corner; a window and a
+        // menu take the panel corner.
+        assert_corner(
+            &filled(&rects, v.widgets.inactive.weak_bg_fill),
+            radius::CONTROL,
+            &format!("egui's buttons, {mode:?}"),
+        );
+        assert_corner(
+            &filled(&rects, v.extreme_bg_color),
+            radius::CONTROL,
+            &format!("egui's fields, {mode:?}"),
+        );
+        assert_corner(
+            &filled(&rects, v.window_fill),
+            radius::PANEL,
+            &format!("egui's windows and menus, {mode:?}"),
+        );
+
+        // The claim is only as wide as what was drawn: the parts it names must
+        // have been on the frame, or "every corner is right" is "nothing here".
         assert!(
             present(v.window_fill),
             "{mode:?}: no window or menu surface"
@@ -284,17 +188,69 @@ fn the_slider_thumb_stays_round() {
     }
 }
 
-/// One frame with the whole Meridian set in it that has no dedicated test below:
-/// the status pill, the key chip, the query line and a row in each state.
-fn meridian_set(mode: Mode) -> Harness<'static, String> {
+/// The status pills and a key chip, each drawn alone so the shapes in the frame
+/// are the primitive's own.
+fn chips(mode: Mode) -> (Harness<'static, ()>, Harness<'static, ()>) {
+    let mut pills = Harness::builder()
+        .with_size(egui::vec2(400.0, 100.0))
+        .build_ui(move |ui| {
+            theme::apply(ui.ctx(), mode);
+            widgets::status_pill(ui, &icons::CLOCK, "waiting", Role::Neutral);
+            widgets::status_pill(ui, &icons::CIRCLE_CHECK, "ok", Role::Success);
+        });
+    pills.run();
+    let mut key = Harness::builder()
+        .with_size(egui::vec2(300.0, 100.0))
+        .build_ui(move |ui| {
+            theme::apply(ui.ctx(), mode);
+            key_chip(ui, "Esc");
+        });
+    key.run();
+    (pills, key)
+}
+
+#[test]
+fn a_key_and_a_pill_draw_the_chip_corner() {
+    for mode in MODES {
+        let (pills, key) = chips(mode);
+        assert_corner(
+            &painted(&pills, mode),
+            radius::CHIP,
+            &format!("the status pills, {mode:?}"),
+        );
+
+        let rects = painted(&key, mode);
+        let sunken = ink(semantic(mode.is_dark()).surfaces.sunken);
+        let boxes = filled(&rects, sunken);
+        assert_eq!(boxes.len(), 1, "{mode:?}: one key box");
+        assert_corner(&boxes, radius::CHIP, &format!("the key's box, {mode:?}"));
+
+        // The foot is the box's own rect at the chip corner, so its corners
+        // are the box's; the key test below pins what it is clipped to.
+        let foot_ink = ink(semantic(mode.is_dark()).borders.default_);
+        let feet = filled(&rects, foot_ink);
+        assert_eq!(feet.len(), 1, "{mode:?}: one foot");
+        assert_eq!(
+            feet[0].radius,
+            CornerRadius::same(radius::CHIP as u8),
+            "{mode:?}: the foot's corners"
+        );
+    }
+}
+
+/// Line tabs and a pane header, drawn into `ui`.
+fn tabs_and_header(ui: &mut egui::Ui) {
+    let _ = line_tabs(ui, LineTabs::new(&["one", "two"], 0));
+    let _ = widgets::pane_header(ui, None, "header");
+}
+
+/// A query line and a row in each state: the primitives that stay square.
+fn bands(mode: Mode) -> Harness<'static, String> {
     let mut harness = Harness::builder()
-        .with_size(egui::vec2(700.0, 700.0))
+        .with_size(egui::vec2(700.0, 400.0))
         .build_ui_state(
             move |ui, q: &mut String| {
                 theme::apply(ui.ctx(), mode);
-                widgets::status_pill(ui, &icons::CLOCK, "waiting", Role::Neutral);
-                widgets::status_pill(ui, &icons::CIRCLE_CHECK, "ok", Role::Success);
-                key_chip(ui, "Esc");
                 query_line(ui, q, "Search…");
                 list_row(ui, ListRow::new(RowHeight::Grid), |ui, _| {
                     ui.label("at rest");
@@ -302,6 +258,7 @@ fn meridian_set(mode: Mode) -> Harness<'static, String> {
                 list_row(ui, ListRow::new(RowHeight::Grid).selected(true), |ui, _| {
                     ui.label("under the cursor");
                 });
+                tabs_and_header(ui);
             },
             String::new(),
         );
@@ -310,12 +267,12 @@ fn meridian_set(mode: Mode) -> Harness<'static, String> {
 }
 
 #[test]
-fn the_pill_the_key_the_query_line_and_a_row_are_drawn_without_a_corner() {
+fn a_row_the_query_line_line_tabs_and_the_pane_header_stay_square() {
     for mode in MODES {
-        let harness = meridian_set(mode);
+        let harness = bands(mode);
         assert_square(
             &painted(&harness, mode),
-            &format!("the primitives, {mode:?}"),
+            &format!("the bands and rows, {mode:?}"),
         );
     }
 }
@@ -353,10 +310,41 @@ fn cards(mode: Mode) -> Harness<'static, (NotificationLayer, ToastLayer)> {
 }
 
 #[test]
-fn the_modal_card_the_banner_and_the_toast_are_drawn_without_a_corner() {
+fn the_modal_card_the_banner_and_the_toast_draw_the_panel_corner() {
     for mode in MODES {
         let harness = cards(mode);
-        assert_square(&painted(&harness, mode), &format!("the cards, {mode:?}"));
+        let sem = semantic(mode.is_dark());
+        let rects = painted(&harness, mode);
+
+        // Each card is a ruled rect in the overlay fill: the inline modal card,
+        // the modal layer's card, the banner and the toast (a dismiss button inside one
+        // is a smaller ruled rect in the same fill, and is a control). Four must be on the
+        // frame, or a missing card would pass for a right corner.
+        let overlay = ink(sem.surfaces.overlay);
+        let cards: Vec<Painted> = filled(&rects, overlay)
+            .into_iter()
+            .filter(|r| r.is_stroked() && r.rect.height() >= 30.0)
+            .collect();
+        assert_eq!(
+            cards.len(),
+            4,
+            "{mode:?}: the inline card, the modal card, the banner and the toast; painted {rects:?}"
+        );
+        assert_corner(&cards, radius::PANEL, &format!("the cards, {mode:?}"));
+
+        // And nothing else the cards paint is rounded differently: their
+        // shadows take the panel corner too. The keystroke hint in the modal is
+        // a chip and the scrim dims the whole screen; neither is a card.
+        let keycap = [ink(sem.surfaces.sunken), ink(sem.borders.default_)];
+        let rest: Vec<Painted> = rects
+            .into_iter()
+            .filter(|r| !keycap.contains(&r.fill) && r.rect.width() < 900.0)
+            .collect();
+        assert_corner(
+            &rest,
+            radius::PANEL,
+            &format!("the cards' shadows, {mode:?}"),
+        );
     }
 }
 
@@ -410,11 +398,13 @@ fn a_focused_controls_ring_is_a_two_pixel_rule_in_the_focus_ink_inside_its_rect(
             "{mode:?}: the ring is {} wide",
             ring.stroke.width
         );
+        // The ring follows the control's corner, so the two stay concentric.
         assert_eq!(
             ring.radius,
-            CornerRadius::ZERO,
-            "{mode:?}: the ring is square"
+            CornerRadius::same(focus::ring_radius(radius::CONTROL).round() as u8),
+            "{mode:?}: the ring's corner is the control's"
         );
+        assert_eq!(ring.radius, CornerRadius::same(3), "{mode:?}");
         assert!(
             control.expand(EPS).contains_rect(ring.outer()),
             "{mode:?}: the ring paints over {:?}, outside the control's rect {:?}",
@@ -493,11 +483,14 @@ fn the_ring_on_an_accent_fill_is_one_pixel_of_the_on_solid_ink_one_pixel_in() {
             "{mode:?}: the ring is {} wide",
             ring.stroke.width
         );
+        // Drawn one pixel in, the ring's corner is the control's less that
+        // pixel, so it still runs parallel to the edge.
         assert_eq!(
             ring.radius,
-            CornerRadius::ZERO,
-            "{mode:?}: the ring is square"
+            CornerRadius::same(focus::inset_ring_radius(radius::CONTROL).round() as u8),
+            "{mode:?}: the ring's corner is the control's, one pixel in"
         );
+        assert_eq!(ring.radius, CornerRadius::same(2), "{mode:?}");
         assert!(
             near_rect(ring.outer(), control.shrink(1.0)),
             "{mode:?}: the ring runs {:?}; a ring one pixel in from {:?} runs {:?}",
@@ -536,7 +529,7 @@ fn focus_ring_on_solid_for_follows_the_keys_too() {
 // ─── the keycap ────────────────────────────────────────────────────────
 
 #[test]
-fn a_key_is_the_sunken_face_with_a_hairline_on_three_sides_and_a_foot() {
+fn a_key_is_one_rounded_box_with_a_hairline_on_three_sides_and_a_foot() {
     // The look states the foot as 2 and the hairline as 1.
     assert_eq!(KEYCAP_FOOT_WIDTH, 2.0);
     for mode in MODES {
@@ -560,60 +553,50 @@ fn a_key_is_the_sunken_face_with_a_hairline_on_three_sides_and_a_foot() {
         harness.run();
         let rects = painted(&harness, mode);
 
-        // One box with the sunken fill — the key's whole extent.
+        // One box with the sunken fill and the side hairline, the key's whole
+        // extent, drawn once at the chip corner: the corner is the box's.
         let boxes = filled(&rects, sunken);
         assert_eq!(boxes.len(), 1, "{mode:?}: one sunken box");
-        let b = boxes[0].rect;
-
-        // No stroke anywhere: one frame stroke cannot draw a 2px foot under 1px
-        // sides, so the rules are filled rects and the box is not stroked.
-        assert!(
-            rects.iter().all(|r| !r.is_stroked()),
-            "{mode:?}: a rect on the key is stroked: {rects:?}"
+        let b = boxes[0];
+        assert_eq!(
+            b.radius,
+            CornerRadius::same(2),
+            "{mode:?}: the box's corner"
         );
+        assert!(b.is_stroked(), "{mode:?}: the box carries the hairline");
+        assert_eq!(b.stroke.color, side, "{mode:?}: the hairline's ink");
+        assert!(near(b.stroke.width, 1.0), "{mode:?}: the hairline's width");
+        assert_eq!(b.kind, StrokeKind::Inside, "{mode:?}: the hairline's side");
 
-        let foot_top = b.bottom() - 2.0;
-        let expected = [
-            // The hairline on the top, the whole width.
-            (
-                Rect::from_min_max(b.min, egui::pos2(b.right(), b.top() + 1.0)),
-                side,
-                "top",
-            ),
-            // The two sides, between the top and the foot.
-            (
-                Rect::from_min_max(
-                    egui::pos2(b.left(), b.top() + 1.0),
-                    egui::pos2(b.left() + 1.0, foot_top),
-                ),
-                side,
-                "left",
-            ),
-            (
-                Rect::from_min_max(
-                    egui::pos2(b.right() - 1.0, b.top() + 1.0),
-                    egui::pos2(b.right(), foot_top),
-                ),
-                side,
-                "right",
-            ),
-            // The foot, 2px, the whole width, flush with the bottom.
-            (
-                Rect::from_min_max(egui::pos2(b.left(), foot_top), b.max),
-                foot_ink,
-                "foot",
-            ),
-        ];
-        for (rule, ink, name) in expected {
-            assert!(
-                filled(&rects, ink).iter().any(|r| near_rect(r.rect, rule)),
-                "{mode:?}: no {name} rule at {rule:?}; the key painted {rects:?}"
-            );
-        }
+        // The foot is the box's own rect at the box's corner, clipped to the
+        // bottom 2px. A rect only 2px tall would clamp its corners to 1px and
+        // poke out of the box's outline; this cannot.
+        let feet = filled(&rects, foot_ink);
+        assert_eq!(feet.len(), 1, "{mode:?}: one foot");
+        assert!(
+            near_rect(feet[0].rect, b.rect),
+            "{mode:?}: the foot's rect is {:?}, not the box's {:?}",
+            feet[0].rect,
+            b.rect
+        );
+        assert_eq!(
+            feet[0].radius,
+            CornerRadius::same(2),
+            "{mode:?}: the foot follows the box's corners"
+        );
+        let band = Rect::from_min_max(
+            egui::pos2(b.rect.left(), b.rect.bottom() - KEYCAP_FOOT_WIDTH),
+            b.rect.max,
+        );
+        assert!(
+            near_rect(feet[0].clip, band),
+            "{mode:?}: the foot shows through {:?}, not the bottom band {band:?}",
+            feet[0].clip
+        );
         assert_eq!(
             rects.len(),
-            5,
-            "{mode:?}: the box and its four rules, and nothing else"
+            2,
+            "{mode:?}: the box and its foot, and nothing else"
         );
     }
 }

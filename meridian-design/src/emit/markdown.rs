@@ -655,6 +655,8 @@ pub fn tokens_md() -> String {
         "--m-editor-",
         "--m-progress-",
         "--m-slider-",
+        "--m-mark-",
+        "--m-keycap-on-solid-",
         "--m-sidebar-",
         "--m-title-bar-",
         "--m-status-bar-",
@@ -697,8 +699,27 @@ pub fn tokens_md() -> String {
         "--m-panel-padding",
         "--m-section-gap",
         "--m-pane-gap",
+        "--m-hairline",
         "--m-tab-bar-width",
         "--m-keycap-foot-width",
+        "--m-keycap-height",
+        "--m-keycap-height-in-control",
+        "--m-keycap-inset-in-control",
+        "--m-gutter-lane",
+        "--m-gutter-pad",
+        "--m-gutter-edge-stroke",
+        "--m-step-mark-cell",
+        "--m-step-mark",
+        "--m-step-mark-stroke",
+        "--m-step-mark-disc-radius",
+        "--m-step-mark-diamond-reach",
+        "--m-step-mark-dot-radius",
+        "--m-timeline-width",
+        "--m-timeline-bar-height",
+        "--m-duration-width",
+        "--m-dot",
+        "--m-band-height",
+        "--m-popover-width",
     ]));
     rows.sort_unstable();
     sheet.table(&rows);
@@ -706,13 +727,13 @@ pub fn tokens_md() -> String {
     sheet.line("## Type and motion");
     sheet.line("");
     sheet.line(
-        "Two faces and two sizes: this is a dense data system, not a marketing site, \
+        "Two faces and three sizes (body, chart label, section label): this is a dense data system, not a marketing site, \
          and the display face is deliberately absent from the app artefact. The motion \
          budget is two numbers because `guidelines/speed.md` allows two — a spatial \
          move and a state change — and nothing decorative.",
     );
     sheet.line("");
-    let rows = sheet.prefix(&["--m-font-", "--m-motion-"]);
+    let rows = sheet.prefix(&["--m-font-", "--m-label-", "--m-motion-"]);
     sheet.table(&rows);
 
     // Anything nobody filed. Empty in a healthy tree, and gated that way.

@@ -32,6 +32,27 @@ fn tokens_css_carries_the_geometry_layer() {
             "--m-font-size-ui",
             format!("{}px", typography::UI_SIZE as u32),
         ),
+        ("--m-keycap-height", "21px".to_string()),
+        ("--m-keycap-height-in-control", "16px".to_string()),
+        ("--m-keycap-inset-in-control", "4px".to_string()),
+        ("--m-gutter-lane", "12px".to_string()),
+        ("--m-gutter-pad", "5px".to_string()),
+        ("--m-gutter-edge-stroke", "1.25px".to_string()),
+        ("--m-step-mark-cell", "24px".to_string()),
+        ("--m-step-mark", "7px".to_string()),
+        ("--m-step-mark-stroke", "1.5px".to_string()),
+        ("--m-step-mark-disc-radius", "4px".to_string()),
+        ("--m-step-mark-diamond-reach", "4.8px".to_string()),
+        ("--m-step-mark-dot-radius", "1.4px".to_string()),
+        ("--m-timeline-width", "72px".to_string()),
+        ("--m-timeline-bar-height", "12px".to_string()),
+        ("--m-duration-width", "40px".to_string()),
+        ("--m-dot", "6px".to_string()),
+        ("--m-band-height", "32px".to_string()),
+        ("--m-popover-width", "240px".to_string()),
+        ("--m-label-size", "11px".to_string()),
+        ("--m-label-tracking", "0.06em".to_string()),
+        ("--m-label-transform", "uppercase".to_string()),
     ] {
         assert!(
             css.contains(&format!("{name}: {value};")),
@@ -45,12 +66,26 @@ fn tokens_css_carries_the_geometry_layer() {
     assert!(!css.contains("--m-shadow-flat"));
 }
 
-/// The square look, as the web receives it. The values are the ruling's,
+/// A keycap inside a control sits at an even inset, and that inset leaves the
+/// focus ring a clear two pixels.
+#[test]
+fn the_keycap_in_a_control_clears_the_focus_ring_evenly() {
+    use meridian_design::control::{HEIGHT_MD, KEYCAP_HEIGHT_IN_CONTROL, KEYCAP_INSET_IN_CONTROL};
+    use meridian_design::focus;
+
+    assert_eq!(
+        (HEIGHT_MD - KEYCAP_HEIGHT_IN_CONTROL) / 2.0,
+        KEYCAP_INSET_IN_CONTROL
+    );
+    assert_eq!(KEYCAP_INSET_IN_CONTROL - focus::RING_WIDTH, 2.0);
+}
+
+/// The chrome look, as the web receives it. The values are the ruling's,
 /// written out rather than read back from the Rust constants: a test that
 /// formats `radius::CONTROL` passes whatever `CONTROL` holds, and what has to
 /// hold here is the look.
 #[test]
-fn tokens_css_draws_the_square_look() {
+fn tokens_css_draws_the_chrome_look() {
     let css = meridian_design::emit::tokens_css();
     let (light, dark) = css.split_once("\n.dark {").expect("two mode blocks");
     let value = |block: &str, name: &str| -> String {
@@ -63,14 +98,15 @@ fn tokens_css_draws_the_square_look() {
     };
 
     for (name, want) in [
-        ("radius-chip", "0px"),
-        ("radius-control", "0px"),
-        ("radius-panel", "0px"),
+        ("radius-chip", "2px"),
+        ("radius-control", "3px"),
+        ("radius-panel", "3px"),
         ("radius-full", "9999px"),
         ("focus-ring-width", "2px"),
         ("focus-ring-offset", "0px"),
         ("focus-ring-bleed", "0px"),
         ("focus-ring-width-on-solid", "1px"),
+        ("hairline", "1px"),
         ("row-bar-width", "3px"),
         ("tab-bar-width", "2px"),
         ("keycap-foot-width", "2px"),
@@ -124,6 +160,8 @@ fn tokens_css_carries_the_semantic_layer_in_both_modes() {
             "--m-border-subtle",
             "--m-border-control",
             "--m-border-focus",
+            "--m-border-divider",
+            "--m-border-divider-overlay",
             "--m-text-primary",
             "--m-text-on-solid",
             "--m-accent-bg",

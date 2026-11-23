@@ -9,7 +9,6 @@
 
 use egui_kittest::kittest::Queryable;
 use egui_kittest::Harness;
-use meridian_design::control::KEYCAP_FOOT_WIDTH;
 use meridian_egui::{
     key_chip, list_row, theme, ListRow, MeridianUi, ModalChrome, ModalLayer, Mode, Notification,
     NotificationId, NotificationLayer, Picker, PickerDelegate, PickerEvent, PickerHint,
@@ -516,8 +515,8 @@ fn toast_layer_renders_queued_toasts() {
 // carries a size for, and the galley never stretched. What stretched was the
 // chip's own box, which exists only as a painted shape. `surfaces.sunken` is
 // the keycap's fill and the query line's too, so a chip box is the sunken rect
-// that stands on a keycap foot — see `keycap_boxes` — and the pair of fill and
-// radius no longer tells them apart, the chrome having no corner.
+// that stands on a keycap foot — see `keycap_boxes` — and fill alone does not tell
+// them apart.
 
 /// The hairline every box in this crate is stroked with. Named here so the
 /// content-derived chip height below is spelled out term by term rather than
@@ -555,8 +554,8 @@ fn boxes_of<S>(harness: &Harness<'_, S>, fill: egui::Color32, radius: f32) -> Ve
 }
 
 /// The keycap boxes a frame painted: the rects filled with the sunken surface
-/// that stand on a foot — a rect in the default border ink as wide as the box,
-/// flush with its bottom edge and [`KEYCAP_FOOT_WIDTH`] tall.
+/// that stand on a foot — a rect in the default border ink with the box's own rect,
+/// painted under a clip that leaves only its bottom [`meridian_design::control::KEYCAP_FOOT_WIDTH`] showing.
 fn keycap_boxes<S>(harness: &Harness<'_, S>, dark: bool) -> Vec<egui::Rect> {
     let sem = meridian_design::semantic(dark);
     let sunken = theme::to_color32(sem.surfaces.sunken);
@@ -570,8 +569,8 @@ fn keycap_boxes<S>(harness: &Harness<'_, S>, dark: bool) -> Vec<egui::Rect> {
                     *ink == foot_ink
                         && (foot.left() - rect.left()).abs() < 0.01
                         && (foot.right() - rect.right()).abs() < 0.01
+                        && (foot.top() - rect.top()).abs() < 0.01
                         && (foot.bottom() - rect.bottom()).abs() < 0.01
-                        && (foot.height() - KEYCAP_FOOT_WIDTH).abs() < 0.01
                 })
         })
         .map(|(rect, _, _)| *rect)
@@ -831,5 +830,180 @@ fn a_chip_is_keycap_sized_in_a_layout_that_offers_it_a_column() {
             "in {layout} a chip drew {drawn:.1}pt tall against a content height \
              of {content:.1}pt",
         );
+    }
+}
+
+// ─── the picker row's unavailable state ─────────────────────────────────────
+
+const OFF_LABEL: &str = "Run this step";
+const OFF_REASON: &str = "Nothing is focused.";
+const OFF_KEY: &str = "\u{2318}\u{21a9}";
+
+/// Three rows; the middle one is unavailable, with a key.
+struct WithUnavailable {
+    confirmed: Vec<Option<usize>>,
+}
+
+impl PickerDelegate for WithUnavailable {
+    fn update_query(&mut self, _query: &str) {}
+    fn match_count(&self) -> usize {
+        3
+    }
+    fn row(&self, index: usize) -> PickerRow {
+        match index {
+            0 => PickerRow::new("Open a Protocol")
+                .detail("from a folder")
+                .keystroke("\u{2318}O"),
+            1 => PickerRow::new(OFF_LABEL)
+                .keystroke(OFF_KEY)
+                .unavailable(OFF_REASON),
+            _ => PickerRow::new("Close"),
+        }
+    }
+    fn confirm(&mut self, index: Option<usize>, _query: &str) -> PickerOutcome {
+        self.confirmed.push(index);
+        PickerOutcome::Close
+    }
+}
+
+fn unavailable_harness() -> Harness<'static, (Picker<WithUnavailable>, Option<PickerEvent>)> {
+    let mut h = Harness::new_ui_state(
+        |ui, s: &mut (Picker<WithUnavailable>, Option<PickerEvent>)| {
+            theme::apply(ui.ctx(), Mode::Light);
+            let r = s.0.show(ui);
+            if r.event.is_some() {
+                s.1 = r.event;
+            }
+        },
+        (Picker::new(WithUnavailable { confirmed: vec![] }), None),
+    );
+    h.run();
+    h
+}
+
+fn drawn_ink<S>(harness: &Harness<'_, S>, text: &str) -> egui::Color32 {
+    for c in &harness.output().shapes {
+        let mut found = None;
+        fn walk(shape: &egui::Shape, text: &str, found: &mut Option<egui::Color32>) {
+            match shape {
+                egui::Shape::Text(t) if t.galley.job.text == text => {
+                    *found = Some(t.galley.job.sections[0].format.color);
+                }
+                egui::Shape::Vec(v) => v.iter().for_each(|s| walk(s, text, found)),
+                _ => {}
+            }
+        }
+        walk(&c.shape, text, &mut found);
+        if let Some(f) = found {
+            return f;
+        }
+    }
+    panic!("{text:?} was not drawn");
+}
+
+#[test]
+fn an_unavailable_row_draws_its_reason_as_its_detail_in_the_disabled_ink_and_keeps_its_key() {
+    let sem = meridian_design::semantic::semantic(false);
+    let off = theme::to_color32(sem.text.disabled);
+    let harness = unavailable_harness();
+    assert_eq!(drawn_ink(&harness, OFF_REASON), off, "the reason");
+    assert_eq!(drawn_ink(&harness, OFF_LABEL), off, "the label");
+    assert_eq!(drawn_ink(&harness, OFF_KEY), off, "the key is dimmed");
+    harness.get_by_label(OFF_REASON);
+
+    // Controls: an available row's detail, label and key are not that ink.
+    assert_ne!(drawn_ink(&harness, "from a folder"), off);
+    assert_ne!(drawn_ink(&harness, "Open a Protocol"), off);
+    assert_ne!(drawn_ink(&harness, "\u{2318}O"), off);
+}
+
+#[test]
+fn it_still_takes_the_cursor() {
+    let sem = meridian_design::semantic::semantic(false);
+    let mut harness = unavailable_harness();
+    harness.key_press(egui::Key::ArrowDown);
+    harness.run();
+    assert_eq!(harness.state().0.selected(), 1);
+    let cursor = theme::to_color32(sem.rows.cursor_background);
+    let n = boxes_of(&harness, cursor, 0.0).len();
+    assert_eq!(n, 1, "the cursor fill is drawn on the unavailable row");
+    // It is the unavailable row's box: the second of the three.
+    let rect = boxes_of(&harness, cursor, 0.0)[0];
+    let first = harness.get_by_label("Open a Protocol").rect();
+    assert!(
+        rect.top() > first.top(),
+        "{rect:?} is not below the first row {first:?}"
+    );
+    assert_eq!(
+        drawn_ink(&harness, OFF_LABEL),
+        theme::to_color32(sem.text.disabled)
+    );
+}
+
+#[test]
+fn choosing_an_unavailable_row_does_not_pick_it() {
+    // Enter on it.
+    let mut harness = unavailable_harness();
+    harness.key_press(egui::Key::ArrowDown);
+    harness.run();
+    harness.key_press(egui::Key::Enter);
+    harness.run();
+    assert_eq!(
+        harness.state().1,
+        None,
+        "Enter confirmed an unavailable row"
+    );
+    assert!(harness.state().0.delegate.confirmed.is_empty());
+
+    // A click on it moves the cursor and picks nothing.
+    let mut harness = unavailable_harness();
+    harness.get_by_label(OFF_LABEL).click();
+    harness.run();
+    assert_eq!(
+        harness.state().1,
+        None,
+        "a click confirmed an unavailable row"
+    );
+    assert!(harness.state().0.delegate.confirmed.is_empty());
+    assert_eq!(harness.state().0.selected(), 1);
+
+    // Controls: the rows either side do confirm.
+    let mut harness = unavailable_harness();
+    harness.get_by_label("Close").click();
+    harness.run();
+    assert_eq!(harness.state().1, Some(PickerEvent::Confirmed));
+    assert_eq!(harness.state().0.delegate.confirmed, vec![Some(2)]);
+}
+
+#[test]
+fn the_pointer_draws_no_fill_on_an_unavailable_row_and_does_on_an_available_one() {
+    let sem = meridian_design::semantic::semantic(false);
+    let hover = theme::to_color32(sem.rows.hover_background);
+    let pressed = theme::to_color32(sem.role(meridian_design::Role::Neutral).background.active);
+    // Only the row asked about: the cursor sits on the first row, and its fill
+    // can share the pressed ink.
+    let fills = |h: &Harness<'_, _>, label: &str| {
+        let y = h.get_by_label(label).rect().center().y;
+        [hover, pressed]
+            .into_iter()
+            .flat_map(|f| boxes_of(h, f, 0.0))
+            .filter(|r| r.width() > 100.0 && r.y_range().contains(y))
+            .count()
+    };
+
+    for (label, want) in [(OFF_LABEL, 0), ("Close", 1)] {
+        let mut harness = unavailable_harness();
+        harness.get_by_label(label).hover();
+        harness.run();
+        assert_eq!(fills(&harness, label), want, "{label}: hovered");
+        let pos = harness.get_by_label(label).rect().center();
+        harness.event(egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed: true,
+            modifiers: egui::Modifiers::NONE,
+        });
+        harness.run();
+        assert_eq!(fills(&harness, label), want, "{label}: pressed");
     }
 }

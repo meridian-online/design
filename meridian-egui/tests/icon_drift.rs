@@ -45,7 +45,7 @@ fn generated_constants_match_the_manifest_byte_for_byte() {
 fn the_set_is_sorted_unique_and_at_the_agreed_size() {
     assert!(
         icons::ALL.len() >= 40,
-        "the curated set carries ~40 glyphs; found {}",
+        "the curated set carries at least 40 glyphs; found {}",
         icons::ALL.len()
     );
     for pair in icons::ALL.windows(2) {
@@ -72,5 +72,43 @@ fn every_glyph_stays_on_the_native_grid() {
                 icon.name
             );
         }
+    }
+}
+
+#[test]
+fn the_chrome_s_icons_are_in_the_manifest() {
+    for name in [
+        "adjustments",
+        "axis-x",
+        "axis-y",
+        "palette",
+        "zoom-in",
+        "zoom-out",
+        "arrow-back-up",
+        "list",
+        "schema",
+        "hierarchy",
+        "link",
+        "unlink",
+        "key",
+        "fold",
+        "trash",
+        "layout-columns",
+        "eye-off",
+        "cursor-text",
+        "math-function",
+        "transform",
+        "bucket-droplet",
+        "copy-off",
+        "list-numbers",
+        "sum",
+        "arrows-join",
+        "row-insert-bottom",
+        "file-import",
+    ] {
+        assert!(
+            icons::Icon::by_name(name).is_some(),
+            "{name} is not in the icon manifest"
+        );
     }
 }

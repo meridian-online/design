@@ -138,6 +138,7 @@ The semantic layer: what a colour is *for*, framework-neutral. Reach for these b
 | `--m-border-control` | `#8a847f` | `#7e7a75` |
 | `--m-border-focus` | `#4b7a9b` | `#8fc1e4` |
 | `--m-border-divider` | `#ebeae9` | `#232221` |
+| `--m-border-divider-overlay` | `#ebeae9` | `#32302f` |
 | `--m-text-primary` | `#231f1c` | `#efeeec` |
 | `--m-text-secondary` | `#605c58` | `#b7b2ae` |
 | `--m-text-muted` | `#7f7a75` | `#7e7a75` |
@@ -256,6 +257,13 @@ Named parts that earn their own slots because two consumers both need them and n
 | `--m-progress-bar` | `#3e6d8d` | `#466c87` |
 | `--m-slider-track` | `#dcdad8` | `#32302f` |
 | `--m-slider-thumb` | `#3e6d8d` | `#466c87` |
+| `--m-mark-not-run` | `#7f7a75` | `#7e7a75` |
+| `--m-mark-running` | `#4b7a9b` | `#8fc1e4` |
+| `--m-mark-ok` | `#218a45` | `#218a45` |
+| `--m-mark-failed` | `#c9302d` | `#ff9083` |
+| `--m-mark-stale` | `#9e6300` | `#da950b` |
+| `--m-keycap-on-solid-rule` | `#c3d1da` | `#c5d1d8` |
+| `--m-keycap-on-solid-foot` | `#fcfcfb` | `#fcfcfb` |
 | `--m-sidebar-bg` | `#f8f7f7` | `#0d0c0c` |
 | `--m-sidebar-border` | `#d4d2cf` | `#3c3a38` |
 | `--m-title-bar-bg` | `#fbfaf9` | `#0e0c0b` |
@@ -279,9 +287,9 @@ Stated once, in logical pixels, and mode-invariant throughout. The spacing ladde
 | Token | Value |
 |---|---|
 | `--m-radius-none` | `0px` |
-| `--m-radius-chip` | `0px` |
-| `--m-radius-control` | `0px` |
-| `--m-radius-panel` | `0px` |
+| `--m-radius-chip` | `2px` |
+| `--m-radius-control` | `3px` |
+| `--m-radius-panel` | `3px` |
 | `--m-radius-full` | `9999px` |
 | `--m-space-0` | `0px` |
 | `--m-space-1` | `2px` |
@@ -301,6 +309,8 @@ Stated once, in logical pixels, and mode-invariant throughout. The spacing ladde
 | `--m-modal-padding` | `16px` |
 | `--m-modal-width-narrow` | `480px` |
 | `--m-modal-width-default` | `560px` |
+| `--m-popover-width` | `240px` |
+| `--m-band-height` | `32px` |
 | `--m-row-dense` | `20px` |
 | `--m-row-grid` | `24px` |
 | `--m-row-preview` | `36px` |
@@ -319,13 +329,30 @@ Stated once, in logical pixels, and mode-invariant throughout. The spacing ladde
 | `--m-focus-ring-inset` | `1px` |
 | `--m-focus-ring-bleed` | `0px` |
 | `--m-focus-ring-width-on-solid` | `1px` |
+| `--m-hairline` | `1px` |
 | `--m-row-bar-width` | `3px` |
 | `--m-tab-bar-width` | `2px` |
 | `--m-keycap-foot-width` | `2px` |
+| `--m-keycap-height` | `21px` |
+| `--m-keycap-height-in-control` | `16px` |
+| `--m-keycap-inset-in-control` | `4px` |
+| `--m-gutter-lane` | `12px` |
+| `--m-gutter-pad` | `5px` |
+| `--m-gutter-edge-stroke` | `1.25px` |
+| `--m-step-mark-cell` | `24px` |
+| `--m-step-mark` | `7px` |
+| `--m-step-mark-stroke` | `1.5px` |
+| `--m-step-mark-disc-radius` | `4px` |
+| `--m-step-mark-diamond-reach` | `4.8px` |
+| `--m-step-mark-dot-radius` | `1.4px` |
+| `--m-timeline-width` | `72px` |
+| `--m-timeline-bar-height` | `12px` |
+| `--m-duration-width` | `40px` |
+| `--m-dot` | `6px` |
 
 ## Type and motion
 
-Two faces and two sizes: this is a dense data system, not a marketing site, and the display face is deliberately absent from the app artefact. The motion budget is two numbers because `guidelines/speed.md` allows two — a spatial move and a state change — and nothing decorative.
+Two faces and three sizes (body, chart label, section label): this is a dense data system, not a marketing site, and the display face is deliberately absent from the app artefact. The motion budget is two numbers because `guidelines/speed.md` allows two — a spatial move and a state change — and nothing decorative.
 
 | Token | Value |
 |---|---|
@@ -333,6 +360,9 @@ Two faces and two sizes: this is a dense data system, not a marketing site, and 
 | `--m-font-mono` | `"JetBrains Mono"` |
 | `--m-font-size-ui` | `12px` |
 | `--m-font-size-chart` | `11px` |
+| `--m-label-size` | `11px` |
+| `--m-label-tracking` | `0.06em` |
+| `--m-label-transform` | `uppercase` |
 | `--m-motion-spatial` | `150ms` |
 | `--m-motion-animation-time` | `0.12s` |
 

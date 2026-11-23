@@ -19,7 +19,7 @@
 //!
 //! - **Corner radii** come from [`meridian_design::radius`] — controls at
 //!   [`radius::CONTROL`], containers at [`radius::PANEL`] — not egui's stock
-//!   rounding. Both rungs are `0`: the chrome is square.
+//!   rounding. Both rungs are `3`.
 //! - **Elevation shadows** come from [`meridian_design::Elevation`]: the modal
 //!   shadow drives [`egui::Visuals::window_shadow`], the overlay shadow drives
 //!   [`egui::Visuals::popup_shadow`]. The two flat elevations cast nothing, so
@@ -177,9 +177,11 @@ pub fn meridian_visuals(mode: Mode) -> egui::Visuals {
     w.open.bg_stroke = egui::Stroke::new(1.0, c(p.gray[6]));
     w.open.fg_stroke = egui::Stroke::new(1.0, c(p.gray[11]));
 
-    // Box model: corner radii from the radius ladder. Controls (buttons, inputs,
-    // list rows, menu items) take `CONTROL`; containers (windows, menus) take
-    // `PANEL`. Left at egui's defaults before this bridge governed the box model.
+    // Box model: corner radii from the radius ladder. egui's own controls
+    // (buttons, inputs, and the selectable labels and menu buttons it draws with
+    // the same widget visuals) take `CONTROL`; containers (windows, menus) take
+    // `PANEL`. A row built from a selectable label therefore rounds, so rows
+    // are drawn with `list_row` or `menu_item`, or set a zero corner (ADR 0013). Left at egui's defaults before this bridge governed the box model.
     let control_radius = egui::CornerRadius::same(radius::CONTROL.round() as u8);
     for wv in [
         &mut w.noninteractive,
@@ -195,7 +197,7 @@ pub fn meridian_visuals(mode: Mode) -> egui::Visuals {
     v.menu_corner_radius = panel_radius;
     // A slider's thumb is one of the marks that stays round (`radius::FULL`);
     // egui's stock handle is a rounded rectangle drawn with the widget corner
-    // above, which the square look would turn into a square thumb.
+    // above, which would round the thumb only as far as a button.
     v.handle_shape = egui::style::HandleShape::Circle;
 
     // Elevation: the two floating surfaces cast the Meridian shadows; the plane
@@ -376,12 +378,12 @@ mod tests {
         assert_eq!(v.menu_corner_radius, panel);
     }
 
-    /// The look is square in the visuals themselves — every widget state, the
-    /// window and the menu have no corner and both floating shadows have no
-    /// blur — and a slider's thumb is the one round mark, a circle rather than
-    /// a rounded rectangle.
+    /// The corners are in the visuals themselves — every widget state takes the
+    /// control corner (3), the window and the menu the panel corner (3) — the
+    /// floating shadows have no blur, and a slider's thumb is the one round
+    /// mark, a circle rather than a rounded rectangle.
     #[test]
-    fn the_visuals_are_square_but_for_a_round_thumb() {
+    fn the_visuals_take_their_corners_and_a_round_thumb() {
         for mode in [Mode::Light, Mode::Dark] {
             let v = meridian_visuals(mode);
             let w = &v.widgets;
@@ -394,12 +396,12 @@ mod tests {
             ] {
                 assert_eq!(
                     state.corner_radius,
-                    egui::CornerRadius::ZERO,
+                    egui::CornerRadius::same(3),
                     "{mode:?} {name}"
                 );
             }
-            assert_eq!(v.window_corner_radius, egui::CornerRadius::ZERO);
-            assert_eq!(v.menu_corner_radius, egui::CornerRadius::ZERO);
+            assert_eq!(v.window_corner_radius, egui::CornerRadius::same(3));
+            assert_eq!(v.menu_corner_radius, egui::CornerRadius::same(3));
             assert_eq!(v.window_shadow.blur, 0, "{mode:?}: the modal's shadow");
             assert_eq!(v.popup_shadow.blur, 0, "{mode:?}: the overlay's shadow");
             assert_eq!(v.handle_shape, egui::style::HandleShape::Circle);

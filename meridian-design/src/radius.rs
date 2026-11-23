@@ -1,33 +1,35 @@
 //! Corner radii — one definition, every consumer.
 //!
-//! **The chrome is square** (`guidelines/chrome.md`, ADR 0013). Every rung a
-//! chrome surface reads is `0`: a rule and a bar do the work a corner used to
-//! do. The rungs keep their names because consumers read them in their own
-//! painters, so a consumer that reads a rung goes square with no edit, and a
-//! rung is where a later look would put a value back. What stays round is a
-//! mark that holds no icon and no word — a dot, a ring, a spinner, a
-//! slider's thumb — and it reads [`FULL`].
+//! **A small corner returns** (`guidelines/chrome.md`, ADR 0013). A chip
+//! rounds by [`CHIP`] (2), a control by [`CONTROL`] (3), a card by [`PANEL`]
+//! (3). What stays square is a row and its fills, every bar, every hairline,
+//! data marks, and a band that runs edge to edge, and it reads [`NONE`], never
+//! a rounding rung: a square shape that reads a rung rounds the day the rung
+//! changes. What stays round is a mark that holds no icon and no word — a
+//! dot, a ring, a spinner, a slider's thumb — and it reads [`FULL`].
 
-/// `0` — square. Table cells, grid rules, anything that tiles.
+/// `0` — square. Rows and their hover, cursor and selection fills, bars,
+/// hairlines, table cells, grid rules, bands that run edge to edge, anything
+/// that tiles.
 pub const NONE: f32 = 0.0;
 
-/// `0` — inline chips, badges, tags, swatches, key hints. Square, as the
-/// rest of the chrome is; a key hint reads as a keycap by its foot
-/// ([`crate::control::KEYCAP_FOOT_WIDTH`]), not by a corner.
-pub const CHIP: f32 = 0.0;
+/// `2` — the small things: a keycap, a status pill, a timeline bar, a tab's
+/// close control. A keycap still reads as one by its foot
+/// ([`crate::control::KEYCAP_FOOT_WIDTH`]) as well as by its corner.
+pub const CHIP: f32 = 2.0;
 
-/// `0` — buttons, inputs, selects, menu items, list rows. The desktop
-/// theme's widget states read this value.
-pub const CONTROL: f32 = 0.0;
+/// `3` — buttons, text fields, segmented controls, and the focus ring that
+/// follows them. The desktop theme's widget states read this value.
+pub const CONTROL: f32 = 3.0;
 
-/// `0` — panels, cards, popovers, modals, docked containers. A floating card
-/// is told from the plane by its rule and its hard shadow
-/// ([`crate::elevation`]), not by a corner.
-pub const PANEL: f32 = 0.0;
+/// `3` — popovers, menus, modal cards, banners, toasts, an inspector or step
+/// list drawn as a card. A floating card is also told from the plane by its
+/// rule and its hard shadow ([`crate::elevation`]).
+pub const PANEL: f32 = 3.0;
 
 /// A radius large enough to fully round anything on the control ladder — a
 /// dot, a ring, a spinner, a slider's thumb. Consumers clamp to half the
-/// shorter side. The one radius in the system that is not `0`.
+/// shorter side.
 pub const FULL: f32 = 9999.0;
 
 /// Every rung a chrome surface reads, excluding [`FULL`] (which is a
@@ -52,19 +54,15 @@ pub fn outer(inner: f32, offset: f32) -> f32 {
 mod tests {
     use super::*;
 
-    /// The ruling, pinned rung by rung: every rung the chrome reads is
-    /// square. A rung that comes back rounded is a change of look, and it
+    /// The ruling, pinned rung by rung, written as numbers rather than read
+    /// back from the constants. A rung that moves is a change of look, and it
     /// has to come through this test and the decision record that says so.
     #[test]
-    fn every_chrome_rung_is_square() {
-        for (name, r) in [
-            ("NONE", NONE),
-            ("CHIP", CHIP),
-            ("CONTROL", CONTROL),
-            ("PANEL", PANEL),
-        ] {
-            assert_eq!(r, 0.0, "radius::{name} is {r}, and the chrome is square");
-        }
+    fn the_chrome_rungs_are_two_three_and_three() {
+        assert_eq!(NONE, 0.0);
+        assert_eq!(CHIP, 2.0);
+        assert_eq!(CONTROL, 3.0);
+        assert_eq!(PANEL, 3.0);
         assert_eq!(RADII, [NONE, CHIP, CONTROL, PANEL]);
     }
 
@@ -79,9 +77,12 @@ mod tests {
 
     #[test]
     fn a_square_shape_keeps_a_square_outline_and_a_round_one_stays_concentric() {
-        for r in RADII {
+        for offset in [0.0, 1.0, 2.0] {
+            assert_eq!(outer(NONE, offset), 0.0);
+        }
+        for r in [CHIP, CONTROL, PANEL] {
             for offset in [0.0, 1.0, 2.0] {
-                assert_eq!(outer(r, offset), 0.0);
+                assert_eq!(outer(r, offset), r + offset);
             }
         }
         assert_eq!(outer(FULL, 2.0), FULL + 2.0);

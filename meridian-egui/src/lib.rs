@@ -46,20 +46,47 @@ pub use icons::Icon;
 // N delegates, one line-tab strip, and the notification/toast layers. Each is a
 // shape the tokens alone cannot supply; all of them draw exclusively through
 // the token system.
+pub mod button;
+pub mod distribution;
 pub mod key_chip;
 pub mod list_row;
+pub mod menu;
 pub mod notify;
 pub mod overlay;
 pub mod picker;
+pub mod popover;
 pub mod query;
+pub mod ribbon;
+pub mod run_status;
+pub mod section;
+pub mod segmented;
+pub mod step_row;
 pub mod tabs;
+pub mod text_field;
+pub mod vertical_tab;
 
-pub use key_chip::{key_chip, tooltip_for_action};
+pub use button::{button, Button, ButtonResponse, Weight};
+pub use distribution::{distribution_bar, Bars, DistributionBar, DistributionResponse};
+pub use key_chip::{key_chip, key_chip_with, tooltip_for_action, KeyInk, KeySize};
 pub use list_row::{list_row, ListRow, ListRowResponse, RowHeight, RowState};
+pub use menu::{menu_item, menu_separator, MenuItem, MenuItemResponse};
 pub use notify::{Notification, NotificationId, NotificationLayer, Severity, Toast, ToastLayer};
 pub use overlay::{overlay_frame, ModalChrome, ModalLayer, ModalLayerResponse, ModalWidth};
 pub use picker::{
     Picker, PickerDelegate, PickerEvent, PickerHint, PickerOutcome, PickerResponse, PickerRow,
 };
+pub use popover::{Anchor, Popover, PopoverResponse};
 pub use query::{query_line, QueryLineResponse, PROMPT_GLYPH};
+pub use ribbon::{
+    key_tip, ribbon_row, ribbon_tabs, CommandAt, RibbonRow, RibbonRowResponse, RibbonTab,
+    RibbonTabs, RibbonTabsResponse, TabPick,
+};
+pub use run_status::{run_status, teaching_message, RunStatus};
+pub use section::{section, Section, SectionResponse};
+pub use segmented::{segmented, Segmented, SegmentedOption, SegmentedResponse};
+pub use step_row::{
+    step_mark, step_row, Fold, Gutter, StepEntry, StepMark, StepRow, StepRowResponse, Timeline,
+};
 pub use tabs::{line_tabs, LineTabs, LineTabsResponse};
+pub use text_field::{text_field, TextField, TextFieldResponse};
+pub use vertical_tab::{vertical_tab, VerticalTab, VerticalTabResponse};

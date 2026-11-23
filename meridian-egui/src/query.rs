@@ -5,9 +5,9 @@
 //! row hand-rolled several times with prompt glyphs that disagreed;
 //! [`query_line`] is the one copy, and [`PROMPT_GLYPH`] is the one glyph.
 
-use egui::{Align, CornerRadius, Layout, Rect, RichText, Sense, TextEdit, UiBuilder};
+use egui::{Align, Layout, Rect, RichText, Sense, TextEdit, UiBuilder};
 use meridian_design::focus::RING_WIDTH;
-use meridian_design::semantic;
+use meridian_design::{radius, semantic};
 
 use crate::theme::to_color32;
 use crate::MeridianUi;
@@ -55,7 +55,7 @@ pub fn query_line(ui: &mut egui::Ui, query: &mut String, placeholder: &str) -> Q
     // last, once the edit has said whether it has the keys.
     if ui.is_rect_visible(field) {
         ui.painter()
-            .rect_filled(field, CornerRadius::ZERO, to_color32(sem.surfaces.sunken));
+            .rect_filled(field, radius::NONE, to_color32(sem.surfaces.sunken));
     }
 
     let mut row_ui = ui.new_child(
@@ -82,7 +82,7 @@ pub fn query_line(ui: &mut egui::Ui, query: &mut String, placeholder: &str) -> Q
         };
         let rule = Rect::from_min_max(egui::pos2(field.left(), field.bottom() - width), field.max);
         ui.painter()
-            .rect_filled(rule, CornerRadius::ZERO, to_color32(ink));
+            .rect_filled(rule, radius::NONE, to_color32(ink));
     }
 
     QueryLineResponse {

@@ -46,7 +46,7 @@
 //! anywhere a row carries its own inline controls or must meet 2.5.8 on its
 //! own.
 
-use crate::spacing::{ROW_COMFORTABLE, ROW_DENSE, ROW_GRID, ROW_PREVIEW};
+use crate::spacing::{ROW_COMFORTABLE, ROW_DENSE, ROW_GRID, ROW_PREVIEW, SPACE_2};
 use crate::typography::UI_SIZE;
 
 /// `18` — controls inside a dense row. Also, coincidentally, the stock
@@ -82,6 +82,12 @@ pub const ICON_XL: f32 = 24.0;
 /// The icon ladder in ascending order.
 pub const ICONS: [f32; 5] = [ICON_XS, ICON_SM, ICON_MD, ICON_LG, ICON_XL];
 
+/// `1` — the hairline: the width of every rule, border and divider in the
+/// chrome. A rule is one pixel throughout the system, so the heavier bars
+/// below ([`ROW_BAR_WIDTH`], [`TAB_BAR_WIDTH`], [`KEYCAP_FOOT_WIDTH`]) are
+/// read against it.
+pub const HAIRLINE: f32 = 1.0;
+
 /// `3` — the bar on the leading edge of a row under the cursor
 /// (`guidelines/chrome.md`). Its ink is `semantic::Rows::cursor_bar`. A
 /// square row has no corner to say which row the keys act on, so the bar
@@ -97,6 +103,65 @@ pub const TAB_BAR_WIDTH: f32 = 2.0;
 /// than by a corner. Its ink is `semantic::Borders::default_`, its sides
 /// `semantic::Borders::subtle`.
 pub const KEYCAP_FOOT_WIDTH: f32 = 2.0;
+
+/// `21` — the height of a keycap standing alone, as a key hint in a row or a
+/// footer.
+pub const KEYCAP_HEIGHT: f32 = 21.0;
+
+/// `16` — the height of a keycap inside a control, small enough to leave the
+/// control's own edge and focus ring clear.
+pub const KEYCAP_HEIGHT_IN_CONTROL: f32 = 16.0;
+
+/// `4` — the gap between a keycap inside a control and that control's edge.
+/// With [`KEYCAP_HEIGHT_IN_CONTROL`] it centres the keycap in a
+/// [`HEIGHT_MD`] control, and it leaves the focus ring two pixels clear.
+pub const KEYCAP_INSET_IN_CONTROL: f32 = SPACE_2;
+
+/// `12` — the width of the narrow lane at a row's leading edge that holds a
+/// gutter mark.
+pub const GUTTER_LANE: f32 = 12.0;
+
+/// `5` — the inset at each side of a step row's gutter, before its first lane
+/// and after its last: a gutter of `n` lanes is `GUTTER_PAD + n × GUTTER_LANE +
+/// GUTTER_PAD` wide.
+pub const GUTTER_PAD: f32 = 5.0;
+
+/// `1.25` — the line weight of a graph edge in a step row's gutter: a lane
+/// passing the row, arriving at its mark or leaving it. Its ink is
+/// `semantic::Borders::strong`.
+pub const GUTTER_EDGE_STROKE: f32 = 1.25;
+
+/// `24` — the cell a step mark sits in, at the start of a step row.
+pub const STEP_MARK_CELL: f32 = 24.0;
+
+/// `7` — the drawn size of a step mark inside its cell.
+pub const STEP_MARK: f32 = 7.0;
+
+/// `1.5` — the line weight of a step mark that is drawn as an outline.
+pub const STEP_MARK_STROKE: f32 = 1.5;
+
+/// `4` — the radius of a step mark drawn as a solid disc (ok): a little past
+/// the outlined ring's stroke centre, so the disc and the ring read one size.
+pub const STEP_MARK_DISC_RADIUS: f32 = 4.0;
+
+/// `4.8` — the half-diagonal of a step mark drawn as a solid diamond (failed),
+/// which reads smaller than a disc of the same reach.
+pub const STEP_MARK_DIAMOND_REACH: f32 = 4.8;
+
+/// `1.4` — the radius of the dot at the centre of the stale mark's ring.
+pub const STEP_MARK_DOT_RADIUS: f32 = 1.4;
+
+/// `72` — the width of the timeline column in a step row.
+pub const TIMELINE_WIDTH: f32 = 72.0;
+
+/// `12` — the height of a bar drawn in the timeline column.
+pub const TIMELINE_BAR_HEIGHT: f32 = 12.0;
+
+/// `40` — the width of the duration column in a step row.
+pub const DURATION_WIDTH: f32 = 40.0;
+
+/// `6` — the diameter of a status dot.
+pub const DOT: f32 = 6.0;
 
 /// Every dimension a row and its contents must agree on.
 ///

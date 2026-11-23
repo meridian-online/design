@@ -119,12 +119,22 @@ fn geometry(css: &mut String) {
     use crate::motion;
     use crate::radius;
     use crate::spacing::*;
-    use crate::typography::{CHART_LABEL_SIZE, MONO_FAMILY, SANS_FAMILY, UI_SIZE};
+    use crate::typography::{
+        CHART_LABEL_SIZE, LABEL_SIZE, LABEL_TRACKING_EM, LABEL_UPPERCASE, MONO_FAMILY, SANS_FAMILY,
+        UI_SIZE,
+    };
 
     decl(css, "font-sans", &format!("\"{SANS_FAMILY}\""));
     decl(css, "font-mono", &format!("\"{MONO_FAMILY}\""));
     decl(css, "font-size-ui", &px(UI_SIZE));
     decl(css, "font-size-chart", &px(CHART_LABEL_SIZE));
+    decl(css, "label-size", &px(LABEL_SIZE));
+    decl(css, "label-tracking", &format!("{LABEL_TRACKING_EM}em"));
+    decl(
+        css,
+        "label-transform",
+        if LABEL_UPPERCASE { "uppercase" } else { "none" },
+    );
 
     decl(css, "radius-none", &px(radius::NONE));
     decl(css, "radius-chip", &px(radius::CHIP));
@@ -143,6 +153,8 @@ fn geometry(css: &mut String) {
     decl(css, "modal-padding", &px(MODAL_PADDING));
     decl(css, "modal-width-narrow", &px(MODAL_WIDTH_NARROW));
     decl(css, "modal-width-default", &px(MODAL_WIDTH_DEFAULT));
+    decl(css, "popover-width", &px(POPOVER_WIDTH));
+    decl(css, "band-height", &px(BAND_HEIGHT));
 
     decl(css, "row-dense", &px(ROW_DENSE));
     decl(css, "row-grid", &px(ROW_GRID));
@@ -170,9 +182,30 @@ fn geometry(css: &mut String) {
         &px(focus::RING_WIDTH_ON_SOLID),
     );
 
+    decl(css, "hairline", &px(HAIRLINE));
     decl(css, "row-bar-width", &px(ROW_BAR_WIDTH));
     decl(css, "tab-bar-width", &px(TAB_BAR_WIDTH));
     decl(css, "keycap-foot-width", &px(KEYCAP_FOOT_WIDTH));
+    decl(css, "keycap-height", &px(KEYCAP_HEIGHT));
+    decl(
+        css,
+        "keycap-height-in-control",
+        &px(KEYCAP_HEIGHT_IN_CONTROL),
+    );
+    decl(css, "keycap-inset-in-control", &px(KEYCAP_INSET_IN_CONTROL));
+    decl(css, "gutter-lane", &px(GUTTER_LANE));
+    decl(css, "gutter-pad", &px(GUTTER_PAD));
+    decl(css, "gutter-edge-stroke", &px(GUTTER_EDGE_STROKE));
+    decl(css, "step-mark-cell", &px(STEP_MARK_CELL));
+    decl(css, "step-mark", &px(STEP_MARK));
+    decl(css, "step-mark-stroke", &px(STEP_MARK_STROKE));
+    decl(css, "step-mark-disc-radius", &px(STEP_MARK_DISC_RADIUS));
+    decl(css, "step-mark-diamond-reach", &px(STEP_MARK_DIAMOND_REACH));
+    decl(css, "step-mark-dot-radius", &px(STEP_MARK_DOT_RADIUS));
+    decl(css, "timeline-width", &px(TIMELINE_WIDTH));
+    decl(css, "timeline-bar-height", &px(TIMELINE_BAR_HEIGHT));
+    decl(css, "duration-width", &px(DURATION_WIDTH));
+    decl(css, "dot", &px(DOT));
 
     decl(css, "motion-spatial", &format!("{}ms", motion::SPATIAL_MS));
     decl(
@@ -204,6 +237,11 @@ fn semantic_block(css: &mut String, dark: bool) {
     decl(css, "border-control", &s.borders.control.hex());
     decl(css, "border-focus", &s.borders.focus.hex());
     decl(css, "border-divider", &s.borders.divider.hex());
+    decl(
+        css,
+        "border-divider-overlay",
+        &s.borders.divider_overlay.hex(),
+    );
 
     decl(css, "text-primary", &s.text.primary.hex());
     decl(css, "text-secondary", &s.text.secondary.hex());
@@ -269,6 +307,15 @@ fn semantic_block(css: &mut String, dark: bool) {
     decl(css, "progress-bar", &s.feedback.progress_bar.hex());
     decl(css, "slider-track", &s.feedback.slider_track.hex());
     decl(css, "slider-thumb", &s.feedback.slider_thumb.hex());
+
+    decl(css, "mark-not-run", &s.marks.not_run.hex());
+    decl(css, "mark-running", &s.marks.running.hex());
+    decl(css, "mark-ok", &s.marks.ok.hex());
+    decl(css, "mark-failed", &s.marks.failed.hex());
+    decl(css, "mark-stale", &s.marks.stale.hex());
+
+    decl(css, "keycap-on-solid-rule", &s.keycap.on_solid_rule.hex());
+    decl(css, "keycap-on-solid-foot", &s.keycap.on_solid_foot.hex());
 
     let c = &s.containers;
     decl(css, "sidebar-bg", &c.sidebar_background.hex());

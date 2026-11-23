@@ -13,7 +13,7 @@
 //! the same one.
 //!
 //! **The ring is a rule inside the control's edge** (`guidelines/chrome.md`,
-//! ADR 0013): [`RING_WIDTH`] wide in the focus ink, square, drawn over the
+//! ADR 0013): [`RING_WIDTH`] wide in the focus ink, following the control's corner, drawn over the
 //! control's own fill. Drawn inside, it cannot be clipped by a parent or
 //! overlap a neighbour, so a layout reserves no room for it ([`RING_BLEED`]
 //! is `0`) and there is one ring rather than an outset one and an inset
@@ -54,8 +54,8 @@ pub const RING_WIDTH_ON_SOLID: f32 = 1.0;
 
 /// Radius for the ring around a control of radius `control_radius`, so the
 /// ring and the control stay concentric instead of visibly diverging at the
-/// corners. A square control keeps a square ring, which in the square look is
-/// every control.
+/// corners. A square control keeps a square ring; a control at
+/// [`radius::CONTROL`] gets a ring with the same corner.
 pub fn ring_radius(control_radius: f32) -> f32 {
     radius::outer(control_radius, RING_OFFSET)
 }
@@ -97,11 +97,15 @@ mod tests {
     }
 
     #[test]
-    fn a_square_control_keeps_a_square_ring_and_a_round_one_a_round_ring() {
-        for r in radius::RADII {
-            assert_eq!(ring_radius(r), 0.0);
-            assert_eq!(inset_ring_radius(r), 0.0);
-        }
+    fn a_square_control_keeps_a_square_ring_and_a_round_one_follows_its_corner() {
+        assert_eq!(ring_radius(radius::NONE), 0.0);
+        assert_eq!(inset_ring_radius(radius::NONE), 0.0);
+        // The ring on a control is as round as the control; one drawn a pixel
+        // in is a pixel tighter.
+        assert_eq!(ring_radius(radius::CONTROL), 3.0);
+        assert_eq!(inset_ring_radius(radius::CONTROL), 2.0);
+        assert_eq!(ring_radius(radius::CHIP), 2.0);
+        assert_eq!(inset_ring_radius(radius::CHIP), 1.0);
         assert_eq!(ring_radius(radius::FULL), radius::FULL + RING_OFFSET);
         assert_eq!(inset_ring_radius(radius::FULL), radius::FULL - RING_INSET);
     }
