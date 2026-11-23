@@ -9,6 +9,13 @@
 //! strip can be collapsed, and then no tab is open and the selected one is
 //! marked by its label alone: Medium, in the primary ink.
 //!
+//! [`ribbon_row`] is the command row beneath it: a 32 band on the raised
+//! surface with a 1px rule along its foot, holding groups of quiet buttons
+//! divided by a 1px rule. When the row is narrower than its commands it drops
+//! their labels from the trailing end, one command at a time, until it fits;
+//! the icon and the key remain. Narrower than that, it clips at its trailing
+//! edge and what is clipped takes no pointer.
+//!
 //! The caller holds which tab is selected and whether the strip is collapsed;
 //! nothing is kept between frames. A click on any tab, the selected one
 //! included, and a double click are reported. The labels and keystrokes are the
@@ -29,9 +36,10 @@ use meridian_design::control::TAB_BAR_WIDTH;
 use meridian_design::focus;
 use meridian_design::radius;
 use meridian_design::scales::{MARITIME_DARK, MARITIME_LIGHT};
-use meridian_design::spacing::ROW_GRID;
+use meridian_design::spacing::{BAND_HEIGHT, ROW_GRID};
 use meridian_design::{semantic, Role};
 
+use crate::button::{button_size, mark_unavailable, paint_button, Button, ButtonPaint, Weight};
 use crate::key_chip::{key_size, paint_key, KeyInk, KeySize};
 use crate::theme::to_color32;
 use crate::widgets::{focus_ring_corners, medium_family, optically_centred_galley_top};
@@ -388,4 +396,223 @@ pub fn key_tip(ui: &egui::Ui, target: Rect, keystroke: &str) {
     let chip = CornerRadius::same(radius::CHIP.round() as u8);
     tip.painter().add(shadow.as_shape(rect, chip));
     paint_key(&tip, rect, keystroke, KeySize::Row, KeyInk::Plain);
+}
+
+/// Which command: its group and its place in it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct CommandAt {
+    /// The group's index in the slice passed to [`RibbonRow::new`].
+    pub group: usize,
+    /// The command's index in its group.
+    pub index: usize,
+}
+
+/// A ribbon's command row, drawn by [`ribbon_row`].
+#[derive(Clone, Copy, Debug)]
+#[must_use]
+pub struct RibbonRow<'a> {
+    groups: &'a [&'a [Button<'a>]],
+    key_tips: bool,
+}
+
+impl<'a> RibbonRow<'a> {
+    /// `groups` in order. Every button is drawn in the quiet weight whatever
+    /// weight it carries. A group with no commands is not drawn and has no
+    /// divider.
+    pub fn new(groups: &'a [&'a [Button<'a>]]) -> Self {
+        Self {
+            groups,
+            key_tips: false,
+        }
+    }
+
+    /// Show each command's key as a tip at its corner instead of the keycap
+    /// the command draws itself. Nothing moves when they are on.
+    pub fn key_tips(mut self, shown: bool) -> Self {
+        self.key_tips = shown;
+        self
+    }
+}
+
+/// What [`ribbon_row`] hands back.
+#[derive(Clone, Debug)]
+pub struct RibbonRowResponse {
+    /// The whole band's response.
+    pub response: egui::Response,
+    /// The command clicked. Never an unavailable one.
+    pub clicked: Option<CommandAt>,
+    /// An unavailable command has the pointer over it: which, and its visible
+    /// rect, for the caller to anchor the reason popover to.
+    pub pointed_unavailable: Option<(CommandAt, Rect)>,
+    /// Every command's rect in order, a clipped one's included whole.
+    pub rects: Vec<(CommandAt, Rect)>,
+    /// The commands whose label was dropped to fit, in order.
+    pub icon_only: Vec<CommandAt>,
+}
+
+/// One command, laid out.
+struct Command<'a> {
+    at: CommandAt,
+    button: Button<'a>,
+    bare: bool,
+    rect: Rect,
+}
+
+/// The row's contents laid out from the band's left edge: each command's rect
+/// and the dividers between non-empty groups.
+fn lay_out<'a>(
+    ui: &egui::Ui,
+    row: &RibbonRow<'a>,
+    band: Rect,
+    bare: &[bool],
+) -> (Vec<Command<'a>>, Vec<Rect>) {
+    let t = ui.tokens();
+    let mut commands = Vec::new();
+    let mut dividers = Vec::new();
+    let mut x = band.left() + t.space[4];
+    let mut started = false;
+    let mut n = 0;
+    for (g, group) in row.groups.iter().enumerate() {
+        if group.is_empty() {
+            continue;
+        }
+        if started {
+            x += t.space[3];
+            dividers.push(Rect::from_center_size(
+                egui::pos2(x + 0.5, band.center().y),
+                Vec2::new(1.0, t.space[6]),
+            ));
+            x += 1.0 + t.space[3];
+        }
+        started = true;
+        for (i, b) in group.iter().enumerate() {
+            if i > 0 {
+                x += t.space[1];
+            }
+            let b = b.weight(Weight::Quiet).with_lead(t.space[3]);
+            let is_bare = bare.get(n).copied().unwrap_or(false);
+            let size = button_size(ui, &b, is_bare);
+            let rect = Rect::from_min_size(egui::pos2(x, band.center().y - size.y / 2.0), size);
+            x = rect.right();
+            commands.push(Command {
+                at: CommandAt { group: g, index: i },
+                button: b,
+                bare: is_bare,
+                rect,
+            });
+            n += 1;
+        }
+    }
+    (commands, dividers)
+}
+
+/// Draw the command row and report what was done to it.
+///
+/// It is as wide as the room `ui` has left, `BAND_HEIGHT` tall. While its
+/// commands are wider than that it drops the label of the last command that
+/// still has one (a command with an icon; one without keeps its label), and
+/// what still does not fit is clipped at its trailing edge.
+pub fn ribbon_row(ui: &mut egui::Ui, row: RibbonRow<'_>) -> RibbonRowResponse {
+    let t = ui.tokens();
+    let (band, response) = ui.allocate_exact_size(
+        Vec2::new(ui.available_width().max(0.0), BAND_HEIGHT),
+        Sense::hover(),
+    );
+
+    // Drop labels from the trailing end until the contents fit.
+    let count: usize = row.groups.iter().map(|g| g.len()).sum();
+    let mut bare = vec![false; count];
+    let (mut commands, mut dividers) = lay_out(ui, &row, band, &bare);
+    let fits = |commands: &[Command<'_>]| {
+        commands
+            .last()
+            .is_none_or(|c| c.rect.right() + t.space[4] <= band.right() + 0.01)
+    };
+    while !fits(&commands) {
+        let Some(i) = commands
+            .iter()
+            .rposition(|c| !c.bare && c.button.has_icon() && !c.button.is_icon_only())
+        else {
+            break;
+        };
+        bare[i] = true;
+        (commands, dividers) = lay_out(ui, &row, band, &bare);
+    }
+
+    let mut list = ui.new_child(UiBuilder::new().max_rect(band).id_salt(response.id));
+    list.set_clip_rect(list.clip_rect().intersect(band));
+    list.ctx().accesskit_node_builder(list.unique_id(), |node| {
+        node.set_role(egui::accesskit::Role::Toolbar);
+    });
+    let enabled = list.is_enabled();
+    let mut clicked = None;
+    let mut pointed = None;
+    let mut sensed: Vec<egui::Response> = Vec::with_capacity(commands.len());
+    for c in &commands {
+        let off = c.button.reason().is_some();
+        let sense = if off { Sense::hover() } else { Sense::click() };
+        let r = list.interact(
+            c.rect,
+            response.id.with(("ribbon_row", c.at.group, c.at.index)),
+            sense,
+        );
+        let label = c.button.label();
+        r.widget_info(|| {
+            egui::WidgetInfo::labeled(egui::WidgetType::Button, enabled && !off, label)
+        });
+        if let Some(reason) = c.button.reason() {
+            mark_unavailable(list.ctx(), r.id, reason);
+            if r.hovered() {
+                pointed = Some((c.at, c.rect.intersect(list.clip_rect())));
+            }
+        } else if r.clicked() {
+            clicked = Some(c.at);
+        }
+        sensed.push(r);
+    }
+
+    if ui.is_rect_visible(band) {
+        let sem = semantic(list.visuals().dark_mode);
+        let painter = list.painter();
+        painter.rect_filled(band, CornerRadius::ZERO, to_color32(sem.surfaces.raised));
+        painter.rect_filled(
+            Rect::from_min_max(egui::pos2(band.left(), band.bottom() - 1.0), band.max),
+            CornerRadius::ZERO,
+            to_color32(sem.borders.subtle),
+        );
+        for d in &dividers {
+            painter.rect_filled(*d, CornerRadius::ZERO, to_color32(sem.borders.subtle));
+        }
+        for (c, r) in commands.iter().zip(&sensed) {
+            paint_button(
+                &list,
+                c.rect,
+                &c.button,
+                ButtonPaint {
+                    hovered: r.hovered(),
+                    pressed: r.is_pointer_button_down_on(),
+                    focused: r.has_focus(),
+                    label: !c.bare,
+                    key: !row.key_tips,
+                },
+            );
+        }
+    }
+    // A tip floats on a layer of its own, so one is drawn only for a command
+    // wholly inside a band that is on screen.
+    if row.key_tips && ui.is_rect_visible(band) {
+        for c in commands.iter().filter(|c| band.contains_rect(c.rect)) {
+            if let Some(k) = c.button.own_key() {
+                key_tip(ui, c.rect, k);
+            }
+        }
+    }
+
+    RibbonRowResponse {
+        response,
+        clicked,
+        pointed_unavailable: pointed,
+        rects: commands.iter().map(|c| (c.at, c.rect)).collect(),
+        icon_only: commands.iter().filter(|c| c.bare).map(|c| c.at).collect(),
+    }
 }

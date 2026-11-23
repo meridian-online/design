@@ -59,6 +59,7 @@ pub struct Button<'a> {
     reason: Option<&'a str>,
     weight: Weight,
     dense: bool,
+    lead: Option<f32>,
 }
 
 impl<'a> Button<'a> {
@@ -72,6 +73,7 @@ impl<'a> Button<'a> {
             reason: None,
             weight: Weight::Default,
             dense: false,
+            lead: None,
         }
     }
 
@@ -125,6 +127,34 @@ impl<'a> Button<'a> {
         } else {
             self.keystroke
         }
+    }
+
+    /// A button whose leading padding is `lead` rather than its rung's, as a
+    /// ribbon row sets it.
+    pub(crate) fn with_lead(mut self, lead: f32) -> Self {
+        self.lead = Some(lead);
+        self
+    }
+
+    pub(crate) fn has_icon(&self) -> bool {
+        self.icon.is_some()
+    }
+
+    pub(crate) fn is_icon_only(&self) -> bool {
+        self.icon_only
+    }
+
+    pub(crate) fn label(&self) -> &'a str {
+        self.label
+    }
+
+    pub(crate) fn reason(&self) -> Option<&'a str> {
+        self.reason
+    }
+
+    /// The keycap the button draws on its own, if any.
+    pub(crate) fn own_key(&self) -> Option<&'a str> {
+        self.key()
     }
 
     fn height(&self) -> f32 {
@@ -298,6 +328,11 @@ fn padding(ui: &egui::Ui, button: &Button<'_>) -> f32 {
     }
 }
 
+/// The leading padding: the rung's unless the caller set one.
+fn lead(ui: &egui::Ui, button: &Button<'_>) -> f32 {
+    button.lead.unwrap_or_else(|| padding(ui, button))
+}
+
 /// Whether the button is only its icon: square, centred.
 fn is_square(button: &Button<'_>, drop_label: bool) -> bool {
     button.icon.is_some() && (button.icon_only || (drop_label && button.key().is_none()))
@@ -332,7 +367,10 @@ pub(crate) fn button_size(ui: &egui::Ui, button: &Button<'_>, drop_label: bool) 
     } else {
         pad
     };
-    Vec2::new(pad + parts.iter().sum::<f32>() + gaps + trailing, height)
+    Vec2::new(
+        lead(ui, button) + parts.iter().sum::<f32>() + gaps + trailing,
+        height,
+    )
 }
 
 /// Paint `button` in `rect` in the state `p` describes: its box, the focus
@@ -381,7 +419,7 @@ pub(crate) fn paint_button(ui: &egui::Ui, rect: Rect, button: &Button<'_>, p: Bu
         return;
     }
 
-    let mut x = rect.left() + padding(ui, button);
+    let mut x = rect.left() + lead(ui, button);
     let mut right = rect.right() - padding(ui, button);
     if let Some(k) = key {
         let size = key_size(ui, k, KeySize::Control);
