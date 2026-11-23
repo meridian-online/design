@@ -1,24 +1,26 @@
 # meridian-egui inventory
 
-Every public function, struct, enum, trait and static of this crate has a row here, and `tests/inventory.rs` fails when the crate and this file disagree in either direction (ADR 0011). A component's own config and response types share its row. Constants, such as the icon glyphs and `PROMPT_GLYPH`, are data and have no row of their own; the `Icon` row covers the glyphs.
+Every public function, struct, enum, trait and static of this crate has a row here, and `tests/inventory.rs` fails when the crate and this file disagree in either direction (ADR 0011). A component's own config and response types share its row. Every `pub const` (the icon glyphs and `icons::ALL`, `GRID`, `STROKE_WIDTH`, `PROMPT_GLYPH`, `DEFAULT_TOAST_SECONDS`) is data and has no row of its own; the `Icon` row covers the glyphs. A public type alias or union would need a row like any other item; there are none today.
 
-- **component**: admitted through one of ADR 0011's two doors, `call sites` (three independent ones) or `requirement` (a named product need that cannot be composed). The last column names the Brightfield surfaces that call it, or the requirement. The components below predate the inventory and were admitted under ADR 0011.
+- **component**: admitted through one of ADR 0011's two doors. `call sites` means at least three independent production call sites; a gallery call does not count, and a call that arrives only through another component of this crate is not independent. Every other component is `requirement`: a named need of Brightfield that cannot be composed from the rest. The last column names the real callers.
 - **composition**: composed from other rows, and says from what.
 - **helper**: a public function or type that draws no component of its own.
 
+The callers were searched in Brightfield at revision 7b6ddba1 (`crates/`, tests excluded). The components below predate the inventory and were admitted under ADR 0011.
+
 | Item | Kind | Door | Call sites or requirement |
 |---|---|---|---|
-| ModalChrome, ModalLayer, ModalLayerResponse, ModalWidth | component | call sites | The command palette, the help sheet and the sources browser |
-| query_line, QueryLineResponse | component | call sites | The command palette, the sources browser and the help sheet's filter |
-| list_row, ListRow, ListRowResponse, RowHeight, RowState | component | call sites | The command palette, the sources browser and the help sheet |
-| key_chip | component | call sites | The command palette, the help sheet and the status band |
-| Picker, PickerDelegate, PickerEvent, PickerHint, PickerOutcome, PickerResponse, PickerRow | component | call sites | The command palette, the sources browser and the help sheet |
-| line_tabs, LineTabs, LineTabsResponse | component | call sites | The inspector, the sources browser and the help sheet |
-| NotificationLayer, Notification, NotificationId, Severity | component | call sites | The status band, the sources browser and the inspector |
-| ToastLayer, Toast | component | call sites | The status band, the command palette and the inspector |
-| field_row | component | call sites | The inspector, the sources browser and the help sheet |
-| pane_header, pane_header_with | component | call sites | The inspector, the sources browser and the status band |
-| status_pill | component | call sites | The status band, the inspector and the sources browser |
+| ModalChrome, ModalLayer, ModalLayerResponse, ModalWidth | component | call sites | Every Brightfield modal shares one frame. Callers: the overlays in `brightfield-shell/src/window.rs` (commands, keyboard help, jump to asset, close question, new protocol, which protocol, organise joins, preferences, default app) and the SQL card in `typed_card.rs` |
+| query_line, QueryLineResponse | component | requirement | Brightfield needs one query line with the prompt glyph above every filtered list. No production caller at 7b6ddba1 outside this crate's `Picker`, which draws it for the commands palette, keyboard help and jump to asset; the gallery also shows it; admitted under ADR 0011 before the inventory |
+| list_row, ListRow, ListRowResponse, RowHeight, RowState | component | requirement | Brightfield needs one row treatment, with a selection bar, for every list. Callers: the sources browser (`brightfield-shell/src/sources_browser_view.rs`) directly, and the commands palette, keyboard help and jump to asset through `Picker`, which is not an independent call site |
+| key_chip | component | call sites | Callers: `overlays.rs`, `protocol.rs`, `shelf.rs`, `sources_browser_view.rs` and `typed_card.rs`, all in `brightfield-shell/src/` |
+| Picker, PickerDelegate, PickerEvent, PickerHint, PickerOutcome, PickerResponse, PickerRow | component | call sites | Callers: three delegates in `brightfield-shell/src/window.rs`, the commands palette, the keyboard help sheet and jump to asset |
+| line_tabs, LineTabs, LineTabsResponse | component | requirement | Brightfield needs a strip of words over one rule, with a bar under the open one, for its workbench tabs. One caller: `brightfield-workbench/src/chrome.rs` |
+| NotificationLayer, Notification, NotificationId, Severity | component | requirement | Brightfield needs notifications that stay until dismissed, one per source. One caller: `brightfield-shell/src/window.rs` (the gallery also shows it) |
+| ToastLayer, Toast | component | requirement | Brightfield needs short messages that expire on their own. One caller: `brightfield-shell/src/window.rs` (the gallery also shows it) |
+| field_row | component | requirement | Brightfield needs a label and value row for property panes. No production caller at 7b6ddba1; shown in the gallery only; admitted under ADR 0011 before the inventory |
+| pane_header, pane_header_with | component | requirement | Brightfield needs one header band for a pane, with a leading icon and a trailing slot. No production caller at 7b6ddba1; shown in the gallery only; admitted under ADR 0011 before the inventory |
+| status_pill | component | requirement | Brightfield needs a small icon-and-word state mark. One caller: `brightfield-shell/src/chart_item.rs` (the gallery also shows it) |
 | focus_ring, focus_ring_for, focus_ring_on_solid, focus_ring_on_solid_for | helper | n/a | The focus treatment every interactive piece draws |
 | slider_colours, SliderColours | helper | n/a | Slider colours for the host's own sliders |
 | align_scope, LayoutInfo | helper | n/a | Aligns label and value columns inside a scope |
