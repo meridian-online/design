@@ -675,7 +675,7 @@ fn text_ink(harness: &Harness<'_, Out>, text: &str) -> Color32 {
 }
 
 #[test]
-fn an_unavailable_primary_button_keeps_the_accent_ink_on_its_icon_and_dims_its_label() {
+fn an_unavailable_primary_button_dims_its_icon_with_its_label() {
     for mode in MODES {
         let sem = semantic(mode.is_dark());
         let a = sem.role(Role::Accent).to_owned();
@@ -686,7 +686,7 @@ fn an_unavailable_primary_button_keeps_the_accent_ink_on_its_icon_and_dims_its_l
         let icons = icon_inks(&harness);
         assert!(!icons.is_empty(), "{mode:?}: no icon drawn");
         assert!(
-            icons.iter().all(|c| *c == ink(a.foreground.base)),
+            icons.iter().all(|c| *c == ink(a.foreground.disabled)),
             "{mode:?}: icon inks {icons:?}"
         );
         assert_eq!(
@@ -701,6 +701,7 @@ fn an_unavailable_primary_button_keeps_the_accent_ink_on_its_icon_and_dims_its_l
         spec.icon = true;
         spec.unavailable = true;
         let icons = icon_inks(&drawn(mode, spec));
+        assert!(!icons.is_empty(), "{mode:?}: no icon drawn");
         assert!(
             icons.iter().all(|c| *c == ink(sem.text.disabled)),
             "{mode:?}: {icons:?}"

@@ -221,9 +221,9 @@ fn inks(ui: &egui::Ui, button: &Button<'_>, p: &ButtonPaint) -> Inks {
                 fill: c(a.background.disabled),
                 rule: c(a.border.disabled),
                 label: c(a.foreground.disabled),
-                // The sheet sets only the label's ink for a primary that is
-                // off; its icon keeps the accent's ink.
-                icon: c(a.foreground.base),
+                // An unavailable button dims its icon with its label, in every
+                // weight.
+                icon: c(a.foreground.disabled),
                 key: KeyInk::Dimmed,
             }
         }
