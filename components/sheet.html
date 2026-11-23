@@ -221,6 +221,8 @@ figure.wide { width: 100%; align-items: stretch; }
 .dist i.hov { background: var(--m-seq-600); }
 .dist i.rest { background: var(--m-ink-muted); }
 .dist i.null { background: var(--m-null-ink); }
+/* A zero count draws nothing, as the component does: no floor for it. */
+.dist i.none { min-height: 0; }
 .dist .gap { flex: none; width: var(--m-space-2); margin: 0 calc(-1 * var(--m-hairline)); }
 .dist.sm { height: var(--m-row-dense); }
 .stack { display: flex; height: var(--m-space-4); gap: var(--m-hairline); }
@@ -641,7 +643,7 @@ figure.w240, figure.w360, figure.w520 { align-items: stretch; }
 <div class="spec"><div class="cap">Distribution bar<span>candidates for a category's top values</span></div>
   <div class="row" style="align-items: flex-start">
     <figure class="w240"><div class="dist"><i style="height:92%"></i><i style="height:64%"></i><i style="height:41%"></i><i style="height:30%"></i><i style="height:22%"></i><i style="height:15%"></i><i style="height:11%"></i><i style="height:8%"></i><i style="height:5%"></i><i style="height:4%"></i><i style="height:3%"></i><i style="height:2%"></i><span class="gap"></span><i class="null" style="height:12%"></i></div><div class="readout"><span>0 to 12,000</span><span>412 missing</span></div><figcaption>a number: twelve bins, then the missing</figcaption></figure>
-    <figure class="w240"><div class="dist"><i style="height:92%"></i><i class="hov" style="height:71%"></i><i style="height:38%"></i><i style="height:20%"></i><i style="height:9%"></i><span class="gap"></span><i class="rest" style="height:26%"></i><span class="gap"></span><i class="null" style="height:0%"></i></div><div class="readout"><span><b>cask</b></span><span>5,410 rows</span></div><figcaption>A · a category: top five, the others, the missing (none)</figcaption></figure>
+    <figure class="w240"><div class="dist"><i style="height:92%"></i><i class="hov" style="height:71%"></i><i style="height:38%"></i><i style="height:20%"></i><i style="height:9%"></i><span class="gap"></span><i class="rest" style="height:26%"></i><span class="gap"></span><i class="null none" style="height:0%"></i></div><div class="readout"><span><b>cask</b></span><span>5,410 rows</span></div><figcaption>A · a category: top five, the others, the missing (none)</figcaption></figure>
     <figure class="w240"><div style="height: var(--m-row-preview); display: flex; align-items: flex-end"><div class="stack" style="width: 100%"><i style="flex:38"></i><i class="hov" style="flex:28"></i><i style="flex:14"></i><i style="flex:7"></i><i style="flex:3"></i><i class="rest" style="flex:8"></i><i class="null" style="flex:2"></i></div></div><div class="readout"><span><b>cask</b></span><span>5,410 rows</span></div><figcaption>B · one stacked bar</figcaption></figure>
     <figure class="w240"><div class="dist sm"><i style="height:92%"></i><i style="height:64%"></i><i style="height:41%"></i><i style="height:30%"></i><i style="height:22%"></i><i style="height:15%"></i><i style="height:11%"></i><i style="height:8%"></i><span class="gap"></span><i class="null" style="height:12%"></i></div><figcaption>at the 20 rung, for a column header</figcaption></figure>
   </div>
