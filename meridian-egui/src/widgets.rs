@@ -312,13 +312,8 @@ pub fn status_pill(ui: &mut egui::Ui, icon: &Icon, label: &str, role: Role) -> R
 /// On a control filled with the accent the focus ink can be lost, so that
 /// control takes [`focus_ring_on_solid`] instead.
 pub fn focus_ring(ui: &egui::Ui, rect: egui::Rect, control_radius: f32) {
-    let colour = semantic(mode_of(ui).is_dark()).borders.focus;
-    ui.painter().rect_stroke(
-        rect,
-        egui::CornerRadius::same(focus::ring_radius(control_radius).round() as u8),
-        egui::Stroke::new(focus::RING_WIDTH, to_color32(colour)),
-        StrokeKind::Inside,
-    );
+    let radius = focus::ring_radius(control_radius).round() as u8;
+    focus_ring_corners(ui, rect, egui::CornerRadius::same(radius));
 }
 
 /// The focus ring with a corner of its own on each corner, for a control that

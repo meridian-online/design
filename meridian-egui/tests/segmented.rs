@@ -422,7 +422,7 @@ fn a_label_sits_space_4_from_its_options_leading_edge_and_an_unavailable_key_is_
     for (i, label) in LABELS.iter().enumerate() {
         let o = option_rect(&harness, i);
         assert!(
-            near(label_left(&harness, label) - o.left(), SPACE_4),
+            near(label_left(&harness, label) - o.left(), SPACE_4 + 1.0),
             "option {i}"
         );
     }
@@ -442,10 +442,10 @@ fn a_label_sits_space_4_from_its_options_leading_edge_and_an_unavailable_key_is_
         .get_by_role_and_label(AccessRole::RadioButton, "Grid")
         .rect();
     let left = label_left_in(&h, "Grid");
-    assert!(near(left - grid.left(), SPACE_4));
+    assert!(near(left - grid.left(), SPACE_4 + 1.0));
     let text_w = label_width_in(&h, "Grid");
     assert!(
-        near(grid.width(), text_w + 2.0 * SPACE_4),
+        near(grid.width(), text_w.ceil() + 2.0 * (SPACE_4 + 1.0)),
         "{grid:?} {text_w}"
     );
 
@@ -624,5 +624,153 @@ fn a_selected_index_past_the_end_selects_nothing() {
             harness.query_all_by_role(AccessRole::RadioButton).count(),
             3
         );
+    }
+}
+
+#[test]
+fn a_selected_unavailable_option_keeps_the_selected_ink_and_a_dimmed_key() {
+    for mode in MODES {
+        let n = semantic(mode.is_dark()).role(Role::Neutral).to_owned();
+        let mut spec = Spec::new(2);
+        spec.off = Some(2);
+        let h = drawn(mode, spec);
+        assert_eq!(label_ink(&h, "Model"), ink(n.foreground.selected));
+        let mut live = Spec::new(2);
+        live.off = None;
+        assert_ne!(label_ink(&h, "M"), label_ink(&drawn(mode, live), "M"));
+    }
+}
+
+const LONG: &str = "A rather long activity name";
+
+/// Three keyed options, the middle one long, in a ui `width` wide.
+fn narrow(width: f32) -> Harness<'static, ()> {
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(700.0, 80.0))
+        .build_ui(move |ui| {
+            theme::apply(ui.ctx(), Mode::Light);
+            ui.allocate_ui(egui::vec2(width, 40.0), |ui| {
+                let opts = [
+                    SegmentedOption::new("Grid").keystroke("G"),
+                    SegmentedOption::new(LONG).keystroke("C"),
+                    SegmentedOption::new("Model").keystroke("M"),
+                ];
+                segmented(ui, Segmented::new(&opts, 0));
+            });
+        });
+    h.run();
+    h
+}
+
+fn option_rects<S>(h: &Harness<'_, S>, labels: &[&str]) -> Vec<Rect> {
+    labels
+        .iter()
+        .map(|l| h.get_by_role_and_label(AccessRole::RadioButton, l).rect())
+        .collect()
+}
+
+fn text_rects<S>(h: &Harness<'_, S>) -> Vec<(String, Rect)> {
+    let mut out = Vec::new();
+    for c in &h.output().shapes {
+        if let egui::Shape::Text(t) = &c.shape {
+            let s: String = t.galley.rows.iter().map(|r| r.text()).collect();
+            out.push((s, t.galley.rect.translate(t.pos.to_vec2())));
+        }
+    }
+    out
+}
+
+#[test]
+fn a_narrow_control_shrinks_only_its_labels_and_keeps_every_key_in_its_option() {
+    let labels = ["Grid", LONG, "Model"];
+    let wide = narrow(650.0);
+    let natural = option_rects(&wide, &labels);
+    let natural_w = natural[2].right() - natural[0].left();
+    // The wide control cuts nothing: the control case.
+    assert!(text_rects(&wide).iter().any(|(t, _)| t == LONG));
+
+    let h = narrow(natural_w - 40.0);
+    let opts = option_rects(&h, &labels);
+    let group_w = opts[2].right() - opts[0].left();
+    assert!(group_w <= natural_w - 40.0 + 0.01, "{group_w}");
+    let texts = text_rects(&h);
+    let caps: Vec<Rect> = painted(&h, Mode::Light)
+        .iter()
+        .filter(|r| r.is_stroked() && r.radius == CornerRadius::same(CHIP as u8))
+        .map(|r| r.rect)
+        .collect();
+    assert_eq!(caps.len(), 3);
+    for (cap, o) in caps.iter().zip(&opts) {
+        assert!(
+            near(o.right() - cap.right(), KEYCAP_INSET_IN_CONTROL),
+            "{cap:?} in {o:?}"
+        );
+        assert!(cap.left() > o.left(), "{cap:?} left its option {o:?}");
+    }
+    // A short label is whole and a long one is cut.
+    let short = texts.iter().find(|(t, _)| t == "Grid").expect("Grid whole");
+    assert!(texts.iter().any(|(t, _)| t == "Model"));
+    assert!(
+        near(opts[0].width(), natural[0].width()),
+        "a short option shrank"
+    );
+    assert!(
+        texts.iter().all(|(t, _)| t != LONG),
+        "the long label was not cut"
+    );
+    assert!(opts[1].width() < natural[1].width());
+    // No label reaches its own key, and none leaves its option.
+    for (i, l) in labels.iter().enumerate() {
+        let (_, r) = texts
+            .iter()
+            .find(|(t, _)| t.starts_with(&l[..2]) && t != "G" && t != "C" && t != "M")
+            .expect("a label");
+        assert!(
+            r.right() <= caps[i].left() + 0.01,
+            "{l}: {r:?} reaches {:?}",
+            caps[i]
+        );
+        assert!(r.left() >= opts[i].left());
+    }
+    let _ = short;
+}
+
+#[test]
+fn a_control_narrower_than_its_fixed_parts_overlaps_nothing_and_paints_inside_the_room() {
+    let labels = ["Grid", LONG, "Model"];
+    let room = 60.0;
+    let h = narrow(room);
+    let opts = option_rects(&h, &labels);
+    for w in opts.windows(2) {
+        assert!(w[0].right() <= w[1].left() + 0.01, "{opts:?}");
+    }
+    // It really is wider than the room, so the clip below is what is tested.
+    assert!(opts[2].right() - opts[0].left() > room);
+    let edge = opts[0].left() + room;
+    let page = theme::meridian_visuals(Mode::Light).panel_fill;
+    let mut seen = 0;
+    for c in &h.output().shapes {
+        if let egui::Shape::Rect(r) = &c.shape {
+            if r.fill == page {
+                continue;
+            }
+        }
+        seen += 1;
+        assert!(
+            c.clip_rect.right() <= edge + 0.5 || !has_rect_past(&c.shape, edge),
+            "painted past the room: {:?} under {:?}",
+            c.shape,
+            c.clip_rect
+        );
+    }
+    assert!(seen > 3);
+}
+
+fn has_rect_past(shape: &egui::Shape, edge: f32) -> bool {
+    match shape {
+        egui::Shape::Rect(r) => r.rect.right() > edge + 0.5,
+        egui::Shape::Text(t) => t.galley.rect.translate(t.pos.to_vec2()).right() > edge + 0.5,
+        egui::Shape::Vec(v) => v.iter().any(|s| has_rect_past(s, edge)),
+        _ => false,
     }
 }

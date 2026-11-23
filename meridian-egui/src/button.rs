@@ -28,7 +28,7 @@ use meridian_design::typography::UI_SIZE;
 use meridian_design::{semantic, Role};
 
 use crate::icons::Icon;
-use crate::key_chip::{key_size, paint_key, KeyInk, KeySize};
+use crate::key_chip::{control_key_rect, key_size, paint_key, KeyInk, KeySize};
 use crate::theme::to_color32;
 use crate::widgets::{focus_ring, focus_ring_on_solid, optically_centred_galley_top};
 use crate::MeridianUi;
@@ -385,11 +385,7 @@ pub(crate) fn paint_button(ui: &egui::Ui, rect: Rect, button: &Button<'_>, p: Bu
     let mut right = rect.right() - padding(ui, button);
     if let Some(k) = key {
         let size = key_size(ui, k, KeySize::Control);
-        let inset = t.keycap_inset_in_control;
-        let key_rect = Rect::from_min_size(
-            egui::pos2(rect.right() - inset - size.x, rect.top() + inset),
-            size,
-        );
+        let key_rect = control_key_rect(ui, rect, size);
         paint_key(ui, key_rect, k, KeySize::Control, ink.key);
         right = key_rect.left() - gap;
     }
@@ -406,6 +402,15 @@ pub(crate) fn paint_button(ui: &egui::Ui, rect: Rect, button: &Button<'_>, p: Bu
         let top = optically_centred_galley_top(&galley, rect.center().y);
         painter.galley(egui::pos2(x, top), galley, ink.label);
     }
+}
+
+/// Mark the accessibility node `id` unavailable: disabled, with `reason` as its
+/// description. The one treatment every unavailable control gives.
+pub(crate) fn mark_unavailable(ctx: &egui::Context, id: egui::Id, reason: &str) {
+    ctx.accesskit_node_builder(id, |node| {
+        node.set_disabled();
+        node.set_description(reason);
+    });
 }
 
 /// Draw a button and report what was done to it.
@@ -426,10 +431,7 @@ pub fn button(ui: &mut egui::Ui, button: Button<'_>) -> ButtonResponse {
     let label = button.label;
     response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, !off, label));
     if let Some(reason) = button.reason {
-        ui.ctx().accesskit_node_builder(response.id, |node| {
-            node.set_disabled();
-            node.set_description(reason);
-        });
+        mark_unavailable(ui.ctx(), response.id, reason);
     }
 
     if ui.is_rect_visible(rect) {

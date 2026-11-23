@@ -20,6 +20,12 @@
 //!
 //! The text is the caller's: labels, keystrokes (`"G"`) and reasons are strings
 //! it passes. Nothing here animates.
+//!
+//! Too narrow for its options, a control gives up label width first: each
+//! option keeps its padding and keycap and only the labels shrink, the longest
+//! first (a short label stays whole), cut with an ellipsis. Narrower than the padding and keycaps alone, it keeps those widths
+//! and is clipped at the trailing edge of the room it was given; no option
+//! overlaps another.
 
 use egui::{Color32, CornerRadius, Rect, Sense, Stroke, StrokeKind, UiBuilder, Vec2};
 use meridian_design::control::{HEIGHT_MD, HEIGHT_SM};
@@ -27,7 +33,7 @@ use meridian_design::focus;
 use meridian_design::{semantic, Role};
 
 use crate::button::label_galley;
-use crate::key_chip::{key_size, paint_key, KeyInk, KeySize};
+use crate::key_chip::{control_key_rect, key_size, paint_key, KeyInk, KeySize};
 use crate::theme::to_color32;
 use crate::widgets::{focus_ring_corners, optically_centred_galley_top};
 use crate::MeridianUi;
@@ -104,19 +110,28 @@ pub struct SegmentedResponse {
     pub pointed_unavailable: Option<(usize, Rect)>,
 }
 
-/// The width of option `i` at its natural size, and what of it is not the label.
-fn natural(ui: &egui::Ui, o: &SegmentedOption<'_>) -> (f32, f32) {
+/// An option's fixed width (its padding, its 1px border either side and its keycap) and
+/// its label's natural width. The sheet draws each option with a transparent 1px
+/// border inside `SPACE_4` of leading padding, so a label starts `SPACE_4 + 1` in;
+/// a keycap takes the inset from the option's edge, and a keyless option pads its
+/// trailing edge as it does its leading one.
+fn parts(ui: &egui::Ui, o: &SegmentedOption<'_>) -> (f32, f32) {
     let t = ui.tokens();
     let key = o.keystroke.map(|k| key_size(ui, k, KeySize::Control).x);
     let (trailing, key_part) = match key {
         Some(k) => (t.keycap_inset_in_control, t.icon_label_gap + k),
-        None => (t.space[4], 0.0),
+        None => (lead(ui), 0.0),
     };
-    let fixed = t.space[4] + key_part + trailing;
     let label = label_galley(ui, o.label, Color32::PLACEHOLDER, f32::INFINITY)
         .size()
-        .x;
-    (fixed + label, fixed)
+        .x
+        .ceil();
+    (lead(ui) + key_part + trailing, label)
+}
+
+/// Where an option's label starts, from its edge: `SPACE_4` and the 1px border.
+fn lead(ui: &egui::Ui) -> f32 {
+    ui.tokens().space[4] + 1.0
 }
 
 /// The corners option `i` of `count` rounds: the box's outer ones.
@@ -128,6 +143,31 @@ fn corners_of(i: usize, count: usize, radius: u8) -> CornerRadius {
         ne: if last { radius } else { 0 },
         se: if last { radius } else { 0 },
     }
+}
+
+/// The widest a label may be so that the options fit in `room`: infinite when
+/// they already do, whole pixels otherwise, zero when the fixed parts alone do
+/// not fit.
+fn label_cap(sizes: &[(f32, f32)], room: f32) -> f32 {
+    let fixed: f32 = sizes.iter().map(|s| s.0).sum();
+    let labels: f32 = sizes.iter().map(|s| s.1).sum();
+    if fixed + labels <= room {
+        return f32::INFINITY;
+    }
+    let left = (room - fixed).max(0.0);
+    let mut ls: Vec<f32> = sizes.iter().map(|s| s.1).collect();
+    ls.sort_by(f32::total_cmp);
+    // Walk up the labels shortest first: those below the cap keep their width,
+    // and the rest share what remains.
+    let mut spent = 0.0;
+    for (k, l) in ls.iter().enumerate() {
+        let share = (left - spent) / (ls.len() - k) as f32;
+        if *l > share {
+            return share.floor();
+        }
+        spent += l;
+    }
+    f32::INFINITY
 }
 
 /// Draw a segmented control and report what was done to it.
@@ -146,11 +186,16 @@ pub fn segmented(ui: &mut egui::Ui, control: Segmented<'_>) -> SegmentedResponse
         };
     }
     let height = control.height();
-    let sizes: Vec<(f32, f32)> = control.options.iter().map(|o| natural(ui, o)).collect();
-    let total: f32 = sizes.iter().map(|s| s.0).sum();
+    let sizes: Vec<(f32, f32)> = control.options.iter().map(|o| parts(ui, o)).collect();
     let room = ui.available_width().max(0.0);
-    let scale = if total > room { room / total } else { 1.0 };
-    let widths: Vec<f32> = sizes.iter().map(|s| (s.0 * scale).floor()).collect();
+    // Read before allocating: a box wider than the room stretches `max_rect`.
+    let edge = ui.max_rect().right();
+    // Only the labels give way, the longest first: the room the fixed parts
+    // leave is shared out by a cap on label width, so a short label stays whole.
+    // Below the fixed parts the box keeps them and is clipped at the trailing
+    // edge.
+    let cap = label_cap(&sizes, room);
+    let widths: Vec<f32> = sizes.iter().map(|(f, l)| f + l.min(cap)).collect();
 
     let (rect, response) = ui.allocate_exact_size(
         Vec2::new(widths.iter().sum::<f32>(), height),
@@ -190,10 +235,7 @@ pub fn segmented(ui: &mut egui::Ui, control: Segmented<'_>) -> SegmentedResponse
             )
         });
         if let Some(reason) = o.reason {
-            child.ctx().accesskit_node_builder(r.id, |node| {
-                node.set_disabled();
-                node.set_description(reason);
-            });
+            crate::button::mark_unavailable(child.ctx(), r.id, reason);
             if r.hovered() {
                 pointed = Some((i, rects[i]));
             }
@@ -204,7 +246,12 @@ pub fn segmented(ui: &mut egui::Ui, control: Segmented<'_>) -> SegmentedResponse
     }
 
     if ui.is_rect_visible(rect) {
-        paint(ui, rect, &rects, &options, &control);
+        // A box wider than the room it was given is cut at the ui's trailing edge.
+        let mut clip = rect;
+        clip.max.x = clip.max.x.min(edge);
+        let mut canvas = child;
+        canvas.set_clip_rect(canvas.clip_rect().intersect(clip));
+        paint(&canvas, rect, &rects, &options, &control);
     }
 
     SegmentedResponse {
@@ -277,26 +324,23 @@ fn paint(
             let ring = focus::ring_radius(t.radius_control).round() as u8;
             focus_ring_corners(ui, r, corners_of(i, count, ring));
         }
-        let label_ink = if off {
-            c(sem.text.disabled)
-        } else if i == control.selected {
+        // The sheet's `.on` out-specifies `.off`: a selected option keeps its ink.
+        let label_ink = if i == control.selected {
             c(n.foreground.selected)
+        } else if off {
+            c(sem.text.disabled)
         } else {
             c(sem.tabs.foreground)
         };
-        let mut right = r.right() - t.space[4];
+        let mut right = r.right() - lead(ui);
         if let Some(k) = o.keystroke {
             let size = key_size(ui, k, KeySize::Control);
-            let inset = t.keycap_inset_in_control;
-            let key_rect = Rect::from_min_size(
-                egui::pos2(r.right() - inset - size.x, r.top() + inset),
-                size,
-            );
+            let key_rect = control_key_rect(ui, r, size);
             let key_ink = if off { KeyInk::Dimmed } else { KeyInk::Plain };
             paint_key(ui, key_rect, k, KeySize::Control, key_ink);
             right = key_rect.left() - t.icon_label_gap;
         }
-        let x = r.left() + t.space[4];
+        let x = r.left() + lead(ui);
         let galley = label_galley(ui, o.label, label_ink, (right - x).max(0.0));
         let top = optically_centred_galley_top(&galley, r.center().y);
         painter.galley(egui::pos2(x, top), galley, label_ink);

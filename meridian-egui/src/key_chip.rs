@@ -244,6 +244,17 @@ pub(crate) fn key_size(ui: &egui::Ui, keystroke: &str, size: KeySize) -> Vec2 {
     }
 }
 
+/// The rect of a control's keycap of `size` in a control occupying `control`:
+/// `KEYCAP_INSET_IN_CONTROL` from its top and trailing edge, which with the
+/// 16 cap leaves the same at the bottom of a 24 control.
+pub(crate) fn control_key_rect(ui: &egui::Ui, control: Rect, size: Vec2) -> Rect {
+    let inset = ui.tokens().keycap_inset_in_control;
+    Rect::from_min_size(
+        egui::pos2(control.right() - inset - size.x, control.top() + inset),
+        size,
+    )
+}
+
 /// Paint a keycap of [`key_size`] in `rect`: the box, then the keystroke centred
 /// on its face, placed on the glyphs it inks ([`optically_centred_galley_top`]).
 pub(crate) fn paint_key(ui: &egui::Ui, rect: Rect, keystroke: &str, size: KeySize, ink: KeyInk) {
