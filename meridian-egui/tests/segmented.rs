@@ -708,7 +708,7 @@ fn a_narrow_control_shrinks_only_its_labels_and_keeps_every_key_in_its_option() 
         assert!(cap.left() > o.left(), "{cap:?} left its option {o:?}");
     }
     // A short label is whole and a long one is cut.
-    let short = texts.iter().find(|(t, _)| t == "Grid").expect("Grid whole");
+    assert!(texts.iter().any(|(t, _)| t == "Grid"), "Grid whole");
     assert!(texts.iter().any(|(t, _)| t == "Model"));
     assert!(
         near(opts[0].width(), natural[0].width()),
@@ -732,7 +732,6 @@ fn a_narrow_control_shrinks_only_its_labels_and_keeps_every_key_in_its_option() 
         );
         assert!(r.left() >= opts[i].left());
     }
-    let _ = short;
 }
 
 #[test]
@@ -772,5 +771,152 @@ fn has_rect_past(shape: &egui::Shape, edge: f32) -> bool {
         egui::Shape::Text(t) => t.galley.rect.translate(t.pos.to_vec2()).right() > edge + 0.5,
         egui::Shape::Vec(v) => v.iter().any(|s| has_rect_past(s, edge)),
         _ => false,
+    }
+}
+
+#[test]
+fn the_part_of_a_clipped_option_past_the_room_takes_no_hover_and_no_click() {
+    struct St {
+        clicked: Option<usize>,
+        pointed: Option<(usize, Rect)>,
+    }
+    let room = 60.0;
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(700.0, 80.0))
+        .build_ui_state(
+            move |ui, st: &mut St| {
+                theme::apply(ui.ctx(), Mode::Light);
+                ui.allocate_ui(egui::vec2(room, 40.0), |ui| {
+                    let opts = [
+                        SegmentedOption::new("Grid").keystroke("G"),
+                        SegmentedOption::new(LONG).keystroke("C").unavailable("No"),
+                        SegmentedOption::new("Model").keystroke("M"),
+                    ];
+                    let r = segmented(ui, Segmented::new(&opts, 0));
+                    st.clicked = st.clicked.or(r.clicked);
+                    st.pointed = r.pointed_unavailable.or(st.pointed);
+                });
+            },
+            St {
+                clicked: None,
+                pointed: None,
+            },
+        );
+    h.run();
+    let last = h
+        .get_by_role_and_label(AccessRole::RadioButton, "Model")
+        .rect();
+    let second = h
+        .get_by_role_and_label(AccessRole::RadioButton, LONG)
+        .rect();
+    let first = h
+        .get_by_role_and_label(AccessRole::RadioButton, "Grid")
+        .rect();
+    let edge = first.left() + room;
+    assert!(
+        last.right() > edge + 10.0,
+        "the control fits its room: the test is idle"
+    );
+    let beyond = egui::pos2(
+        (last.right() + edge.max(last.left())) / 2.0 + 5.0,
+        last.center().y,
+    );
+    assert!(
+        last.contains(beyond),
+        "the point is not inside the last option"
+    );
+    h.event(egui::Event::PointerMoved(beyond));
+    h.run();
+    h.event(egui::Event::PointerButton {
+        pos: beyond,
+        button: egui::PointerButton::Primary,
+        pressed: true,
+        modifiers: egui::Modifiers::NONE,
+    });
+    h.run();
+    h.event(egui::Event::PointerButton {
+        pos: beyond,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers: egui::Modifiers::NONE,
+    });
+    h.run();
+    assert_eq!(h.state().clicked, None, "a click past the room landed");
+    // Control: a point inside the room, in the first option, does click.
+    let inside = egui::pos2(edge - 30.0, last.center().y);
+    let first = h
+        .get_by_role_and_label(AccessRole::RadioButton, "Grid")
+        .rect();
+    let inside = if first.contains(inside) {
+        inside
+    } else {
+        first.center()
+    };
+    h.event(egui::Event::PointerMoved(inside));
+    h.run();
+    for pressed in [true, false] {
+        h.event(egui::Event::PointerButton {
+            pos: inside,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        });
+        h.run();
+    }
+    assert_eq!(h.state().clicked, Some(0), "the harness cannot click");
+    // The unavailable option's reported rect stays inside the room.
+    h.event(egui::Event::PointerMoved(
+        second.left_center() + egui::vec2(20.0, 0.0),
+    ));
+    h.run();
+    if let Some((_, r)) = h.state().pointed {
+        assert!(r.right() <= edge + 0.5, "{r:?} past {edge}");
+    }
+}
+
+#[test]
+fn a_right_to_left_control_paints_nothing_left_of_its_room() {
+    let room = 60.0;
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(700.0, 80.0))
+        .build_ui(move |ui| {
+            theme::apply(ui.ctx(), Mode::Light);
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
+                ui.allocate_ui(egui::vec2(room, 40.0), |ui| {
+                    let opts = [
+                        SegmentedOption::new("Grid").keystroke("G"),
+                        SegmentedOption::new(LONG).keystroke("C"),
+                        SegmentedOption::new("Model").keystroke("M"),
+                    ];
+                    segmented(ui, Segmented::new(&opts, 0));
+                });
+            });
+        });
+    h.run();
+    let page = theme::meridian_visuals(Mode::Light).panel_fill;
+    let rects = painted(&h, Mode::Light);
+    assert!(rects.iter().any(|r| r.fill != page), "nothing painted");
+    let opts = option_rects(&h, &["Grid", LONG, "Model"]);
+    let right = opts.iter().map(|r| r.right()).fold(f32::MIN, f32::max);
+    let left = opts.iter().map(|r| r.left()).fold(f32::MAX, f32::min);
+    assert!(
+        left < right - room,
+        "the control fits its room: the test is idle"
+    );
+    // Every shape's visible part lies in the room: 60 wide, ending at the ui's right.
+    let room_right = right.min(692.0);
+    for c in &h.output().shapes {
+        if let egui::Shape::Rect(r) = &c.shape {
+            if r.fill == page {
+                continue;
+            }
+            let seen = r.rect.intersect(c.clip_rect);
+            assert!(
+                seen.left() >= room_right - room - 0.5 || seen.width() <= 0.0,
+                "painted left of the room: {:?} under {:?}",
+                r.rect,
+                c.clip_rect
+            );
+        }
     }
 }

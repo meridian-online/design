@@ -24,7 +24,7 @@
 //! Too narrow for its options, a control gives up label width first: each
 //! option keeps its padding and keycap and only the labels shrink, the longest
 //! first (a short label stays whole), cut with an ellipsis. Narrower than the padding and keycaps alone, it keeps those widths
-//! and is clipped at the trailing edge of the room it was given; no option
+//! and is clipped at the edges of the room it was given, taking no pointer past them; no option
 //! overlaps another.
 
 use egui::{Color32, CornerRadius, Rect, Sense, Stroke, StrokeKind, UiBuilder, Vec2};
@@ -189,7 +189,7 @@ pub fn segmented(ui: &mut egui::Ui, control: Segmented<'_>) -> SegmentedResponse
     let sizes: Vec<(f32, f32)> = control.options.iter().map(|o| parts(ui, o)).collect();
     let room = ui.available_width().max(0.0);
     // Read before allocating: a box wider than the room stretches `max_rect`.
-    let edge = ui.max_rect().right();
+    let room_x = ui.max_rect().x_range();
     // Only the labels give way, the longest first: the room the fixed parts
     // leave is shared out by a cap on label width, so a short label stays whole.
     // Below the fixed parts the box keeps them and is clipped at the trailing
@@ -213,7 +213,11 @@ pub fn segmented(ui: &mut egui::Ui, control: Segmented<'_>) -> SegmentedResponse
 
     // The options sit in a child `Ui`, whose own accessibility node is the
     // radio group: the options are its children, with no container between.
-    let child = ui.new_child(UiBuilder::new().max_rect(rect).id_salt(response.id));
+    let mut child = ui.new_child(UiBuilder::new().max_rect(rect).id_salt(response.id));
+    // A box wider than the room it was given is cut at the room's edges, and
+    // what is cut takes no pointer: the clip goes on before the options sense.
+    let clip = Rect::from_x_y_ranges(room_x, rect.y_range());
+    child.set_clip_rect(child.clip_rect().intersect(clip));
     child
         .ctx()
         .accesskit_node_builder(child.unique_id(), |node| {
@@ -237,7 +241,7 @@ pub fn segmented(ui: &mut egui::Ui, control: Segmented<'_>) -> SegmentedResponse
         if let Some(reason) = o.reason {
             crate::button::mark_unavailable(child.ctx(), r.id, reason);
             if r.hovered() {
-                pointed = Some((i, rects[i]));
+                pointed = Some((i, rects[i].intersect(child.clip_rect())));
             }
         } else if r.clicked() {
             clicked = Some(i);
@@ -246,12 +250,7 @@ pub fn segmented(ui: &mut egui::Ui, control: Segmented<'_>) -> SegmentedResponse
     }
 
     if ui.is_rect_visible(rect) {
-        // A box wider than the room it was given is cut at the ui's trailing edge.
-        let mut clip = rect;
-        clip.max.x = clip.max.x.min(edge);
-        let mut canvas = child;
-        canvas.set_clip_rect(canvas.clip_rect().intersect(clip));
-        paint(&canvas, rect, &rects, &options, &control);
+        paint(&child, rect, &rects, &options, &control);
     }
 
     SegmentedResponse {
