@@ -51,6 +51,11 @@ jobs:
       # and the eframe `gallery` example are all linted and compiled — not just
       # the libs. A lib-only run would never see a broken example.
       - run: cargo clippy --workspace --all-targets -- -D warnings
+      # The docs' intra-doc links: a link to a private item, or one that names
+      # both a module and a function, is a warning, and denied here.
+      - run: cargo doc --workspace --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
 
   crate:
     runs-on: ubuntu-latest
