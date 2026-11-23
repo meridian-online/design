@@ -193,6 +193,8 @@ fn geometry(css: &mut String) {
     );
     decl(css, "keycap-inset-in-control", &px(KEYCAP_INSET_IN_CONTROL));
     decl(css, "gutter-lane", &px(GUTTER_LANE));
+    decl(css, "gutter-pad", &px(GUTTER_PAD));
+    decl(css, "gutter-edge-stroke", &px(GUTTER_EDGE_STROKE));
     decl(css, "step-mark-cell", &px(STEP_MARK_CELL));
     decl(css, "step-mark", &px(STEP_MARK));
     decl(css, "step-mark-stroke", &px(STEP_MARK_STROKE));

@@ -66,6 +66,10 @@ pub struct Tokens {
     pub keycap_inset_in_control: f32,
     /// Width of the gutter lane at a row's leading edge.
     pub gutter_lane: f32,
+    /// Inset at each side of a step row's gutter.
+    pub gutter_pad: f32,
+    /// Line weight of a graph edge in a step row's gutter.
+    pub gutter_edge_stroke: f32,
     /// The cell a step mark sits in.
     pub step_mark_cell: f32,
     /// The drawn size of a step mark.
@@ -123,6 +127,8 @@ pub static TOKENS: Tokens = Tokens {
     keycap_height_in_control: control::KEYCAP_HEIGHT_IN_CONTROL,
     keycap_inset_in_control: control::KEYCAP_INSET_IN_CONTROL,
     gutter_lane: control::GUTTER_LANE,
+    gutter_pad: control::GUTTER_PAD,
+    gutter_edge_stroke: control::GUTTER_EDGE_STROKE,
     step_mark_cell: control::STEP_MARK_CELL,
     step_mark: control::STEP_MARK,
     step_mark_stroke: control::STEP_MARK_STROKE,
@@ -180,6 +186,8 @@ mod tests {
             control::KEYCAP_INSET_IN_CONTROL
         );
         assert_eq!(TOKENS.gutter_lane, control::GUTTER_LANE);
+        assert_eq!(TOKENS.gutter_pad, control::GUTTER_PAD);
+        assert_eq!(TOKENS.gutter_edge_stroke, control::GUTTER_EDGE_STROKE);
         assert_eq!(TOKENS.step_mark_cell, control::STEP_MARK_CELL);
         assert_eq!(TOKENS.step_mark, control::STEP_MARK);
         assert_eq!(TOKENS.step_mark_stroke, control::STEP_MARK_STROKE);

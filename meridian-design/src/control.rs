@@ -115,6 +115,16 @@ pub const KEYCAP_INSET_IN_CONTROL: f32 = SPACE_2;
 /// gutter mark.
 pub const GUTTER_LANE: f32 = 12.0;
 
+/// `5` — the inset at each side of a step row's gutter, before its first lane
+/// and after its last: a gutter of `n` lanes is `GUTTER_PAD + n × GUTTER_LANE +
+/// GUTTER_PAD` wide.
+pub const GUTTER_PAD: f32 = 5.0;
+
+/// `1.25` — the line weight of a graph edge in a step row's gutter: a lane
+/// passing the row, arriving at its mark or leaving it. Its ink is
+/// `semantic::Borders::strong`.
+pub const GUTTER_EDGE_STROKE: f32 = 1.25;
+
 /// `24` — the cell a step mark sits in, at the start of a step row.
 pub const STEP_MARK_CELL: f32 = 24.0;
 

@@ -59,6 +59,7 @@ pub mod query;
 pub mod ribbon;
 pub mod section;
 pub mod segmented;
+pub mod step_row;
 pub mod tabs;
 pub mod text_field;
 
@@ -80,5 +81,8 @@ pub use ribbon::{
 };
 pub use section::{section, Section, SectionResponse};
 pub use segmented::{segmented, Segmented, SegmentedOption, SegmentedResponse};
+pub use step_row::{
+    step_mark, step_row, Fold, Gutter, StepEntry, StepMark, StepRow, StepRowResponse, Timeline,
+};
 pub use tabs::{line_tabs, LineTabs, LineTabsResponse};
 pub use text_field::{text_field, TextField, TextFieldResponse};

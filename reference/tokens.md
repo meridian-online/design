@@ -335,6 +335,8 @@ Stated once, in logical pixels, and mode-invariant throughout. The spacing ladde
 | `--m-keycap-height-in-control` | `16px` |
 | `--m-keycap-inset-in-control` | `4px` |
 | `--m-gutter-lane` | `12px` |
+| `--m-gutter-pad` | `5px` |
+| `--m-gutter-edge-stroke` | `1.25px` |
 | `--m-step-mark-cell` | `24px` |
 | `--m-step-mark` | `7px` |
 | `--m-step-mark-stroke` | `1.5px` |

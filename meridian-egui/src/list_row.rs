@@ -68,6 +68,7 @@ pub struct ListRow {
     bar_ink: Option<Color32>,
     inert: bool,
     no_pointer_fill: bool,
+    wash: bool,
 }
 
 impl ListRow {
@@ -80,6 +81,7 @@ impl ListRow {
             bar_ink: None,
             inert: false,
             no_pointer_fill: false,
+            wash: false,
         }
     }
 
@@ -98,6 +100,16 @@ impl ListRow {
     pub(crate) fn inert(mut self) -> Self {
         self.no_pointer_fill = true;
         self.inert = true;
+        self
+    }
+
+    /// The row is the selected thing — the node a canvas shows — rather than
+    /// where the keys act: the selection wash (`rows.selected_background`) with
+    /// a 1px inside rule in `rows.selected_border`, over any pointer fill. The
+    /// cursor's bar, when the row also has the cursor, is drawn over the rule.
+    #[must_use]
+    pub(crate) fn wash(mut self, on: bool) -> Self {
+        self.wash = on;
         self
     }
 
@@ -165,8 +177,10 @@ impl<R> ListRowResponse<R> {
 /// The bar is in the token's ink unless the caller passes one with
 /// [`ListRow::bar_ink`].
 ///
-/// State precedence: under the cursor > pressed > hovered > nothing, so the
-/// cursor survives losing the pointer.
+/// State precedence: the selection wash (a crate-internal option for a row
+/// that is the selected thing) > under the cursor > pressed > hovered >
+/// nothing, so the cursor survives losing the pointer. The cursor's bar is drawn
+/// over the wash.
 pub fn list_row<R>(
     ui: &mut egui::Ui,
     row: ListRow,
@@ -193,7 +207,9 @@ pub fn list_row<R>(
 
     if ui.is_rect_visible(rect) {
         let rows = &sem.rows;
-        let fill = if state.selected {
+        let fill = if row.wash {
+            Some(rows.selected_background)
+        } else if state.selected {
             Some(rows.cursor_background)
         } else if state.pressed {
             // The rows vocabulary has no pressed slot; the neutral role's
@@ -205,8 +221,19 @@ pub fn list_row<R>(
             None
         };
         if let Some(fill) = fill {
-            ui.painter()
-                .rect_filled(rect, radius::NONE, to_color32(fill));
+            if row.wash {
+                // The wash and its rule are one shape, the rule inside the row.
+                ui.painter().rect(
+                    rect,
+                    radius::NONE,
+                    to_color32(fill),
+                    egui::Stroke::new(1.0, to_color32(rows.selected_border)),
+                    egui::StrokeKind::Inside,
+                );
+            } else {
+                ui.painter()
+                    .rect_filled(rect, radius::NONE, to_color32(fill));
+            }
         }
         if state.selected {
             let bar = Rect::from_min_size(rect.min, egui::vec2(ROW_BAR_WIDTH, rect.height()));

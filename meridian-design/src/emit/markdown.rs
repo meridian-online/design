@@ -705,6 +705,8 @@ pub fn tokens_md() -> String {
         "--m-keycap-height-in-control",
         "--m-keycap-inset-in-control",
         "--m-gutter-lane",
+        "--m-gutter-pad",
+        "--m-gutter-edge-stroke",
         "--m-step-mark-cell",
         "--m-step-mark",
         "--m-step-mark-stroke",

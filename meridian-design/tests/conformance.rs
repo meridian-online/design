@@ -36,6 +36,8 @@ fn tokens_css_carries_the_geometry_layer() {
         ("--m-keycap-height-in-control", "16px".to_string()),
         ("--m-keycap-inset-in-control", "4px".to_string()),
         ("--m-gutter-lane", "12px".to_string()),
+        ("--m-gutter-pad", "5px".to_string()),
+        ("--m-gutter-edge-stroke", "1.25px".to_string()),
         ("--m-step-mark-cell", "24px".to_string()),
         ("--m-step-mark", "7px".to_string()),
         ("--m-step-mark-stroke", "1.5px".to_string()),
