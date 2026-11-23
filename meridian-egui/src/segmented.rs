@@ -207,8 +207,8 @@ pub fn segmented(ui: &mut egui::Ui, control: Segmented<'_>) -> SegmentedResponse
     let room_x = ui.max_rect().x_range();
     // Only the labels give way, the longest first: the room the fixed parts
     // leave is shared out by a cap on label width, so a short label stays whole.
-    // Below the fixed parts the box keeps them and is clipped at the trailing
-    // edge.
+    // Below the fixed parts the box keeps them and is clipped at both edges of
+    // its room, taking no pointer past them.
     let cap = label_cap(&sizes, room);
     let widths: Vec<f32> = sizes.iter().map(|(f, l)| f + l.min(cap)).collect();
 

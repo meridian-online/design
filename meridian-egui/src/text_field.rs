@@ -153,8 +153,8 @@ pub fn text_field(ui: &mut egui::Ui, field: TextField<'_>) -> TextFieldResponse 
     let gap = t.space[2];
     let radius = t.radius_control.round() as u8;
 
-    let field_rect = {
-        ui.scope(|ui| {
+    let (field_rect, box_response, message) = ui
+        .scope(|ui| {
             ui.spacing_mut().item_spacing.y = t.space[1];
             let sense = if off { Sense::hover() } else { Sense::CLICK };
             // Clickable but not focusable: the edit takes the keys, not the box.
@@ -177,9 +177,7 @@ pub fn text_field(ui: &mut egui::Ui, field: TextField<'_>) -> TextFieldResponse 
             });
             (rect, box_response, message)
         })
-        .inner
-    };
-    let (field_rect, box_response, message) = (field_rect.0, field_rect.1, field_rect.2);
+        .inner;
 
     // The box is painted under the text edit, once the state is known.
     let slot = ui.painter().add(Shape::Noop);

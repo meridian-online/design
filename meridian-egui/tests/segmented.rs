@@ -901,14 +901,24 @@ fn the_part_of_a_clipped_option_past_the_room_takes_no_hover_and_no_click() {
         h.run();
     }
     assert_eq!(h.state().clicked, Some(0), "the harness cannot click");
-    // The unavailable option's reported rect stays inside the room.
-    h.event(egui::Event::PointerMoved(
-        second.left_center() + egui::vec2(20.0, 0.0),
-    ));
+    // The unavailable option's reported rect stays inside the room: hover a
+    // point inside both the option and the room.
+    assert!(
+        second.left() < edge,
+        "the unavailable option starts past the room: the check is idle"
+    );
+    let within = egui::pos2(
+        (second.left() + edge.min(second.right())) / 2.0,
+        second.center().y,
+    );
+    h.state_mut().pointed = None;
+    h.event(egui::Event::PointerMoved(within));
     h.run();
-    if let Some((_, r)) = h.state().pointed {
-        assert!(r.right() <= edge + 0.5, "{r:?} past {edge}");
-    }
+    let (_, r) = h
+        .state()
+        .pointed
+        .expect("hovering the unavailable option inside the room reports it");
+    assert!(r.right() <= edge + 0.5, "{r:?} past {edge}");
 }
 
 #[test]
