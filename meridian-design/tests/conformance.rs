@@ -47,6 +47,7 @@ fn tokens_css_carries_the_geometry_layer() {
         ("--m-popover-width", "240px".to_string()),
         ("--m-label-size", "11px".to_string()),
         ("--m-label-tracking", "0.06em".to_string()),
+        ("--m-label-transform", "uppercase".to_string()),
     ] {
         assert!(
             css.contains(&format!("{name}: {value};")),

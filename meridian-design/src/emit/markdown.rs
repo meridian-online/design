@@ -719,7 +719,7 @@ pub fn tokens_md() -> String {
     sheet.line("## Type and motion");
     sheet.line("");
     sheet.line(
-        "Two faces and two sizes: this is a dense data system, not a marketing site, \
+        "Two faces and three sizes (body, chart label, section label): this is a dense data system, not a marketing site, \
          and the display face is deliberately absent from the app artefact. The motion \
          budget is two numbers because `guidelines/speed.md` allows two — a spatial \
          move and a state change — and nothing decorative.",

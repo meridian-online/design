@@ -120,7 +120,8 @@ fn geometry(css: &mut String) {
     use crate::radius;
     use crate::spacing::*;
     use crate::typography::{
-        CHART_LABEL_SIZE, LABEL_SIZE, LABEL_TRACKING_EM, MONO_FAMILY, SANS_FAMILY, UI_SIZE,
+        CHART_LABEL_SIZE, LABEL_SIZE, LABEL_TRACKING_EM, LABEL_UPPERCASE, MONO_FAMILY, SANS_FAMILY,
+        UI_SIZE,
     };
 
     decl(css, "font-sans", &format!("\"{SANS_FAMILY}\""));
@@ -129,6 +130,11 @@ fn geometry(css: &mut String) {
     decl(css, "font-size-chart", &px(CHART_LABEL_SIZE));
     decl(css, "label-size", &px(LABEL_SIZE));
     decl(css, "label-tracking", &format!("{LABEL_TRACKING_EM}em"));
+    decl(
+        css,
+        "label-transform",
+        if LABEL_UPPERCASE { "uppercase" } else { "none" },
+    );
 
     decl(css, "radius-none", &px(radius::NONE));
     decl(css, "radius-chip", &px(radius::CHIP));

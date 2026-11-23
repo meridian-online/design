@@ -338,7 +338,7 @@ Stated once, in logical pixels, and mode-invariant throughout. The spacing ladde
 
 ## Type and motion
 
-Two faces and two sizes: this is a dense data system, not a marketing site, and the display face is deliberately absent from the app artefact. The motion budget is two numbers because `guidelines/speed.md` allows two — a spatial move and a state change — and nothing decorative.
+Two faces and three sizes (body, chart label, section label): this is a dense data system, not a marketing site, and the display face is deliberately absent from the app artefact. The motion budget is two numbers because `guidelines/speed.md` allows two — a spatial move and a state change — and nothing decorative.
 
 | Token | Value |
 |---|---|
@@ -348,6 +348,7 @@ Two faces and two sizes: this is a dense data system, not a marketing site, and 
 | `--m-font-size-chart` | `11px` |
 | `--m-label-size` | `11px` |
 | `--m-label-tracking` | `0.06em` |
+| `--m-label-transform` | `uppercase` |
 | `--m-motion-spatial` | `150ms` |
 | `--m-motion-animation-time` | `0.12s` |
 

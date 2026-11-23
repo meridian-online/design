@@ -162,10 +162,24 @@ mod tests {
         assert_eq!(TOKENS.radius_control, radius::CONTROL);
         assert_eq!(TOKENS.radius_panel, radius::PANEL);
         assert_eq!(TOKENS.modal_width_default, spacing::MODAL_WIDTH_DEFAULT);
-        assert_eq!(TOKENS.band_height, spacing::BAND_HEIGHT);
         assert_eq!(TOKENS.popover_width, spacing::POPOVER_WIDTH);
+        assert_eq!(TOKENS.band_height, spacing::BAND_HEIGHT);
         assert_eq!(TOKENS.keycap_height, control::KEYCAP_HEIGHT);
+        assert_eq!(
+            TOKENS.keycap_height_in_control,
+            control::KEYCAP_HEIGHT_IN_CONTROL
+        );
+        assert_eq!(
+            TOKENS.keycap_inset_in_control,
+            control::KEYCAP_INSET_IN_CONTROL
+        );
+        assert_eq!(TOKENS.gutter_lane, control::GUTTER_LANE);
+        assert_eq!(TOKENS.step_mark_cell, control::STEP_MARK_CELL);
+        assert_eq!(TOKENS.step_mark, control::STEP_MARK);
         assert_eq!(TOKENS.step_mark_stroke, control::STEP_MARK_STROKE);
+        assert_eq!(TOKENS.timeline_width, control::TIMELINE_WIDTH);
+        assert_eq!(TOKENS.timeline_bar_height, control::TIMELINE_BAR_HEIGHT);
+        assert_eq!(TOKENS.duration_width, control::DURATION_WIDTH);
         assert_eq!(TOKENS.dot, control::DOT);
         assert_eq!(TOKENS.label_size, typography::LABEL_SIZE);
         assert_eq!(TOKENS.label_tracking_em, typography::LABEL_TRACKING_EM);

@@ -301,6 +301,7 @@
   --m-font-size-chart: 11px;
   --m-label-size: 11px;
   --m-label-tracking: 0.06em;
+  --m-label-transform: uppercase;
   --m-radius-none: 0px;
   --m-radius-chip: 2px;
   --m-radius-control: 3px;
