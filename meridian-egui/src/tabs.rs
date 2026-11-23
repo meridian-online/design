@@ -92,7 +92,9 @@ struct Word {
 /// [`TAB_BAR_WIDTH`] bar in [`semantic::Tabs::active_bar`] under it, over the
 /// rule — unless the caller passes an ink with [`LineTabs::bar_ink`]. Each word
 /// is padded by the spacing ladder on both sides, and every word sits on one
-/// baseline, cap height centred above the bar ([`cap_centred_galley_top`]).
+/// baseline, cap height centred on the strip as any row's label is
+/// ([`cap_centred_galley_top`]), so the words share a baseline with the buttons
+/// and other labels beside the strip.
 ///
 /// Each word is a tab node in the accessibility tree and the strip is the one
 /// tab-list node they sit inside; the open word reads selected.
@@ -145,9 +147,10 @@ pub fn line_tabs(ui: &mut egui::Ui, tabs: LineTabs<'_>) -> LineTabsResponse {
         );
         painter.rect_filled(rule, radius::NONE, to_color32(sem.borders.divider));
 
-        // The words sit above the bar, so the open tab's bar is not a line
-        // through its own text.
-        let centre_y = strip.top() + (strip.height() - TAB_BAR_WIDTH) / 2.0;
+        // Centred on the whole strip, as every label in a row is, so a strip
+        // beside a button shares its baseline. The bar is drawn under the word,
+        // in the room a 24 row leaves below a descender.
+        let centre_y = strip.center().y;
         for (i, word) in words.iter().enumerate() {
             if i == tabs.open {
                 let bar = Rect::from_min_max(

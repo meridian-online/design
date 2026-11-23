@@ -24,7 +24,7 @@ use egui_kittest::Harness;
 use meridian_design::colour::Rgba;
 use meridian_design::control::TAB_BAR_WIDTH;
 use meridian_design::semantic::semantic;
-use meridian_egui::{line_tabs, theme, LineTabs, LineTabsResponse, Mode, TOKENS};
+use meridian_egui::{button, line_tabs, theme, Button, LineTabs, LineTabsResponse, Mode, TOKENS};
 
 const EPS: f32 = 0.01;
 
@@ -525,6 +525,39 @@ fn every_word_in_a_strip_sits_on_one_baseline_descender_or_not() {
                     MIXED[0]
                 );
             }
+        }
+    }
+}
+
+/// A strip and a button side by side in one row, as a toolbar lays them out:
+/// the words and the button's label are one face at one size, and the strip and
+/// the button are both the 24 row, so they share one baseline. The sheet centres
+/// a line tab's word in its whole row; the bar is drawn under it and does not
+/// lift it.
+#[test]
+fn a_strip_s_words_share_a_baseline_with_a_button_beside_it() {
+    for mode in MODES {
+        let mut harness = Harness::builder()
+            .with_size(egui::vec2(600.0, 120.0))
+            .build_ui(move |ui| {
+                theme::apply(ui.ctx(), mode);
+                ui.horizontal(|ui| {
+                    ui.allocate_ui(egui::vec2(300.0, TOKENS.rows[1]), |ui| {
+                        line_tabs(ui, LineTabs::new(&MIXED, 0));
+                    });
+                    button(ui, Button::new("Rows"));
+                });
+            });
+        harness.run();
+        let lines = common::text_baselines(&harness);
+        assert_eq!(lines.len(), MIXED.len() + 1, "{mode:?}: {lines:?}");
+        let (label, at) = lines.last().expect("the button's label");
+        assert_eq!(label, "Rows");
+        for (text, y) in &lines[..MIXED.len()] {
+            assert!(
+                near(*y, *at),
+                "{mode:?}: the tab {text:?} sits on a baseline at {y}, the button's label at {at}"
+            );
         }
     }
 }
