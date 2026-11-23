@@ -15,14 +15,15 @@
 //! - not run: the ring and the caller's `label` in muted.
 //!
 //! `done` past `total` fills the bar, and a `total` of zero draws the track
-//! alone. Every word is the caller's. The area is clickable: under the pointer
+//! alone. Every word is the caller's except the "n of m" count and the state word
+//! read to a screen reader, which are the component's. The area is clickable: under the pointer
 //! it takes the neutral hover fill at the control corner, and with keyboard
 //! focus the ring at the same corner. Its accessibility node is a `Status`
 //! named by its words and the mark's state word, holding a `ProgressIndicator`
 //! child while running (accesskit's name for what ARIA calls a
 //! progress bar).
 //!
-//! [`teaching_message`] is the one piece of copy a component owns: the command
+//! [`teaching_message`] owns one phrase of its own, "next time, press": the command
 //! in primary, `" · next time, press"` in secondary, `SPACE_3`, and the
 //! keystroke on a 21 key, on one line in a 24 row.
 //!
@@ -48,7 +49,8 @@ use crate::widgets::{cap_centred_galley_top, focus_ring, medium_family, mode_of}
 use crate::MeridianUi;
 use meridian_design::marks::word;
 
-/// What the activity area says. Every string is the caller's.
+/// What the activity area says. Every string here is the caller's; the area adds
+/// only the "n of m" count and, for a screen reader, the mark's state word.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RunStatus<'a> {
     /// A run is under way: the step running, if known, and how many steps are

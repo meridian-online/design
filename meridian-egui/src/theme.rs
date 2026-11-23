@@ -177,9 +177,11 @@ pub fn meridian_visuals(mode: Mode) -> egui::Visuals {
     w.open.bg_stroke = egui::Stroke::new(1.0, c(p.gray[6]));
     w.open.fg_stroke = egui::Stroke::new(1.0, c(p.gray[11]));
 
-    // Box model: corner radii from the radius ladder. Controls (buttons, inputs,
-    // menu items) take `CONTROL`; containers (windows, menus) take
-    // `PANEL`. Left at egui's defaults before this bridge governed the box model.
+    // Box model: corner radii from the radius ladder. egui's own controls
+    // (buttons, inputs, and the selectable labels and menu buttons it draws with
+    // the same widget visuals) take `CONTROL`; containers (windows, menus) take
+    // `PANEL`. A row built from a selectable label therefore rounds, so rows
+    // are drawn with `list_row` or `menu_item`, or set a zero corner (ADR 0013). Left at egui's defaults before this bridge governed the box model.
     let control_radius = egui::CornerRadius::same(radius::CONTROL.round() as u8);
     for wv in [
         &mut w.noninteractive,

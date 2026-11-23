@@ -85,6 +85,8 @@ The cap counted components and could not say which ones existed or why. A review
 
 **Defined:** a variant parameter is an argument that selects among looks of one component, such as a weight or a rung. Content (an icon, a keycap, a count) and state (unavailable, selected, open) are not variants. By that reading `button` has two, its weight and its rung, and no component here has three.
 
+**Defined:** for the call-sites door, a shape the consumer builds by hand at three or more independent places counts as three call sites for the component that replaces it. The owner admitted `button` and `text_field` on that reading, earned by Brightfield's 32 hand-built buttons and 14 hand-built text inputs.
+
 The inventory has three kinds of row, so that the test covers the crate's whole public surface:
 
 - **component**: its door, and its call sites or its requirement in plain words. The components that existed before the inventory are entered as admitted under this ADR, each with the Brightfield surfaces that call it.

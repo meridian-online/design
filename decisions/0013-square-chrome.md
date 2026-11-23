@@ -69,3 +69,5 @@ Square at every right angle was ruled for a look that was drawn and driven as a 
 The keycap is now one rounded box with its hairline on three sides and a 2px foot that follows the box's bottom corners.
 
 Consumers read the radius tokens in their own painters, some of them for row fills and selection washes that were square only because the rungs were 0. Each consumer therefore moves its row fills, bars and edge-to-edge bands to `radius::NONE` (`--m-radius-none` on the web) in the same change as its bump.
+
+A second path reads no token, so a search for the rungs will not find it. `theme::apply` gives egui's own widgets the control corner, and egui's `selectable_label`, `selectable_value` and stock menu buttons draw their fills with it. A row built from those widgets would round its hover and selection fills by 3 after the bump. The consumer redraws such a row with `list_row` or `menu_item`, or sets `corner_radius(radius::NONE)` on it; at the bump, a selectable row's selected fill should paint with a zero corner.
