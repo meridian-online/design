@@ -297,6 +297,12 @@ fn semantic_block(css: &mut String, dark: bool) {
     decl(css, "slider-track", &s.feedback.slider_track.hex());
     decl(css, "slider-thumb", &s.feedback.slider_thumb.hex());
 
+    decl(css, "mark-not-run", &s.marks.not_run.hex());
+    decl(css, "mark-running", &s.marks.running.hex());
+    decl(css, "mark-ok", &s.marks.ok.hex());
+    decl(css, "mark-failed", &s.marks.failed.hex());
+    decl(css, "mark-stale", &s.marks.stale.hex());
+
     let c = &s.containers;
     decl(css, "sidebar-bg", &c.sidebar_background.hex());
     decl(css, "sidebar-border", &c.sidebar_border.hex());

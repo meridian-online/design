@@ -497,3 +497,29 @@ fn a_chrome_tint_leaves_the_ink_over_it_legible() {
         }
     }
 }
+
+/// The step marks are drawn on the sidebar and on the cursor and selected
+/// rows of the step list, so each ink must clear the non-text floor there in
+/// both modes.
+#[test]
+fn step_mark_inks_clear_the_non_text_floor_on_chrome() {
+    use meridian_design::marks::{glyph, STEP_MARKS};
+    for (dark, name) in [(false, "light"), (true, "dark")] {
+        let s = semantic(dark);
+        let grounds = [
+            ("sidebar", s.surfaces.sidebar),
+            ("row-cursor", s.rows.cursor_background),
+            ("row-selected", s.rows.selected_background),
+        ];
+        for m in STEP_MARKS {
+            let ink = glyph(m, dark).ink;
+            for (gname, g) in grounds {
+                let c = contrast(ink, g);
+                assert!(
+                    c >= NON_TEXT,
+                    "{name} {m:?} ink on {gname}: {c:.2}:1 is under {NON_TEXT}:1"
+                );
+            }
+        }
+    }
+}

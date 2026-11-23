@@ -253,6 +253,11 @@
   --m-progress-bar: #3e6d8d;
   --m-slider-track: #dcdad8;
   --m-slider-thumb: #3e6d8d;
+  --m-mark-not-run: #7f7a75;
+  --m-mark-running: #4b7a9b;
+  --m-mark-ok: #218a45;
+  --m-mark-failed: #c9302d;
+  --m-mark-stale: #9e6300;
   --m-sidebar-bg: #f8f7f7;
   --m-sidebar-border: #d4d2cf;
   --m-title-bar-bg: #fbfaf9;
@@ -615,6 +620,11 @@
   --m-progress-bar: #466c87;
   --m-slider-track: #32302f;
   --m-slider-thumb: #466c87;
+  --m-mark-not-run: #7e7a75;
+  --m-mark-running: #8fc1e4;
+  --m-mark-ok: #218a45;
+  --m-mark-failed: #ff9083;
+  --m-mark-stale: #da950b;
   --m-sidebar-bg: #0d0c0c;
   --m-sidebar-border: #3c3a38;
   --m-title-bar-bg: #0e0c0b;

@@ -9,12 +9,15 @@
 //! across, drawn with a [`STEP_MARK_STROKE`](crate::control::STEP_MARK_STROKE)
 //! stroke, in a [`STEP_MARK_CELL`](crate::control::STEP_MARK_CELL) cell.
 //!
-//! The status inks (ok, failed, stale) are the one [`STATUS`] set in both
-//! modes, as the emitter writes them. Not run and running follow the theme.
+//! Each ink is a semantic token, [`crate::semantic::MarkInks`], emitted as
+//! `--m-mark-*`. They are the control border (not run), the focus ink
+//! (running) and the status inks (ok, failed, stale), except where that ink
+//! misses the 3:1 floor on the sidebar or the cursor and selected rows: light
+//! not run takes gray step 10, light stale takes amber step 11 and dark failed
+//! takes red step 11. Ok is the same status green in both modes.
 
 use crate::colour::Rgba;
 use crate::semantic::semantic;
-use crate::viz::STATUS;
 
 /// A run state of a step.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -63,17 +66,17 @@ pub struct MarkGlyph {
 
 /// The shape and ink of `mark` in the light or dark theme.
 pub fn glyph(mark: StepMark, dark: bool) -> MarkGlyph {
-    let s = semantic(dark);
+    let m = &semantic(dark).marks;
     let (shape, ink) = match mark {
-        StepMark::NotRun => (MarkShape::Ring, s.borders.control),
-        StepMark::Running => (MarkShape::HalfDisc, s.borders.focus),
-        StepMark::Ok => (MarkShape::Disc, STATUS.good),
-        StepMark::Failed => (MarkShape::Diamond, STATUS.critical),
-        StepMark::Stale => (MarkShape::RingWithCentre, STATUS.warning),
+        StepMark::NotRun => (MarkShape::Ring, m.not_run),
+        StepMark::Running => (MarkShape::HalfDisc, m.running),
+        StepMark::Ok => (MarkShape::Disc, m.ok),
+        StepMark::Failed => (MarkShape::Diamond, m.failed),
+        StepMark::Stale => (MarkShape::RingWithCentre, m.stale),
     };
     let fill = match shape {
         MarkShape::Disc | MarkShape::Diamond => Some(ink),
-        _ => None,
+        MarkShape::Ring | MarkShape::HalfDisc | MarkShape::RingWithCentre => None,
     };
     MarkGlyph { shape, ink, fill }
 }
@@ -92,7 +95,7 @@ pub fn word(mark: StepMark) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::semantic::semantic;
+    use crate::scales::{AMBER_LIGHT, GRAY_LIGHT, RED_DARK};
     use crate::viz::STATUS;
 
     #[test]
@@ -114,11 +117,17 @@ mod tests {
     fn each_ink_is_the_named_token_in_both_modes() {
         for dark in [false, true] {
             let s = semantic(dark);
-            assert_eq!(glyph(StepMark::NotRun, dark).ink, s.borders.control);
-            assert_eq!(glyph(StepMark::Running, dark).ink, s.borders.focus);
-            assert_eq!(glyph(StepMark::Ok, dark).ink, STATUS.good);
-            assert_eq!(glyph(StepMark::Failed, dark).ink, STATUS.critical);
-            assert_eq!(glyph(StepMark::Stale, dark).ink, STATUS.warning);
+            let ink = |m| glyph(m, dark).ink;
+            assert_eq!(ink(StepMark::Running), s.borders.focus);
+            assert_eq!(ink(StepMark::Ok), STATUS.good);
+            let (not_run, failed, stale) = if dark {
+                (s.borders.control, RED_DARK[10], STATUS.warning)
+            } else {
+                (GRAY_LIGHT[9], STATUS.critical, AMBER_LIGHT[10])
+            };
+            assert_eq!(ink(StepMark::NotRun), not_run);
+            assert_eq!(ink(StepMark::Failed), failed);
+            assert_eq!(ink(StepMark::Stale), stale);
         }
     }
 

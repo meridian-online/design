@@ -256,6 +256,11 @@ Named parts that earn their own slots because two consumers both need them and n
 | `--m-progress-bar` | `#3e6d8d` | `#466c87` |
 | `--m-slider-track` | `#dcdad8` | `#32302f` |
 | `--m-slider-thumb` | `#3e6d8d` | `#466c87` |
+| `--m-mark-not-run` | `#7f7a75` | `#7e7a75` |
+| `--m-mark-running` | `#4b7a9b` | `#8fc1e4` |
+| `--m-mark-ok` | `#218a45` | `#218a45` |
+| `--m-mark-failed` | `#c9302d` | `#ff9083` |
+| `--m-mark-stale` | `#9e6300` | `#da950b` |
 | `--m-sidebar-bg` | `#f8f7f7` | `#0d0c0c` |
 | `--m-sidebar-border` | `#d4d2cf` | `#3c3a38` |
 | `--m-title-bar-bg` | `#fbfaf9` | `#0e0c0b` |

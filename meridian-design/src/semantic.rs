@@ -354,6 +354,26 @@ pub struct Feedback {
     pub slider_thumb: Rgba,
 }
 
+/// The ink of each step mark ([`crate::marks`]), as drawn on chrome.
+///
+/// Every ink clears the 3:1 non-text floor on the sidebar and on the cursor
+/// and selected rows, in both modes (`tests/chrome_gate.rs`). Where a state's
+/// usual ink does not, the mark takes the next step along that ink's own
+/// scale rather than a new hue: not run in light (step 10 of the gray scale,
+/// not [`Borders::control`]'s step 9), stale in light (amber step 11, not
+/// [`crate::viz::STATUS`]'s warning) and failed in dark (red step 11, not its
+/// critical). [`Borders::control`] and [`crate::viz::STATUS`] themselves are
+/// unchanged; other things read them.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct MarkInks {
+    pub not_run: Rgba,
+    /// [`Borders::focus`].
+    pub running: Rgba,
+    pub ok: Rgba,
+    pub failed: Rgba,
+    pub stale: Rgba,
+}
+
 /// Named containers that are not roles and not rows.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Containers {
@@ -387,6 +407,7 @@ pub struct Semantic {
     pub editor: Editor,
     pub drag_drop: DragDrop,
     pub feedback: Feedback,
+    pub marks: MarkInks,
     pub containers: Containers,
 }
 
@@ -611,6 +632,13 @@ pub const LIGHT: Semantic = {
             slider_track: g[4],
             slider_thumb: m[9],
         },
+        marks: MarkInks {
+            not_run: g[9],
+            running: borders.focus,
+            ok: STATUS.good,
+            failed: STATUS.critical,
+            stale: AMBER_LIGHT[10],
+        },
         containers: Containers {
             sidebar_background: g[0],
             sidebar_border: borders.subtle,
@@ -818,6 +846,13 @@ pub const DARK: Semantic = {
             progress_bar: m[9],
             slider_track: g[4],
             slider_thumb: m[9],
+        },
+        marks: MarkInks {
+            not_run: borders.control,
+            running: borders.focus,
+            ok: STATUS.good,
+            failed: r[10],
+            stale: STATUS.warning,
         },
         containers: Containers {
             sidebar_background: g[0],
