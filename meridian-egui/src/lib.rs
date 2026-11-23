@@ -56,6 +56,7 @@ pub mod overlay;
 pub mod picker;
 pub mod popover;
 pub mod query;
+pub mod ribbon;
 pub mod section;
 pub mod segmented;
 pub mod tabs;
@@ -73,6 +74,7 @@ pub use picker::{
 };
 pub use popover::{Anchor, Popover, PopoverResponse};
 pub use query::{query_line, QueryLineResponse, PROMPT_GLYPH};
+pub use ribbon::{key_tip, ribbon_tabs, RibbonTab, RibbonTabs, RibbonTabsResponse, TabPick};
 pub use section::{section, Section, SectionResponse};
 pub use segmented::{segmented, Segmented, SegmentedOption, SegmentedResponse};
 pub use tabs::{line_tabs, LineTabs, LineTabsResponse};

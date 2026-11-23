@@ -41,7 +41,7 @@ pub fn mode_of(ui: &egui::Ui) -> Mode {
 /// at frame boundaries), so the very first frame after `theme::apply` would
 /// panic on the named family. Falling back to the default proportional face
 /// for that one frame keeps the primitive safe to draw unconditionally.
-fn medium_family(ui: &egui::Ui) -> egui::FontFamily {
+pub(crate) fn medium_family(ui: &egui::Ui) -> egui::FontFamily {
     let family = egui::FontFamily::Name("Inter-Medium".into());
     if ui.fonts(|fonts| fonts.definitions().families.contains_key(&family)) {
         family
