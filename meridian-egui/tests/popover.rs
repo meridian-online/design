@@ -560,3 +560,141 @@ fn esc_with_a_menu_and_its_submenu_open_closes_only_the_submenu() {
     h.run();
     assert!(h.state().menu_dismissed, "the next Esc closes the menu");
 }
+
+/// One frame carrying an Escape press and nothing else.
+fn esc_frame<S>(h: &mut Harness<'_, S>) {
+    h.event(egui::Event::Key {
+        key: egui::Key::Escape,
+        physical_key: Some(egui::Key::Escape),
+        pressed: true,
+        repeat: false,
+        modifiers: egui::Modifiers::NONE,
+    });
+    h.step();
+}
+
+#[test]
+fn an_esc_on_the_frame_after_a_submenu_closed_closes_its_menu() {
+    let mut h = stack_harness();
+    esc_frame(&mut h);
+    assert!(h.state().sub_dismissed, "the submenu takes the first Esc");
+    assert!(!h.state().menu_dismissed);
+    // The very next frame: the submenu is gone, the menu is on top.
+    esc_frame(&mut h);
+    assert!(h.state().menu_dismissed, "the menu takes the second Esc");
+}
+
+struct OverModal {
+    menu_open: bool,
+    sub_open: bool,
+    menu_dismissed: bool,
+    sub_dismissed: bool,
+    modal_dismissed: bool,
+    item: Rect,
+}
+
+/// A menu, and a submenu while `sub_open`, shown ahead of a modal beneath.
+fn over_modal_harness(sub_open: bool) -> Harness<'static, OverModal> {
+    let mut h = Harness::builder()
+        .with_size(vec2(600.0, 400.0))
+        .build_ui_state(
+            |ui, s: &mut OverModal| {
+                theme::apply(ui.ctx(), Mode::Light);
+                let ctx = ui.ctx().clone();
+                if s.menu_open {
+                    let r = Popover::show_menu(
+                        &ctx,
+                        "menu",
+                        rect_at(20.0, 20.0),
+                        Anchor::Below,
+                        |ui| {
+                            s.item = ui
+                                .allocate_exact_size(
+                                    vec2(ui.available_width(), 30.0),
+                                    egui::Sense::click(),
+                                )
+                                .0;
+                        },
+                    );
+                    if r.dismissed {
+                        s.menu_dismissed = true;
+                        s.menu_open = false;
+                    }
+                }
+                if s.sub_open {
+                    let r = Popover::show_menu(&ctx, "sub", s.item, Anchor::Beside, |ui| {
+                        ui.label("sub");
+                    });
+                    if r.dismissed {
+                        s.sub_dismissed = true;
+                        s.sub_open = false;
+                    }
+                }
+                let r = meridian_egui::ModalLayer::show(
+                    &ctx,
+                    "m",
+                    &meridian_egui::ModalChrome::new(),
+                    |ui| ui.label("modal"),
+                );
+                s.modal_dismissed |= r.dismissed;
+            },
+            OverModal {
+                menu_open: true,
+                sub_open: false,
+                menu_dismissed: false,
+                sub_dismissed: false,
+                modal_dismissed: false,
+                item: Rect::NOTHING,
+            },
+        );
+    h.run();
+    if sub_open {
+        h.state_mut().sub_open = true;
+        h.run();
+    }
+    h
+}
+
+#[test]
+fn one_esc_with_a_menu_over_a_modal_closes_the_menu_and_not_the_modal() {
+    let mut h = over_modal_harness(false);
+    esc_frame(&mut h);
+    assert!(h.state().menu_dismissed, "the menu takes the Esc");
+    h.run();
+    assert!(!h.state().modal_dismissed, "the modal never sees it");
+}
+
+#[test]
+fn an_esc_as_the_caller_closes_a_submenu_closes_the_menu_and_not_the_modal() {
+    let mut h = over_modal_harness(true);
+    // The caller closes the submenu itself, on the frame the Esc arrives: the
+    // menu, now the highest popover shown, takes it, a frame late.
+    h.state_mut().sub_open = false;
+    esc_frame(&mut h);
+    h.step();
+    assert!(h.state().menu_dismissed, "the menu takes the Esc");
+    assert!(!h.state().sub_dismissed);
+    h.run();
+    assert!(!h.state().modal_dismissed, "the modal never sees it");
+}
+
+#[test]
+fn an_esc_on_the_frame_a_menu_and_its_submenu_open_closes_only_the_submenu() {
+    let mut h = over_modal_harness(false);
+    h.state_mut().menu_dismissed = false;
+    // Close the menu, then open the menu and the submenu together on the frame
+    // the Esc arrives: neither was shown in the previous pass.
+    h.state_mut().menu_open = false;
+    h.run();
+    h.state_mut().menu_open = true;
+    h.state_mut().sub_open = true;
+    esc_frame(&mut h);
+    h.step();
+    assert!(
+        h.state().sub_dismissed,
+        "the submenu, shown last, takes the Esc"
+    );
+    assert!(!h.state().menu_dismissed, "the menu leaves it");
+    h.run();
+    assert!(!h.state().modal_dismissed, "the modal never sees it");
+}

@@ -14,13 +14,27 @@
 //! keeps that frame invisible, and the next frame flips and clamps with the
 //! measured size.
 //!
-//! **Dismissal.** Escape and a press outside are read from the pointer's
-//! interact position: with no pointer there is no outside dismissal. A press
-//! on another popover's layer (a submenu over its menu) is not outside. Escape
-//! closes only the topmost dismissable popover, "topmost" being the one shown
-//! last in the previous frame (egui keeps its layer order private); the others
-//! leave it in the input queue. A reason is never dismissable and never reads
-//! the input queue, so Escape reaches whatever is underneath it.
+//! **Dismissal.** A press outside is read from the pointer's interact
+//! position: with no pointer there is no outside dismissal. A press on another
+//! popover's layer (a submenu over its menu) is not outside.
+//!
+//! Escape closes only the topmost dismissable popover; no other reports it.
+//! egui keeps its layer order private, so "topmost" is read from the order
+//! popovers are shown in. The one expected on top is the last dismissable
+//! popover shown in the previous pass that did not report `dismissed` there
+//! (one that did is being closed by its caller), and it reports the Escape as
+//! soon as it is shown. A dismissable popover shown before it in the pass
+//! takes the key out of the queue and hands it on, so a modal or picker shown
+//! after them never sees it.
+//!
+//! When the expected popover is not shown this pass (its caller closed it for
+//! another reason), or none was expected (each was opened this pass), the
+//! Escape goes to the last dismissable popover shown this pass. Which one that
+//! is is known only once the pass ends, so the popover left holding the key
+//! reports `dismissed` on the next pass, one frame late.
+//!
+//! A reason is never dismissable and never reads the input queue, so Escape
+//! reaches whatever is underneath it.
 
 use std::hash::Hash;
 
@@ -47,9 +61,11 @@ pub enum Anchor {
 pub struct PopoverResponse<R> {
     /// The body closure's return value.
     pub inner: R,
-    /// Escape was pressed, or a primary press landed outside the card and
-    /// outside the anchor (a press on the anchor is the caller's toggle). The
-    /// caller stops showing the popover in response.
+    /// Escape was pressed with this popover topmost (on the pass after the
+    /// press, when which popover was topmost was known only once the pass
+    /// ended; see the module doc), or a primary press landed outside the card
+    /// and outside the anchor (a press on the anchor is the caller's toggle).
+    /// The caller stops showing the popover in response.
     pub dismissed: bool,
 }
 
@@ -91,13 +107,28 @@ enum Form {
     Reason,
 }
 
+/// One popover shown in a pass.
+#[derive(Clone, Copy)]
+struct Shown {
+    layer: LayerId,
+    dismissable: bool,
+    /// It reported `dismissed` in that pass, so its caller is closing it.
+    dismissed: bool,
+}
+
 /// The popover layers shown this pass and the last, in the order they were
-/// shown, each with whether it is dismissable.
+/// shown, and the popover holding an Escape that is still to be reported.
 #[derive(Clone, Default)]
 struct Registry {
     pass: u64,
-    prev: Vec<(LayerId, bool)>,
-    cur: Vec<(LayerId, bool)>,
+    prev: Vec<Shown>,
+    cur: Vec<Shown>,
+    /// The popover that held an Escape when the previous pass ended: it
+    /// reports `dismissed` when it is shown this pass.
+    prev_held: Option<LayerId>,
+    /// The popover holding an Escape this pass, waiting to learn whether a
+    /// popover shown after it is higher.
+    held: Option<LayerId>,
 }
 
 fn registry<T>(ctx: &egui::Context, f: impl FnOnce(&mut Registry) -> T) -> T {
@@ -106,7 +137,16 @@ fn registry<T>(ctx: &egui::Context, f: impl FnOnce(&mut Registry) -> T) -> T {
     ctx.data_mut(|d| {
         let reg = d.get_temp_mut_or_default::<Registry>(key);
         if reg.pass != now {
+            // What was recorded belongs to the previous pass only if that is
+            // the pass it was recorded in: a pass that showed no popover
+            // never opened the registry.
+            let previous = reg.pass + 1 == now;
             reg.prev = std::mem::take(&mut reg.cur);
+            reg.prev_held = reg.held.take();
+            if !previous {
+                reg.prev.clear();
+                reg.prev_held = None;
+            }
             reg.pass = now;
         }
         f(reg)
@@ -166,18 +206,32 @@ fn show_card<R>(
                 .inner
         });
 
+    let layer = area.response.layer_id;
     if !dismissable {
-        registry(ctx, |r| r.cur.push((area.response.layer_id, false)));
+        registry(ctx, |r| {
+            r.cur.push(Shown {
+                layer,
+                dismissable: false,
+                dismissed: false,
+            });
+        });
         return (area.response, area.inner, false);
     }
-    let layer = area.response.layer_id;
-    let topmost = registry(ctx, |r| {
-        r.cur.push((layer, true));
-        r.prev
+    // The popover expected on top: the last dismissable one shown in the
+    // previous pass whose caller was not told to close it.
+    let (expected, late) = registry(ctx, |r| {
+        let expected = r
+            .prev
             .iter()
             .rev()
-            .find(|(_, d)| *d)
-            .is_none_or(|(l, _)| *l == layer)
+            .find(|e| e.dismissable && !e.dismissed)
+            .map(|e| e.layer);
+        r.cur.push(Shown {
+            layer,
+            dismissable: true,
+            dismissed: false,
+        });
+        (expected, r.prev_held == Some(layer))
     });
     let card = area.response.rect;
     let pressed = ctx.input(|i| {
@@ -189,11 +243,36 @@ fn show_card<R>(
     let outside = pressed.is_some_and(|p| {
         let on_popover = ctx
             .layer_id_at(p)
-            .is_some_and(|l| registry(ctx, |r| r.prev.iter().chain(&r.cur).any(|(x, _)| *x == l)));
+            .is_some_and(|l| registry(ctx, |r| r.prev.iter().chain(&r.cur).any(|e| e.layer == l)));
         !card.contains(p) && !anchor.contains(p) && !on_popover
     });
-    let esc = topmost && ctx.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape));
-    (area.response, area.inner, esc || outside)
+    let consume = || ctx.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape));
+    let esc = if expected == Some(layer) {
+        // The topmost: it takes the Escape, from the queue or from a popover
+        // shown before it this pass that was holding it in case it did not
+        // show.
+        let held = registry(ctx, |r| r.held.take().is_some());
+        held || consume()
+    } else {
+        // Not expected on top, but it may be the highest shown this pass:
+        // hold the Escape, taking it from the queue or from a popover shown
+        // before it, until the pass shows whether one shown later is higher.
+        let held = registry(ctx, |r| r.held.is_some()) || consume();
+        if held {
+            registry(ctx, |r| r.held = Some(layer));
+            ctx.request_repaint();
+        }
+        false
+    };
+    let dismissed = esc || outside || late;
+    if dismissed {
+        registry(ctx, |r| {
+            if let Some(e) = r.cur.iter_mut().rev().find(|e| e.layer == layer) {
+                e.dismissed = true;
+            }
+        });
+    }
+    (area.response, area.inner, dismissed)
 }
 
 impl Popover {
