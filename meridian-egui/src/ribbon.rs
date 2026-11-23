@@ -249,8 +249,11 @@ pub fn ribbon_tabs(ui: &mut egui::Ui, tabs: RibbonTabs<'_>) -> RibbonTabsRespons
     if ui.is_rect_visible(strip) {
         paint(&list, strip, &cells, &sensed, divider);
     }
-    if tabs.key_tips {
-        for c in &cells {
+    // A tip floats on a layer of its own, so one is drawn only for a tab that
+    // lies wholly inside a strip that is on screen: a tab cut by the strip's
+    // edge takes no pointer and gets no tip.
+    if tabs.key_tips && ui.is_rect_visible(strip) {
+        for c in cells.iter().filter(|c| strip.contains_rect(c.rect)) {
             if let Some(k) = c.tab.keystroke {
                 key_tip(ui, c.rect, k);
             }
@@ -279,8 +282,6 @@ fn paint(
     let neutral = sem.role(Role::Neutral);
     let painter = ui.painter_at(strip);
     let corner = t.radius_control.round() as u8;
-    let none = radius::NONE.round() as u8;
-    debug_assert_eq!(none, 0);
 
     // The strip, then its rule along the foot. An open cell paints over the
     // rule below it.
@@ -324,9 +325,9 @@ fn paint(
                 );
             }
         } else if pressed {
-            painter.rect_filled(rect, CornerRadius::ZERO, c(neutral.background.active));
+            painter.rect_filled(rect, top_corners(corner), c(neutral.background.active));
         } else if cell.contextual {
-            painter.rect_filled(rect, CornerRadius::ZERO, maritime(dark, 3));
+            painter.rect_filled(rect, top_corners(corner), maritime(dark, 3));
         }
 
         // The ink: a contextual tab keeps its Maritime one when pointed at.
@@ -348,11 +349,7 @@ fn paint(
 
         if r.has_focus() {
             let ring = focus::ring_radius(t.radius_control).round() as u8;
-            let corners = if cell.open {
-                top_corners(ring)
-            } else {
-                CornerRadius::ZERO
-            };
+            let corners = top_corners(ring);
             focus_ring_corners(ui, rect, corners);
         }
     }
@@ -385,7 +382,7 @@ pub fn key_tip(ui: &egui::Ui, target: Rect, keystroke: &str) {
             .max_rect(Rect::from_min_size(at, size)),
     );
     tip.set_clip_rect(ctx.content_rect());
-    let (rect, response) = tip.allocate_exact_size(size, Sense::hover());
+    let (rect, response) = tip.allocate_exact_size(size, Sense::empty());
     response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, keystroke));
     let shadow = tip.visuals().popup_shadow;
     let chip = CornerRadius::same(radius::CHIP.round() as u8);

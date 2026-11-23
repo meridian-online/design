@@ -368,6 +368,25 @@ fn a_pressed_tab_takes_the_neutral_active_wash() {
             "{mode:?}: {:?} vs {r:?}",
             w[0].rect
         );
+        assert_eq!(w[0].radius, corners(CONTROL as u8, CONTROL as u8, 0, 0));
+    }
+}
+
+#[test]
+fn a_pressed_contextual_tab_shows_the_neutral_active_wash_not_its_maritime_one() {
+    for mode in MODES {
+        let n = semantic(mode.is_dark()).role(Role::Neutral).to_owned();
+        let (rects, h) = frame(
+            mode,
+            Spec::new(Some(TabPick::Stage(1))),
+            TabPick::Contextual,
+            Interact::Pressed,
+        );
+        let r = rect_of(&h, TabPick::Contextual);
+        let w = filled(&rects, ink(n.background.active));
+        assert_eq!(w.len(), 1, "{mode:?}: {rects:?}");
+        assert!(near_rect(w[0].rect, r));
+        assert!(filled(&rects, maritime(mode, 3)).is_empty(), "{mode:?}");
     }
 }
 
@@ -391,6 +410,8 @@ fn a_focused_tab_is_ringed_inside_its_edge() {
             })
             .unwrap_or_else(|| panic!("{mode:?}: no ring in {rects:?}"));
         assert!(near(ring.stroke.width, 2.0), "{ring:?}");
+        let ring_corner = meridian_design::focus::ring_radius(CONTROL).round() as u8;
+        assert_eq!(ring.radius, corners(ring_corner, ring_corner, 0, 0));
         // Nobody else is ringed.
         assert_eq!(
             rects
@@ -527,6 +548,7 @@ fn the_contextual_tab_follows_a_divider_and_wears_the_maritime_wash() {
         let wash = filled(&rects, maritime(mode, 3));
         assert_eq!(wash.len(), 1, "{mode:?}");
         assert!(near_rect(wash[0].rect, ctx));
+        assert_eq!(wash[0].radius, corners(CONTROL as u8, CONTROL as u8, 0, 0));
         let t = text_of(&h, CTX);
         assert_eq!(t.colour, maritime(mode, 11), "{mode:?}");
         assert_eq!(t.family, FontFamily::Proportional);
@@ -810,4 +832,56 @@ fn the_strip_is_a_tab_list_of_tabs_with_the_open_one_selected() {
             "{l}"
         );
     }
+}
+
+// ─── key tips and the strip's edge ──────────────────────────────────────────
+
+#[test]
+fn a_tab_clipped_by_the_strip_gets_no_key_tip_and_the_others_keep_theirs() {
+    for mode in MODES {
+        let mut spec = Spec::new(None);
+        spec.tips = true;
+        // Room for the stages and not the contextual tab.
+        spec.width = 330.0;
+        let h = drawn(mode, spec);
+        let strip = h.state().strip;
+        let ctx = rect_of(&h, TabPick::Contextual);
+        assert!(ctx.right() > strip.right(), "{ctx:?} {strip:?}");
+        let keys = faces(&painted(&h, mode), mode);
+        let inside: Vec<_> = h
+            .state()
+            .rects
+            .iter()
+            .filter(|(_, r)| strip.contains_rect(*r))
+            .collect();
+        assert_eq!(keys.len(), inside.len(), "{mode:?}: {keys:?}");
+        assert!(inside.len() >= 2 && inside.len() < 5);
+        for k in &keys {
+            assert!(k.rect.left() < strip.right(), "{mode:?}: {k:?}");
+        }
+    }
+}
+
+#[test]
+fn tips_do_not_take_the_pointer_from_the_tab_beneath() {
+    let mut spec = Spec::new(Some(TabPick::Stage(1)));
+    spec.tips = true;
+    let mut h = drawn(Mode::Light, spec);
+    // A tab's tip covers the next tab's leading corner; point at the corner.
+    let a = rect_of(&h, TabPick::Stage(0));
+    let b = rect_of(&h, TabPick::Stage(1));
+    let pos = egui::pos2(b.left() + 3.0, a.bottom() - 2.0);
+    assert!(b.contains(pos));
+    h.event(egui::Event::PointerMoved(pos));
+    h.run();
+    for pressed in [true, false] {
+        h.event(egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        });
+    }
+    h.run();
+    assert_eq!(h.state().clicked, Some(TabPick::Stage(1)));
 }
