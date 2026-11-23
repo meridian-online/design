@@ -35,7 +35,7 @@ use egui::text::{Galley, LayoutJob, TextFormat, TextWrapping};
 use egui::{Align, Color32, FontSelection, Key, Layout, Modifiers, RichText, UiBuilder};
 use meridian_design::semantic;
 
-use crate::key_chip::{chip_width, key_chip};
+use crate::key_chip::{chip_width, key_chip_with, KeyInk, KeySize};
 use crate::list_row::{list_row, ListRow, RowHeight};
 use crate::query::query_line;
 use crate::theme::to_color32;
@@ -52,6 +52,10 @@ pub struct PickerRow {
     /// A keystroke chip, right-aligned — a caller-provided string (the
     /// binding registry stays application-side).
     pub keystroke: Option<String>,
+    /// Why the row cannot be chosen now. An unavailable row draws this as its
+    /// detail, greyed with its label and key; it still takes the cursor, and
+    /// choosing it picks nothing.
+    pub unavailable: Option<String>,
 }
 
 impl PickerRow {
@@ -62,6 +66,7 @@ impl PickerRow {
             label: label.into(),
             detail: None,
             keystroke: None,
+            unavailable: None,
         }
     }
 
@@ -76,6 +81,17 @@ impl PickerRow {
     #[must_use]
     pub fn keystroke(mut self, keystroke: impl Into<String>) -> Self {
         self.keystroke = Some(keystroke.into());
+        self
+    }
+
+    /// The row cannot be chosen now, for `reason` (the caller's sentence): the
+    /// menu item's unavailable treatment. The reason is drawn as the row's
+    /// detail, replacing any other, and the label and key are greyed. The row
+    /// still takes the cursor and keeps its place; Enter or a click on it
+    /// picks nothing.
+    #[must_use]
+    pub fn unavailable(mut self, reason: impl Into<String>) -> Self {
+        self.unavailable = Some(reason.into());
         self
     }
 }
@@ -299,6 +315,9 @@ impl<D: PickerDelegate> Picker<D> {
         } else {
             Some(self.selected.min(count - 1))
         };
+        if index.is_some_and(|i| self.delegate.row(i).unavailable.is_some()) {
+            return None;
+        }
         match self.delegate.confirm(index, &self.query) {
             PickerOutcome::Close => Some(PickerEvent::Confirmed),
             PickerOutcome::KeepOpen => None,
@@ -364,6 +383,8 @@ impl<D: PickerDelegate> Picker<D> {
         self.scroll_to_selected = false;
 
         if let Some(index) = clicked_row {
+            // An unavailable row takes the cursor and `confirm_current` picks
+            // nothing on it.
             self.selected = index;
             out.event = self.confirm_current();
         }
@@ -411,6 +432,7 @@ impl<D: PickerDelegate> Picker<D> {
         let sem = semantic(dark);
         let muted = to_color32(sem.text.muted);
         let secondary = to_color32(sem.text.secondary);
+        let disabled = to_color32(sem.text.disabled);
         let mut clicked = None;
 
         ui.add_space(t.space[2]);
@@ -428,6 +450,7 @@ impl<D: PickerDelegate> Picker<D> {
                         ui.add_space(t.space[1]);
                     }
                     let row = self.delegate.row(index);
+                    let off = row.unavailable.is_some();
                     let selected = index == self.selected;
                     let r = list_row(
                         ui,
@@ -456,12 +479,16 @@ impl<D: PickerDelegate> Picker<D> {
                                     .max_rect(text_rect)
                                     .layout(Layout::left_to_right(Align::Center)),
                                 |ui| {
-                                    ui.add(
-                                        egui::Label::new(row.label.as_str())
-                                            .selectable(false)
-                                            .truncate(),
-                                    );
-                                    if let Some(detail) = &row.detail {
+                                    let label = if off {
+                                        RichText::new(row.label.as_str()).color(disabled)
+                                    } else {
+                                        RichText::new(row.label.as_str())
+                                    };
+                                    ui.add(egui::Label::new(label).selectable(false).truncate());
+                                    if let Some(reason) = &row.unavailable {
+                                        ui.add_space(t.icon_label_gap);
+                                        detail_label(ui, reason, disabled);
+                                    } else if let Some(detail) = &row.detail {
                                         ui.add_space(t.icon_label_gap);
                                         detail_label(ui, detail, muted);
                                     }
@@ -474,7 +501,8 @@ impl<D: PickerDelegate> Picker<D> {
                                         .max_rect(row_rect)
                                         .layout(Layout::right_to_left(Align::Center)),
                                     |ui| {
-                                        key_chip(ui, keystroke);
+                                        let ink = if off { KeyInk::Dimmed } else { KeyInk::Plain };
+                                        key_chip_with(ui, keystroke, KeySize::Row, ink);
                                     },
                                 );
                             }
@@ -483,6 +511,9 @@ impl<D: PickerDelegate> Picker<D> {
                     if selected && self.scroll_to_selected {
                         r.response.scroll_to_me(None);
                     }
+                    if let Some(reason) = &row.unavailable {
+                        describe_unavailable(ui, r.response.id, reason);
+                    }
                     if r.clicked() {
                         clicked = Some(index);
                     }
@@ -490,6 +521,15 @@ impl<D: PickerDelegate> Picker<D> {
             });
         clicked
     }
+}
+
+/// An unavailable row is disabled to a screen reader, with its reason as the
+/// node's description.
+fn describe_unavailable(ui: &egui::Ui, id: egui::Id, reason: &str) {
+    ui.ctx().accesskit_node_builder(id, |node| {
+        node.set_disabled();
+        node.set_description(reason);
+    });
 }
 
 /// The row's supporting annotation, drawn for the column it was actually

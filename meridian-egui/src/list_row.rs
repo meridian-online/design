@@ -66,6 +66,7 @@ pub struct ListRow {
     height: RowHeight,
     selected: bool,
     bar_ink: Option<Color32>,
+    inert: bool,
 }
 
 impl ListRow {
@@ -76,7 +77,17 @@ impl ListRow {
             height,
             selected: false,
             bar_ink: None,
+            inert: false,
         }
+    }
+
+    /// The row takes the cursor but not the pointer: no click, no hover fill, no
+    /// pressed fill, and no keyboard focus of its own. For a row that is
+    /// unavailable and still walked with the keys.
+    #[must_use]
+    pub(crate) fn inert(mut self) -> Self {
+        self.inert = true;
+        self
     }
 
     /// Mark the row as the one under the cursor — where the keys act. It takes
@@ -156,12 +167,17 @@ pub fn list_row<R>(
 
     let height = row.height.px(t);
     let desired = egui::vec2(ui.available_width(), height);
-    let (rect, response) = ui.allocate_exact_size(desired, Sense::click());
+    let sense = if row.inert {
+        Sense::hover()
+    } else {
+        Sense::click()
+    };
+    let (rect, response) = ui.allocate_exact_size(desired, sense);
 
     let state = RowState {
-        hovered: response.contains_pointer(),
+        hovered: !row.inert && response.contains_pointer(),
         selected: row.selected,
-        pressed: response.is_pointer_button_down_on(),
+        pressed: !row.inert && response.is_pointer_button_down_on(),
     };
 
     if ui.is_rect_visible(rect) {

@@ -156,6 +156,11 @@ fn show_card<R>(
                     if let Some(w) = width {
                         ui.set_width(w);
                     }
+                    if matches!(form, Form::Menu) {
+                        // Menu items and separators abut: a row's own height is
+                        // the whole of its place.
+                        ui.spacing_mut().item_spacing.y = 0.0;
+                    }
                     body(ui)
                 })
                 .inner

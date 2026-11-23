@@ -272,7 +272,7 @@ fn inks(ui: &egui::Ui, button: &Button<'_>, p: &ButtonPaint) -> Inks {
 
 /// The label on one line, cut with an ellipsis at `max_width` when it does not
 /// fit.
-fn label_galley(
+pub(crate) fn label_galley(
     ui: &egui::Ui,
     text: &str,
     ink: Color32,
