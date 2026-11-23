@@ -320,10 +320,21 @@ pub fn focus_ring(ui: &egui::Ui, rect: egui::Rect, control_radius: f32) {
 /// is one part of a ruled box: only the box's outer corners round.
 pub(crate) fn focus_ring_corners(ui: &egui::Ui, rect: egui::Rect, corners: egui::CornerRadius) {
     let colour = semantic(mode_of(ui).is_dark()).borders.focus;
+    ring_corners_in(ui, rect, corners, to_color32(colour));
+}
+
+/// The same ring in an ink of the caller's: a field with an error rings in its
+/// danger border rather than the focus ink.
+pub(crate) fn ring_corners_in(
+    ui: &egui::Ui,
+    rect: egui::Rect,
+    corners: egui::CornerRadius,
+    colour: egui::Color32,
+) {
     ui.painter().rect_stroke(
         rect,
         corners,
-        egui::Stroke::new(focus::RING_WIDTH, to_color32(colour)),
+        egui::Stroke::new(focus::RING_WIDTH, colour),
         StrokeKind::Inside,
     );
 }

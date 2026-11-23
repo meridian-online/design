@@ -8,8 +8,11 @@
 //! its bottom corners are square, over a rule along the foot: 1px in the
 //! control border at rest and in the primary ink under the pointer; 2px in the
 //! focus ink while it has the keys, and 2px in the danger border when it has an
-//! error. An error wins over the keys. The rule is drawn inside the box, so
-//! thickening it moves nothing.
+//! error. An error keeps its rule while the field has the keys, and the same
+//! danger ink closes into a 2px ring on all four sides, inside the edge and
+//! following the top corners: the focus sign for a field whose rule is already
+//! spoken for. The rule and the ring are drawn inside the box, so neither
+//! moves anything.
 //!
 //! Beneath the field is one message line at label size: the help in the muted
 //! ink, or the error in the red scale's step 11 when one is passed, which
@@ -30,6 +33,7 @@ use meridian_design::typography::UI_SIZE;
 
 use crate::icons::Icon;
 use crate::theme::to_color32;
+use crate::widgets::ring_corners_in;
 use crate::MeridianUi;
 
 /// One text field's configuration, drawn by [`text_field`].
@@ -295,6 +299,16 @@ pub fn text_field(ui: &mut egui::Ui, field: TextField<'_>) -> TextFieldResponse 
             Shape::rect_filled(foot, CornerRadius::ZERO, rule),
         ]),
     );
+
+    if focused && danger {
+        let corners = CornerRadius {
+            nw: radius,
+            ne: radius,
+            sw: 0,
+            se: 0,
+        };
+        ring_corners_in(ui, field_rect, corners, rule);
+    }
 
     if let Some((rect, galley)) = message {
         ui.painter().galley(rect.min, galley, Color32::PLACEHOLDER);

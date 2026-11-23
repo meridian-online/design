@@ -241,9 +241,93 @@ fn a_field_with_an_error_rules_two_pixels_in_the_danger_ink_and_keeps_it_with_th
         let mut spec = Spec::new();
         spec.error = Some(ERROR);
         assert_look(mode, spec, Interact::Rest, danger, 2.0);
-        // Error wins over the keys: the sheet has no field in both states.
+        // The foot stays 2px in the danger ink with the keys too; the ring
+        // that joins it is read in its own test.
         assert_look(mode, spec, Interact::Focus, danger, 2.0);
         assert_ne!(danger, ink(sem.borders.focus));
+    }
+}
+
+/// The stroked rects of `ink` laid on the field's own box: a ring, not a rule.
+fn rings(rects: &[Painted], ink: Color32, b: Rect) -> Vec<Painted> {
+    rects
+        .iter()
+        .filter(|r| r.is_stroked() && r.stroke.color == ink && near_rect(r.rect, b))
+        .copied()
+        .collect()
+}
+
+#[test]
+fn an_errored_field_with_the_keys_closes_the_danger_rule_into_a_ring() {
+    for mode in MODES {
+        let sem = semantic(mode.is_dark());
+        let danger = ink(sem.role(Role::Danger).border.base);
+        let mut spec = Spec::new();
+        spec.error = Some(ERROR);
+        let h = interacted(mode, spec, Interact::Focus);
+        assert!(h.state().focused, "{mode:?}: the harness did not focus it");
+        let b = h.state().rect;
+        let rects = painted(&h, mode);
+        let ring = rings(&rects, danger, b);
+        assert_eq!(ring.len(), 1, "{mode:?}: danger rings on the box: {ring:?}");
+        let ring = ring[0];
+        assert!(near(ring.stroke.width, 2.0), "{mode:?}: {:?}", ring.stroke);
+        assert_eq!(
+            ring.kind,
+            egui::StrokeKind::Inside,
+            "{mode:?}: inside the edge"
+        );
+        let c = CONTROL.round() as u8;
+        assert_eq!(
+            ring.radius,
+            CornerRadius {
+                nw: c,
+                ne: c,
+                sw: 0,
+                se: 0
+            },
+            "{mode:?}: top corners at the control radius, bottom square"
+        );
+        // The foot is still the 2px danger rule, and the text has not moved.
+        assert_eq!(rules(&rects, danger, b, 2.0), 1, "{mode:?}: foot");
+        let rest = drawn(mode, spec);
+        let (_, at_rest) = text_of(&rest, "ranking");
+        let (_, with_keys) = text_of(&h, "ranking");
+        assert!(
+            near(at_rest.min.x, with_keys.min.x) && near(at_rest.min.y, with_keys.min.y),
+            "{mode:?}: the text moved from {at_rest:?} to {with_keys:?}"
+        );
+    }
+}
+
+#[test]
+fn an_errored_field_without_the_keys_draws_only_the_foot() {
+    for mode in MODES {
+        let sem = semantic(mode.is_dark());
+        let danger = ink(sem.role(Role::Danger).border.base);
+        let mut spec = Spec::new();
+        spec.error = Some(ERROR);
+        for how in [Interact::Rest, Interact::Hover] {
+            let h = interacted(mode, spec, how);
+            let b = h.state().rect;
+            let rects = painted(&h, mode);
+            assert!(rings(&rects, danger, b).is_empty(), "{mode:?} {how:?}");
+            assert_eq!(rules(&rects, danger, b, 2.0), 1, "{mode:?} {how:?}: foot");
+        }
+    }
+}
+
+#[test]
+fn a_focused_field_without_an_error_keeps_the_focus_foot_and_draws_no_ring() {
+    for mode in MODES {
+        let sem = semantic(mode.is_dark());
+        let h = interacted(mode, Spec::new(), Interact::Focus);
+        let b = h.state().rect;
+        let rects = painted(&h, mode);
+        for colour in [sem.borders.focus, sem.role(Role::Danger).border.base] {
+            assert!(rings(&rects, ink(colour), b).is_empty(), "{mode:?}");
+        }
+        assert_eq!(rules(&rects, ink(sem.borders.focus), b, 2.0), 1, "{mode:?}");
     }
 }
 
