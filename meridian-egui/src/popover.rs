@@ -31,7 +31,9 @@
 //! another reason), or none was expected (each was opened this pass), the
 //! Escape goes to the last dismissable popover shown this pass. Which one that
 //! is is known only once the pass ends, so the popover left holding the key
-//! reports `dismissed` on the next pass, one frame late.
+//! reports `dismissed` on the next pass, one frame late. That pass counts it
+//! as already closing: a fresh Escape then goes to the layer beneath it, as
+//! it would had the first one been reported at once.
 //!
 //! A reason is never dismissable and never reads the input queue, so Escape
 //! reaches whatever is underneath it.
@@ -218,13 +220,14 @@ fn show_card<R>(
         return (area.response, area.inner, false);
     }
     // The popover expected on top: the last dismissable one shown in the
-    // previous pass whose caller was not told to close it.
+    // previous pass whose caller was not told to close it, and which is not
+    // reporting a held Escape this pass.
     let (expected, late) = registry(ctx, |r| {
         let expected = r
             .prev
             .iter()
             .rev()
-            .find(|e| e.dismissable && !e.dismissed)
+            .find(|e| e.dismissable && !e.dismissed && r.prev_held != Some(e.layer))
             .map(|e| e.layer);
         r.cur.push(Shown {
             layer,
@@ -247,7 +250,11 @@ fn show_card<R>(
         !card.contains(p) && !anchor.contains(p) && !on_popover
     });
     let consume = || ctx.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape));
-    let esc = if expected == Some(layer) {
+    let esc = if late {
+        // It reports the Escape it held, and that press is spent: a fresh one
+        // in this pass belongs to the layer beneath, so it is left alone.
+        false
+    } else if expected == Some(layer) {
         // The topmost: it takes the Escape, from the queue or from a popover
         // shown before it this pass that was holding it in case it did not
         // show.

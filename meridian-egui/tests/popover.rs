@@ -698,3 +698,21 @@ fn an_esc_on_the_frame_a_menu_and_its_submenu_open_closes_only_the_submenu() {
     h.run();
     assert!(!h.state().modal_dismissed, "the modal never sees it");
 }
+
+#[test]
+fn two_escs_as_the_caller_closes_a_submenu_close_the_menu_and_then_the_modal() {
+    let mut h = over_modal_harness(true);
+    // The caller closes the submenu on the frame the first Esc arrives; the
+    // second comes on the very next frame. Each press closes one layer, as
+    // when the submenu takes the first press itself.
+    h.state_mut().sub_open = false;
+    esc_frame(&mut h);
+    assert!(!h.state().modal_dismissed, "the first Esc is the menu's");
+    esc_frame(&mut h);
+    assert!(h.state().menu_dismissed, "the menu reports the first Esc");
+    assert!(
+        h.state().modal_dismissed,
+        "the second Esc reaches the modal"
+    );
+    assert!(!h.state().sub_dismissed);
+}
